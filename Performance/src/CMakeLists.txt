@@ -7,14 +7,13 @@ SET( Performance_PATCH_LEVEL 0 )
 
 
 SET( CMAKE_C_FLAGS   "-g -Wall" )
-#SET( CMAKE_CXX_FLAGS "-g -Wall" )
 
-MESSAGE("Project Source Dir set to ${PROJECT_SOURCE_DIR}")
-MESSAGE("Project Binary Dir set to ${PROJECT_BINARY_DIR}")
-MESSAGE("BGS Binary Dir set to ${BGS_BINARY_DIR}")
-MESSAGE("BGS Source Dir set to ${BGS_SOURCE_DIR}")
-MESSAGE("Performance Binary Dir set to ${Performance_BINARY_DIR}")
-MESSAGE("Performance Source Dir set to ${Performance_SOURCE_DIR}")
+#MESSAGE("Project Source Dir set to ${PROJECT_SOURCE_DIR}")
+#MESSAGE("Project Binary Dir set to ${PROJECT_BINARY_DIR}")
+#MESSAGE("BGS Binary Dir set to ${BGS_BINARY_DIR}")
+#MESSAGE("BGS Source Dir set to ${BGS_SOURCE_DIR}")
+#MESSAGE("Performance Binary Dir set to ${Performance_BINARY_DIR}")
+#MESSAGE("Performance Source Dir set to ${Performance_SOURCE_DIR}")
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/../include)
 

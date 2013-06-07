@@ -47,8 +47,13 @@ static const unsigned char defaultnShadowDetection2 = (unsigned char)127; // val
 
 //const float BackgroundSubtractorMOG3::Alpha        = 0.001f; //speed of update, the time interval =1/Alfa.
 //const float BackgroundSubtractorMOG3::Cf          = 0.05f;
-const float BackgroundSubtractorMOG3::Alpha       = 0.00001f; //speed of update, the time interval =1/Alfa.
-const float BackgroundSubtractorMOG3::Cf          = 0.001f;
+
+const float BackgroundSubtractorMOG3::Alpha       = 0.0001f; //speed of update, the time interval =1/Alfa.
+const float BackgroundSubtractorMOG3::Cf          = 0.05f;
+
+//const float BackgroundSubtractorMOG3::Alpha       = 0.00001f; //speed of update, the time interval =1/Alfa.
+//const float BackgroundSubtractorMOG3::Cf          = 0.001f;
+
 const int   BackgroundSubtractorMOG3::GaussiansNo = 4;       // Max. number of Gaussian per pixel
 const float BackgroundSubtractorMOG3::Sigma       = 11.0f;    // Initial sigma.
 const float BackgroundSubtractorMOG3::SigmaMax    = 5.0f*BackgroundSubtractorMOG3::Sigma;    // Initial sigma.

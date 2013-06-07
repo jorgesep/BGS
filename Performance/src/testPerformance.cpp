@@ -121,10 +121,10 @@ int main( int argc, char** argv )
         return -1;
     }
     
-    //Performance::Indexes index[3];
+    //Performance::ContingencyMatrix index[3];
     perf.pixelLevelCompare(im1, im2);
     cout << perf.asString() << endl;
-   // index = perf.getIndexes();
+   // index = perf.getContingencyMatrix();
 
     //perf.pixelLevelCompare(im1, im3);
     //cout << perf.asString() << endl;

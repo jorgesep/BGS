@@ -29,13 +29,20 @@ SET_DIRECTORY_PROPERTIES (
 # Set DEBUG option
 OPTION(DEBUG "DEBUG option to print out more info" ON)
 
+# openCV library
+set(OpenCV_DIR "/usr/local/share/OpenCV"
+           CACHE PATH "The path where OpenCVConfig.cmake is placed")
+FIND_PACKAGE( OpenCV REQUIRED )
+
+
+
 link_directories(${BGS_SOURCE_DIR}/Performance)
 
-#find_library(Log4 log4cxx PATHS /opt/local/lib)
 find_library(Logging log4cplus PATHS /opt/local/lib)
 
-# openCV library
-FIND_PACKAGE( OpenCV REQUIRED )
+
+#ADD_LIBRARY(Background SHARED  mdgkt_filter background_subtraction ${OpenCV_LIBS})
+#set_property(TARGET Background PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
 ADD_EXECUTABLE( bgs ${SRCS} )
 TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} ${Logging} Performance )

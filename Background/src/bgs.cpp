@@ -112,6 +112,13 @@ int main( int argc, char** argv )
     map<unsigned int, string>::iterator it;
     Mat gt_image;
 
+    stringstream msg;
+    ofstream outfile;
+
+    //get specific point (x,y) of BG image
+    int col = 253;
+    int row = 308;
+
     bool compare = false;
     Performance perf;
 
@@ -128,6 +135,7 @@ int main( int argc, char** argv )
         compare=true;
         list_files(groundDir,gt_files);
         namedWindow("GROUND THRUTH", CV_WINDOW_NORMAL);
+        outfile.open("output.txt");
     }
 
 
@@ -219,21 +227,38 @@ int main( int argc, char** argv )
          */
 
         //look for ground thruth file
-        if ( (compare) && (it = gt_files.find(cnt++)) != gt_files.end() ) {
-            //cout << cnt << " " << it->second << endl;
+        if ( (compare) && (it = gt_files.find(cnt)) != gt_files.end() ) {
+
             gt_image = imread(it->second, CV_LOAD_IMAGE_GRAYSCALE);
+
             if( gt_image.data ) {
                 imshow("GROUND THRUTH", gt_image);
                 //Compare both images
                 perf.pixelLevelCompare(gt_image, fgmask);
-                cout << perf.asString() << endl;
-                //cout << gt_image.rows << "X" << gt_image.cols << fgmask.rows<< "X"  << fgmask.cols << endl;
+
+                msg.str("");
+                msg << cnt << " " << perf.asString() << " " 
+                    << (int)img.at<Vec3b>(row,col)[0] << " " 
+                    << (int)img.at<Vec3b>(row,col)[1] << " " 
+                    << (int)img.at<Vec3b>(row,col)[2];
+                cout << msg.str() << endl; 
+                outfile << msg.str() << endl;
             }
         }
 
+        cnt++;
         if (cv::waitKey(delay)>=0)
             break;
     }
+
+    if (!groundDir.empty()) {
+        cout    << perf.summaryAsString() << endl;
+        cout    << perf.averageSummaryAsString() << endl;
+        outfile << perf.summaryAsString() << endl;
+        outfile << perf.averageSummaryAsString() << endl;
+        outfile.close();
+    }
+
 
     /*
     Mat frame;
