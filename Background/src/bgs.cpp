@@ -100,20 +100,66 @@ static void help()
     exit( EXIT_FAILURE );
 }
 
+/*
 const char* keys =
 {
     "{v|video_name|input.mpg| movie file}"
     "{g|ground_truth|dir | ground truth directory}"
 };
+*/
+
+const char* keys =
+{
+    "{ i   | input      |           | Input video }"
+    "{ o   | output     |           | Output video }"
+    "{ g   | gtruth     |           | Input ground-truth directory }"
+    "{ m   | model      |           | Load background model from  file }"
+    "{ s   | save       |           | Save background model to file }"
+    "{ c   | config     |           | Load init config file }"
+    "{ f   | frame      | 0         | Shift ground-truth in +/- n frames, e.g -f -3 or -f 3}"
+    "{ d   | display    | false     | Display video sequence }"
+    "{ v   | verbose    | false     | Display output messages }"
+    "{ h   | help       | false     | Print help message }"
+};
+
+
 
 int main( int argc, char** argv )
 {
+    //Parse console parameters
+    CommandLineParser cmd(argc, argv, keys);
+
+    if (cmd.get<bool>("help"))
+    {
+        cout << "Background Subtraction Program." << endl;
+        cout << "------------------------------------------------------------------------------" << endl;
+        cout << "Process input video comparing with its ground truth." << endl;
+        cmd.printParams();
+        cout << "------------------------------------------------------------------------------" << endl <<endl;
+        return 0;
+    }
+
+    // Read input parameters
+    const string inputVideoName  = cmd.get<string>("input");
+    const string outputVideoName = cmd.get<string>("output");
+    const string groundTruthName = cmd.get<string>("gtruth");
+    const string bgModelName     = cmd.get<string>("model");
+    const string saveName        = cmd.get<string>("save");
+    const string initConfigName  = cmd.get<string>("config");
+    const bool displayImages     = cmd.get<bool>("display");
+    const bool verbose           = cmd.get<bool>("verbose");
+    const int shiftFrame         = cmd.get<int>("frame");
+
+    //declaration of local variables.
     map<unsigned int, string> gt_files;
     map<unsigned int, string>::iterator it;
     Mat gt_image;
-
     stringstream msg;
     ofstream outfile;
+    BackgroundSubtractorMOG3 bg_model;
+    Mat img, fgmask, fgimg;
+    bool update_bg_model = true;
+    Mat frame;
 
     //get specific point (x,y) of BG image
     int col = 253;
@@ -122,49 +168,49 @@ int main( int argc, char** argv )
     bool compare = false;
     Performance perf;
 
-    CommandLineParser parser(argc, argv, keys);
-    string videoName = parser.get<string>("v");
-    string groundDir = parser.get<string>("g");
-    parser.printParams();
 
-    if (videoName.empty()) {
-        help();
+    if (inputVideoName.empty()) {
+        cout << "Insert video name" << endl;
+        cmd.printParams();
+        return 0;
     }
 
-    if (!groundDir.empty()) {
+    if (!groundTruthName.empty()) {
         compare=true;
-        list_files(groundDir,gt_files);
-        namedWindow("GROUND THRUTH", CV_WINDOW_NORMAL);
+        list_files(groundTruthName,gt_files);
+        namedWindow("GROUND TRUTH", CV_WINDOW_NORMAL);
         outfile.open("output.txt");
     }
 
+    if (!initConfigName.empty()) {
+        bg_model.loadInitParametersFromFile(initConfigName);
+    }
 
-    mdgkt* preProc = mdgkt::Instance();
+    //Print out initialization parameters.
+    cout << bg_model.initParametersToString() << endl;
     
-    //string videoName= "/Users/jsepulve/Downloads/Last_Downloads/Matlab/dvcam/testxvid.avi";
-    //string videoName= "/Users/jsepulve/Documents/Universidad/usach/ProyectoTesis/Code/Matlab/dvcam/testxvid.avi"; 
-    //string videoName= "/Users/jsepulve/Documents/Universidad/usach/ProyectoTesis/Code/Matlab/dvcam/WalkTurnBack-Camera_3-Person1.avi"; 
-    //string videoName= "/Users/jsepulve/Documents/Universidad/usach/ProyectoTesis/Code/Matlab/dvcam/dvcam2-1.mpg"; 
-    
-    namedWindow("image", CV_WINDOW_NORMAL);
-    namedWindow("foreground mask", CV_WINDOW_NORMAL);
-    namedWindow("foreground image", CV_WINDOW_NORMAL);
-    //namedWindow("mean background image", CV_WINDOW_NORMAL);
-    
-    
-    VideoCapture video(videoName);
+    // Create display windows 
+    if (displayImages) { 
+        namedWindow("image", CV_WINDOW_NORMAL);
+        namedWindow("foreground mask", CV_WINDOW_NORMAL);
+        namedWindow("foreground image", CV_WINDOW_NORMAL);
+    } 
+   
+    //create video object.
+    VideoCapture video(inputVideoName);
     
     // Check video has been opened sucessfully
     if (!video.isOpened())
-        return 1;
-    
-    BackgroundSubtractorMOG3 bg_model;
-    Mat img, fgmask, fgimg;
-    bool update_bg_model = true;
+        return 0;
 
+    double rate= video.get(CV_CAP_PROP_FPS);
+    int delay= 1000/rate;
+    int cnt = 0  + shiftFrame; 
     
-    Mat frame;
     
+    //spatio-temporal pre-processing filter for smoothing transform
+    mdgkt* preProc = mdgkt::Instance();
+
     video >> frame;
     preProc->initializeFirstImage(frame);
     preProc->SpatioTemporalPreprocessing(frame, img);
@@ -172,20 +218,14 @@ int main( int argc, char** argv )
     preProc->SpatioTemporalPreprocessing(frame, img);
     video >> frame;
     preProc->SpatioTemporalPreprocessing(frame, img);
-
     
-    double rate= video.get(CV_CAP_PROP_FPS);
-    int delay= 1000/rate;
-    
-    int cnt = 0 ; 
-    
+    // main loop 
     for(;;)
     {
         video >> img;
         //video >> frame;
         
         //preProc->SpatioTemporalPreprocessing(frame, img);
-
         
         if( img.empty() )
             break;
@@ -202,15 +242,15 @@ int main( int argc, char** argv )
         
         Mat bgimg;
         bg_model.getBackgroundImage(bgimg);
-        
-        imshow("image", img);
-        imshow("foreground mask", fgmask);
-        imshow("foreground image", fgimg);
-        //if(!bgimg.empty())
-        //    imshow("mean background image", bgimg );
+
+        //Display sequences
+        if (displayImages) { 
+            imshow("image", img);
+            imshow("foreground mask", fgmask);
+            imshow("foreground image", fgimg);
+        }
 
         
-        //imshow("IMAGE", img);
         /*
         //update the model
         
@@ -226,24 +266,32 @@ int main( int argc, char** argv )
         }
          */
 
-        //look for ground thruth file
+        if  (cnt >= 0 ) {
+
+        //looking for ground truth file
         if ( (compare) && (it = gt_files.find(cnt)) != gt_files.end() ) {
 
             gt_image = imread(it->second, CV_LOAD_IMAGE_GRAYSCALE);
 
             if( gt_image.data ) {
-                imshow("GROUND THRUTH", gt_image);
+
+                if (displayImages)
+                    imshow("GROUND TRUTH", gt_image);
+
                 //Compare both images
                 perf.pixelLevelCompare(gt_image, fgmask);
 
                 msg.str("");
-                msg << cnt << " " << perf.asString() << " " 
-                    << (int)img.at<Vec3b>(row,col)[0] << " " 
-                    << (int)img.at<Vec3b>(row,col)[1] << " " 
-                    << (int)img.at<Vec3b>(row,col)[2];
-                cout << msg.str() << endl; 
+                msg     << cnt << " " << perf.asString() << " " 
+                        << (int)img.at<Vec3b>(row,col)[0] << " " 
+                        << (int)img.at<Vec3b>(row,col)[1] << " " 
+                        << (int)img.at<Vec3b>(row,col)[2];
                 outfile << msg.str() << endl;
+
+                if (verbose) 
+                    cout    << msg.str() << endl; 
             }
+        }
         }
 
         cnt++;
@@ -251,11 +299,14 @@ int main( int argc, char** argv )
             break;
     }
 
-    if (!groundDir.empty()) {
+    perf.calculateFinalPerformanceOfMetrics();
+
+    if (!groundTruthName.empty()) {
         cout    << perf.summaryAsString() << endl;
         cout    << perf.averageSummaryAsString() << endl;
-        outfile << perf.summaryAsString() << endl;
-        outfile << perf.averageSummaryAsString() << endl;
+        cout    << perf.metricsStatisticsAsString() << endl;
+        //outfile << perf.summaryAsString() << endl;
+        //outfile << perf.averageSummaryAsString() << endl;
         outfile.close();
     }
 

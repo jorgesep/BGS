@@ -19,6 +19,10 @@
 //////////
 //*/
 
+#include <iomanip> 
+#include <fstream>
+//#include <sstream>
+#include <algorithm>
 #include "background_subtraction.h"
 
 #include <opencv2/opencv.hpp>
@@ -45,15 +49,8 @@ static const float defaultfTau             = 0.5f; // Tau - shadow threshold, se
 static const unsigned char defaultnShadowDetection2 = (unsigned char)127; // value to use in the segmentation mask for shadows, set 0 not to do shadow detection
 
 
-//const float BackgroundSubtractorMOG3::Alpha        = 0.001f; //speed of update, the time interval =1/Alfa.
-//const float BackgroundSubtractorMOG3::Cf          = 0.05f;
-
 const float BackgroundSubtractorMOG3::Alpha       = 0.0001f; //speed of update, the time interval =1/Alfa.
 const float BackgroundSubtractorMOG3::Cf          = 0.05f;
-
-//const float BackgroundSubtractorMOG3::Alpha       = 0.00001f; //speed of update, the time interval =1/Alfa.
-//const float BackgroundSubtractorMOG3::Cf          = 0.001f;
-
 const int   BackgroundSubtractorMOG3::GaussiansNo = 4;       // Max. number of Gaussian per pixel
 const float BackgroundSubtractorMOG3::Sigma       = 11.0f;    // Initial sigma.
 const float BackgroundSubtractorMOG3::SigmaMax    = 5.0f*BackgroundSubtractorMOG3::Sigma;    // Initial sigma.
@@ -299,25 +296,6 @@ public:
     cvtfunc = src->depth() != CV_32F ? getConvertFunc(src->depth(), CV_32F) : 0;
 }
 
-/*
- parallel_for_(Range(0, image.rows),
- BackgroundSubtractionInvoker(
- image, 
- fgmask,
- (GMM*)bgmodel.data,
- (float*)(bgmodel.data + sizeof(GMM)*nmixtures*image.rows*image.cols),
- bgmodelUsedModes.data, 
- nmixtures, 
- (float)learningRate,
- (float)varThreshold,
- backgroundRatio, 
- varThresholdGen,
- fVarInit, fVarMin, fVarMax, 
- float(-learningRate*fCT), 
- fTau,
- bShadowDetection, 
- nShadowDetection));
- */
     
 void operator()(const Range& range) const
 {
@@ -568,30 +546,6 @@ void operator()(const Range& range) const
     BinaryFunc cvtfunc;
 };
 
-/*
-BackgroundSubtractorMOG3::BackgroundSubtractorMOG3()
-{
-    frameSize        = Size(0,0);
-    frameType        = 0;
-
-    nframes          = 0;
-    history          = defaultHistory2; //500 --> 1/500 = 0.002
-    varThreshold     = defaultVarThreshold2;
-    bShadowDetection = 1;
-
-    nmixtures        = defaultNMixtures2;
-    backgroundRatio  = defaultBackgroundRatio2;
-    fVarInit         = defaultVarInit2;
-    fVarMax          = defaultVarMax2;
-    fVarMin          = defaultVarMin2;
-
-    varThresholdGen  = defaultVarThresholdGen2;
-    fCT              = defaultfCT2;
-    nShadowDetection =  defaultnShadowDetection2;
-    fTau             = defaultfTau;
-}
-*/
-
 
 BackgroundSubtractorMOG3::BackgroundSubtractorMOG3()
 {
@@ -604,6 +558,7 @@ BackgroundSubtractorMOG3::BackgroundSubtractorMOG3()
     bShadowDetection = 1;
     
     nmixtures        = GaussiansNo;
+    fAlpha           = Alpha;
     backgroundRatio  = T;
     fVarInit         = Sigma;
     fVarMax          = SigmaMax;
@@ -613,6 +568,7 @@ BackgroundSubtractorMOG3::BackgroundSubtractorMOG3()
     fCT              = CT;
     nShadowDetection =  defaultnShadowDetection2;
     fTau             = Tau;
+
 }
 
 
@@ -627,6 +583,7 @@ BackgroundSubtractorMOG3::BackgroundSubtractorMOG3(int _history,  float _varThre
     bShadowDetection = _bShadowDetection;
 
     nmixtures        = GaussiansNo;
+    fAlpha           = Alpha;
     backgroundRatio  = T;
     fVarInit         = Sigma;
     fVarMax          = SigmaMax;
@@ -636,7 +593,36 @@ BackgroundSubtractorMOG3::BackgroundSubtractorMOG3(int _history,  float _varThre
     fCT              = CT;
     nShadowDetection =  defaultnShadowDetection2;
     fTau             = Tau;
+
 }
+
+BackgroundSubtractorMOG3::BackgroundSubtractorMOG3(string init)
+{
+    frameSize        = Size(0,0);
+    frameType        = 0;
+    
+    nframes          = 0;
+    history          = defaultHistory2; //500 --> 1/500 = 0.002
+    varThreshold     = PixelRange;
+    bShadowDetection = 1;
+    
+    nmixtures        = GaussiansNo;
+    fAlpha           = Alpha;
+    backgroundRatio  = T;
+    fVarInit         = Sigma;
+    fVarMax          = SigmaMax;
+    fVarMin          = SigmaMin;
+    
+    varThresholdGen  = PixelGen;
+    fCT              = CT;
+    nShadowDetection =  defaultnShadowDetection2;
+    fTau             = Tau;
+
+    initParametersName = init;
+    loadInitParametersFromFile(init);
+
+}
+
 
 BackgroundSubtractorMOG3::~BackgroundSubtractorMOG3()
 {
@@ -720,7 +706,8 @@ void BackgroundSubtractorMOG3::operator()(InputArray _image, OutputArray _fgmask
     ++nframes;
 
     //learningRate = learningRate >= 0 && nframes > 1 ? learningRate : 1./min( 2*nframes, history );
-    learningRate = Alpha;
+    //learningRate = Alpha;
+    learningRate = fAlpha;
     CV_Assert(learningRate >= 0);
 
     //Global illumination changing factor 'g' between reference image ir and current image ic.
@@ -804,6 +791,95 @@ void BackgroundSubtractorMOG3::getBackgroundImage(OutputArray backgroundImage) c
     default:
         CV_Error(CV_StsUnsupportedFormat, "");
     }
+}
+
+void BackgroundSubtractorMOG3::loadBackgroundModelFromFile(const string bgModelInputName)
+{
+
+}
+
+void BackgroundSubtractorMOG3::saveBackgroundModelToFile(const string bgModelOutputName)
+{
+
+}
+
+void BackgroundSubtractorMOG3::loadInitParametersFromFile(const string initInputParameters = "init.txt")
+{
+
+
+    ifstream file(initInputParameters.c_str());
+    if (!file.good()) 
+        return ;
+
+    //Logging initialization
+    //I'd like to use a logging tool, like boost-log to send all debug messages.
+    //But just for now 'cout' seems to be good enough.
+    cout << "loadInitParametersFromFile : " << initInputParameters << endl;
+    string line;
+    while(getline(file, line)) {
+        if(!line.length() || line[0] == '#') continue;
+        else {
+            //Removing spaces
+            string::iterator end_pos = std::remove(line.begin(), line.end(), ' ');
+            line.erase(end_pos, line.end());
+            size_t pos = line.find(":");
+            size_t end = line.size() - pos;
+
+            if (pos != string::npos) {
+                stringstream strval( line.substr( pos+1,end ) );
+
+                if      (line.substr(0,pos) == "GaussiansNo" )
+                    strval >> nmixtures;
+                else if (line.substr(0,pos) == "Sigma" )
+                    strval >> fVarInit;
+                else if (line.substr(0,pos) == "SigmaMax" ){
+                    strval >> fVarMax;
+                    fVarMax *= fVarInit;
+                }
+                else if (line.substr(0,pos) == "SigmaMin" )
+                    strval >> fVarMin;
+                  else if (line.substr(0,pos) == "Alfa" )
+                    strval >> fAlpha;
+                else if (line.substr(0,pos) == "cf" ){
+                    strval >> fCf;
+                    backgroundRatio  = 1.0f - fCf;
+                }
+                else if (line.substr(0,pos) == "cT" )
+                    strval >> fCT;
+                else if (line.substr(0,pos) == "Range" )
+                    strval >> varThreshold;
+                else if (line.substr(0,pos) == "Gen" )
+                    strval >> varThresholdGen;
+                else if (line.substr(0,pos) == "Tau" )
+                    strval >> fTau;
+           
+            
+            }
+        }
+    }
+
+    //print out parameters
+    //cout << this->initParametersToString() << endl;
+
+}
+
+string BackgroundSubtractorMOG3::initParametersToString()
+{
+    stringstream str;
+    str << "--------------------------------------------------------------" << endl
+        << "Default initialization parameters:"     << endl 
+        << "GaussiansNo : " <<  nmixtures           << endl
+        << "Sigma       : " << fVarInit             << endl
+        << "SigmaMax    : " << fVarMax              << endl
+        << "SigmaMin    : " << fVarMin              << endl
+        << "Alpha       : " << setiosflags(ios::fixed | ios::showpoint | ios::right) <<  setprecision(10)     << fAlpha << endl
+        << "cf          : " << nmixtures            << endl
+        << "cT          : " << fCT                  << endl
+        << "Range       : " << varThreshold         << endl
+        << "Gen         : " << varThresholdGen      << endl
+        << "Tau         : " << fTau                 << endl
+        << "------------------------------------------------------------" ;
+    return str.str();
 }
 
 

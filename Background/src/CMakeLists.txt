@@ -8,7 +8,8 @@ SET( sagmm_PATCH_LEVEL 0 )
 
 SET( CMAKE_C_FLAGS "-Wall -g" )
 
-FILE ( GLOB SRCS *.cpp *.h )
+#FILE ( GLOB SRCS *.cpp *.h )
+FILE ( GLOB SRCS background_subtraction.cpp  mdgkt_filter.cpp bgs.cpp *.h )
 
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/")
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/../include")
@@ -43,6 +44,10 @@ find_library(Logging log4cplus PATHS /opt/local/lib)
 
 #ADD_LIBRARY(Background SHARED  mdgkt_filter background_subtraction ${OpenCV_LIBS})
 #set_property(TARGET Background PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
+
+ADD_EXECUTABLE( plot_point bg_points.cpp )
+TARGET_LINK_LIBRARIES( plot_point ${OpenCV_LIBS} ${Logging} )
+set_property(TARGET plot_point PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_EXECUTABLE( bgs ${SRCS} )
 TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} ${Logging} Performance )

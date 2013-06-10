@@ -153,6 +153,64 @@ typedef struct GlobalMetrics {
         metricG(0,0,0),
         metricB(0,0,0),
         count(0) {};
+
+    GlobalMetrics( ContingencyMatrix pR, 
+                   ContingencyMatrix pG, 
+                   ContingencyMatrix pB,
+                   CommonMetrics     mR, 
+                   CommonMetrics     mG, 
+                   CommonMetrics     mB, 
+                   unsigned int cn):
+                   perfR(pR),   
+                   perfG(pG),   
+                   perfB(pB),
+                   metricR(mR), 
+                   metricG(mG), 
+                   metricB(mB), 
+                   count(cn) {};
+
+    GlobalMetrics (const GlobalMetrics & rhs) { *this = rhs; };
+
+    bool operator !=(const GlobalMetrics &rhs) const
+    {
+        return (
+                perfR   != rhs.perfR   ||
+                perfG   != rhs.perfG   ||
+                perfB   != rhs.perfB   ||
+                metricR != rhs.metricR ||
+                metricG != rhs.metricG ||
+                metricB != rhs.metricB ||
+                count   != rhs.count);
+    };
+
+    //equality operator
+    bool operator ==(const GlobalMetrics &rhs) const
+    {
+        return (
+                perfR   == rhs.perfR   &&
+                perfG   == rhs.perfG   &&
+                perfB   == rhs.perfB   &&
+                metricR == rhs.metricR &&
+                metricG == rhs.metricG &&
+                metricB == rhs.metricB &&
+                count   == rhs.count);
+    };
+    // assigment operator
+    GlobalMetrics &operator =(const GlobalMetrics &rhs)
+    {
+        if (*this != rhs) 
+        {
+            perfR   = rhs.perfR;
+            perfG   = rhs.perfG;
+            perfB   = rhs.perfB;
+            metricR = rhs.metricR;
+            metricG = rhs.metricG;
+            metricB = rhs.metricB;
+            count   = rhs.count;
+        }
+        return *this;
+    };
+
     ContingencyMatrix perfR;
     ContingencyMatrix perfG;
     ContingencyMatrix perfB;
@@ -161,6 +219,79 @@ typedef struct GlobalMetrics {
     CommonMetrics metricB;
     unsigned int count;
 };
+
+typedef struct StatMetrics {
+    StatMetrics () : 
+        MeanR(0,0,0),
+        MeanG(0,0,0),
+        MeanB(0,0,0),
+        MedianR(0,0,0),
+        MedianG(0,0,0),
+        MedianB(0,0,0) {};
+
+    StatMetrics(   CommonMetrics     _meanR, 
+                   CommonMetrics     _meanG, 
+                   CommonMetrics     _meanB, 
+                   CommonMetrics     _medianR, 
+                   CommonMetrics     _medianG, 
+                   CommonMetrics     _medianB):
+                   MeanR(_meanR), 
+                   MeanG(_meanG), 
+                   MeanB(_meanB), 
+                   MedianR(_medianR), 
+                   MedianG(_medianG), 
+                   MedianB(_medianB)  {};
+
+    StatMetrics (const StatMetrics & rhs) { *this = rhs; };
+
+    bool operator !=(const StatMetrics &rhs) const
+    {
+        return (
+                MeanR   != rhs.MeanR ||
+                MeanG   != rhs.MeanG ||
+                MeanB   != rhs.MeanB ||
+                MedianR != rhs.MedianR ||
+                MedianG != rhs.MedianG ||
+                MedianB != rhs.MedianB
+               );
+    };
+
+    bool operator ==(const StatMetrics &rhs) const
+    {
+        return (
+                MeanR   == rhs.MeanR   &&
+                MeanG   == rhs.MeanG   &&
+                MeanB   == rhs.MeanB   &&
+                MedianR == rhs.MedianR &&
+                MedianG == rhs.MedianG &&
+                MedianB == rhs.MedianB
+               );
+    };
+
+
+    StatMetrics &operator =(const StatMetrics &rhs)
+    {
+        if (*this != rhs) 
+        {
+            MeanR = rhs.MeanR;
+            MeanG = rhs.MeanG;
+            MeanB = rhs.MeanB;
+            MedianR = rhs.MedianR;
+            MedianG = rhs.MedianG;
+            MedianB = rhs.MedianB;
+        }
+        return *this;
+    };
+
+
+    CommonMetrics MeanR;
+    CommonMetrics MeanG;
+    CommonMetrics MeanB;
+    CommonMetrics MedianR;
+    CommonMetrics MedianG;
+    CommonMetrics MedianB;
+};
+
 
 public:
 
@@ -263,6 +394,8 @@ public:
     string refToString() const;
     string summaryAsString() const;
     string averageSummaryAsString() const;
+    string metricsStatisticsAsString() const;
+    void calculateFinalPerformanceOfMetrics();
 
 
     /**
@@ -302,6 +435,8 @@ private:
      */
     void evaluatePerformanceContingencyMatrix();
     void evaluatePerformanceContingencyMatrixPerChannel(int);
+    void medianOfMetrics();
+    void meanOfMetrics();
 
     float FMeasure;
     float Variance;
@@ -309,14 +444,19 @@ private:
     float specificity;
     float sensitivity;
     float precision;
+    float medianR[2];
+    float medianG;
+    float medianB;
     unsigned char threshold;
     unsigned int nchannel;
 
     static const int MAX_NUMBER_CHANNELS = 3;
-    ContingencyMatrix ref[3];
+    ContingencyMatrix refImageArray[3];
     ContingencyMatrix measure[3];
     GlobalMetrics global_metrics;
     CommonMetrics common_metrics;
+    vector<GlobalMetrics> vectorMetrics;
+    StatMetrics stat;
 };
 
 

@@ -20,6 +20,8 @@ public:
     BackgroundSubtractorMOG3();
     //! the full constructor that takes the length of the history, the number of gaussian mixtures, the background ratio parameter and the noise strength
     BackgroundSubtractorMOG3(int history,  float varThreshold, bool bShadowDetection=true);
+    // load initialzation parameters from config file.
+    BackgroundSubtractorMOG3(string);
     //! the destructor
     virtual ~BackgroundSubtractorMOG3();
     //! the update operator
@@ -33,6 +35,11 @@ public:
 
     //virtual AlgorithmInfo* info() const;
 
+    virtual void loadBackgroundModelFromFile(const string);
+    virtual void saveBackgroundModelToFile(const string);
+    virtual void loadInitParametersFromFile(const string);
+    virtual string initParametersToString();
+
 protected:
     Size frameSize;
     int frameType;
@@ -41,6 +48,10 @@ protected:
     int nframes;
     int history;
     int nmixtures;
+
+    //Internal learning rate, initialize from static const values.
+    float fAlpha;
+    float fCf;
     //! here it is the maximum allowed number of mixture components.
     //! Actual number is determined dynamically per pixel
     double varThreshold;
@@ -130,6 +141,8 @@ protected:
     Mat BackgroundNumberCounter;
     Mat Background;
     Mat Foreground;
+
+    string initParametersName;
 
 };
 
