@@ -872,7 +872,7 @@ string BackgroundSubtractorMOG3::initParametersToString()
         << "Sigma       : " << fVarInit             << endl
         << "SigmaMax    : " << fVarMax              << endl
         << "SigmaMin    : " << fVarMin              << endl
-        << "Alpha       : " << setiosflags(ios::fixed | ios::showpoint | ios::right) <<  setprecision(10)     << fAlpha << endl
+        << "Alpha       : " << setiosflags(ios::fixed | ios::showpoint | ios::right) <<  setprecision(2)     << fAlpha << endl
         << "cf          : " << nmixtures            << endl
         << "cT          : " << fCT                  << endl
         << "Range       : " << varThreshold         << endl

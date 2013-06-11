@@ -22,7 +22,8 @@ namespace bgs {
 //Class that keeps all measurement units of quality assesments.
 class Performance {
 public:
-typedef struct ContingencyMatrix
+//typedef struct ContingencyMatrix
+struct ContingencyMatrix
 {
     ContingencyMatrix (): tp(0),tn(0),fp(0),fn(0) {};
     ContingencyMatrix(float _tp, float _tn, float _fp, float _fn):
@@ -93,7 +94,8 @@ typedef struct ContingencyMatrix
     float fn;
 };
 
-typedef struct CommonMetrics {
+//typedef struct CommonMetrics {
+struct CommonMetrics {
     CommonMetrics (): sensitivity(0),specificity(0),precision(0) {};
     CommonMetrics(double se, double sp, double pr):
         sensitivity(se),specificity(sp),precision(pr) {};
@@ -144,7 +146,8 @@ typedef struct CommonMetrics {
     double precision;
 };
 
-typedef struct GlobalMetrics {
+//typedef struct GlobalMetrics {
+struct GlobalMetrics {
     GlobalMetrics () : 
         perfR(0,0,0,0),
         perfG(0,0,0,0),
@@ -220,7 +223,8 @@ typedef struct GlobalMetrics {
     unsigned int count;
 };
 
-typedef struct StatMetrics {
+//typedef struct StatMetrics {
+struct StatMetrics {
     StatMetrics () : 
         MeanR(0,0,0),
         MeanG(0,0,0),

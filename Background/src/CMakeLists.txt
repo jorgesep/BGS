@@ -16,6 +16,7 @@ INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/../include")
 INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/include")
 INCLUDE_DIRECTORIES("/opt/local/include")
 INCLUDE_DIRECTORIES(${Performance_SOURCE_DIR}/../include)
+INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include) 
 
 #set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
 
@@ -35,9 +36,9 @@ set(OpenCV_DIR "/usr/local/share/OpenCV"
            CACHE PATH "The path where OpenCVConfig.cmake is placed")
 FIND_PACKAGE( OpenCV REQUIRED )
 
-
-
 link_directories(${BGS_SOURCE_DIR}/Performance)
+link_directories(${BGS_BINARY_DIR}/Utils) 
+
 
 find_library(Logging log4cplus PATHS /opt/local/lib)
 
@@ -50,5 +51,5 @@ TARGET_LINK_LIBRARIES( plot_point ${OpenCV_LIBS} ${Logging} )
 set_property(TARGET plot_point PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_EXECUTABLE( bgs ${SRCS} )
-TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} ${Logging} Performance )
+TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} ${Logging} Performance Utils)
 set_property(TARGET bgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)

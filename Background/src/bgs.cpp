@@ -32,12 +32,13 @@
 #include "mdgkt_filter.h"
 #include "background_subtraction.h"
 #include "Performance.h"
+#include "utils.h"
 
 using namespace cv;
 using namespace std;
 using namespace bgs;
 
-
+/*
 string chomp (string dir)
 {
     unsigned found = dir.find_last_of("/");
@@ -99,14 +100,8 @@ static void help()
     << endl;
     exit( EXIT_FAILURE );
 }
-
-/*
-const char* keys =
-{
-    "{v|video_name|input.mpg| movie file}"
-    "{g|ground_truth|dir | ground truth directory}"
-};
 */
+
 
 const char* keys =
 {
@@ -119,6 +114,7 @@ const char* keys =
     "{ f   | frame      | 0         | Shift ground-truth in +/- n frames, e.g -f -3 or -f 3}"
     "{ d   | display    | false     | Display video sequence }"
     "{ v   | verbose    | false     | Display output messages }"
+    "{ p   | point      |           | Print out RGB values of point,  e.g -p 250,300 }"
     "{ h   | help       | false     | Print help message }"
 };
 
@@ -126,6 +122,9 @@ const char* keys =
 
 int main( int argc, char** argv )
 {
+
+    showMultipleImages();
+
     //Parse console parameters
     CommandLineParser cmd(argc, argv, keys);
 
@@ -146,6 +145,7 @@ int main( int argc, char** argv )
     const string bgModelName     = cmd.get<string>("model");
     const string saveName        = cmd.get<string>("save");
     const string initConfigName  = cmd.get<string>("config");
+    const string pointPosition   = cmd.get<string>("point");
     const bool displayImages     = cmd.get<bool>("display");
     const bool verbose           = cmd.get<bool>("verbose");
     const int shiftFrame         = cmd.get<int>("frame");
@@ -160,11 +160,6 @@ int main( int argc, char** argv )
     Mat img, fgmask, fgimg;
     bool update_bg_model = true;
     Mat frame;
-
-    //get specific point (x,y) of BG image
-    int col = 253;
-    int row = 308;
-
     bool compare = false;
     Performance perf;
 
@@ -204,9 +199,25 @@ int main( int argc, char** argv )
         return 0;
 
     double rate= video.get(CV_CAP_PROP_FPS);
-    int delay= 1000/rate;
-    int cnt = 0  + shiftFrame; 
-    
+    int width  = video.get(CV_CAP_PROP_FRAME_WIDTH);
+    int height = video.get(CV_CAP_PROP_FRAME_HEIGHT);
+    int delay  = 1000/rate;
+    //The frame counter will shifted 'n' backward/forward positions 
+    //of ground thruth sequence.
+    int cnt    = 0  + shiftFrame; 
+ 
+
+    //Get specific to be displayed in the image.
+    //Check input point to display value
+    int nl=0,nc=0;
+    Point pt(0,0);
+    if (!pointPosition.empty()) {
+        pt = stringToPoint(pointPosition);
+        nc = pt.x > width  ? width  : pt.x;
+        nl = pt.y > height ? height : pt.y;
+    }
+
+   
     
     //spatio-temporal pre-processing filter for smoothing transform
     mdgkt* preProc = mdgkt::Instance();
@@ -240,36 +251,12 @@ int main( int argc, char** argv )
         
         img.copyTo(fgimg, fgmask);
         
-        Mat bgimg;
-        bg_model.getBackgroundImage(bgimg);
+        //Mat bgimg;
+        //bg_model.getBackgroundImage(bgimg);
 
-        //Display sequences
-        if (displayImages) { 
-            imshow("image", img);
-            imshow("foreground mask", fgmask);
-            imshow("foreground image", fgimg);
-        }
-
-        
-        /*
-        //update the model
-        
-        char k = (char)waitKey(30);
-        if( k == 27 ) break;
-        if( k == ' ' )
-        {
-            update_bg_model = !update_bg_model;
-            if(update_bg_model)
-                printf("Background update is on\n");
-            else
-                printf("Background update is off\n");
-        }
-         */
-
-        if  (cnt >= 0 ) {
 
         //looking for ground truth file
-        if ( (compare) && (it = gt_files.find(cnt)) != gt_files.end() ) {
+        if ( cnt >=0 && compare && (it = gt_files.find(cnt)) != gt_files.end() ) {
 
             gt_image = imread(it->second, CV_LOAD_IMAGE_GRAYSCALE);
 
@@ -281,22 +268,54 @@ int main( int argc, char** argv )
                 //Compare both images
                 perf.pixelLevelCompare(gt_image, fgmask);
 
+                //uchar* dsp_point = img.ptr<uchar>(nl);
+
+                //msg.str("");
+                //msg     << cnt << " " << perf.asString() << " " 
+                //        << (int)dsp_point[nc] << " " 
+                //        << (int)dsp_point[nc+1] << " " 
+                //        << (int)dsp_point[nc+2];
+ 
+
+                //msg.str("");
                 msg.str("");
+                //msg.str(   cnt + " " + perf.asString() + " " );
                 msg     << cnt << " " << perf.asString() << " " 
-                        << (int)img.at<Vec3b>(row,col)[0] << " " 
-                        << (int)img.at<Vec3b>(row,col)[1] << " " 
-                        << (int)img.at<Vec3b>(row,col)[2];
+                        << (int)fgmask.at<Vec3b>(nl,nc)[0] << " " 
+                        << (int)fgmask.at<Vec3b>(nl,nc)[1] << " " 
+                        << (int)fgmask.at<Vec3b>(nl,nc)[2];
+
                 outfile << msg.str() << endl;
 
                 if (verbose) 
                     cout    << msg.str() << endl; 
             }
         }
+
+        //Display sequences
+        if (displayImages) {
+            circle(fgmask,pt,8,Scalar(255,255,254),-1,8);
+            //circle(fgmask,Point(col,row),4,Scalar(0,0,254),-1,4);
+            imshow("image", img);
+            imshow("foreground mask", fgmask);
+            imshow("foreground image", fgimg);
         }
 
+ 
         cnt++;
         if (cv::waitKey(delay)>=0)
             break;
+ 
+        //char k = (char)waitKey(30);
+        //if( k == 27 ) break;
+        //if( k == ' ' )
+        //{
+        //    update_bg_model = !update_bg_model;
+        //    if(update_bg_model)
+        //        printf("Background update is on\n");
+        //    else
+        //        printf("Background update is off\n");
+        //}
     }
 
     perf.calculateFinalPerformanceOfMetrics();
@@ -305,6 +324,8 @@ int main( int argc, char** argv )
         cout    << perf.summaryAsString() << endl;
         cout    << perf.averageSummaryAsString() << endl;
         cout    << perf.metricsStatisticsAsString() << endl;
+        outfile << "# MeanR Sensitivity Specificity ...." << endl;
+        outfile << "#" << perf.metricsStatisticsAsString() << endl;
         //outfile << perf.summaryAsString() << endl;
         //outfile << perf.averageSummaryAsString() << endl;
         outfile.close();
