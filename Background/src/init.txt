@@ -1,0 +1,50 @@
+# intialises parameters
+# the size of image
+#ImSize : ImageSize
+
+# Max number of Gaussian per pixel.
+GaussiansNo : 4.0
+
+# the initial sigma.
+#Sigma : 11.0
+Sigma : 36.0
+# SigmaMax n times Sigma 5*11
+SigmaMax : 5.0
+SigmaMin : 4.0
+
+# speed of update, the time interval =1/Alfa.
+#  Para.Alfa=0.001;
+#Alfa : 0.00001
+Alfa : 0.001
+
+# A measure of the minimum portion of the data that be accounted for by the background.
+# If a bigger value of cf is chosen, the background model is uaually
+# unimodal.
+#   cf = 0.05;
+cf : 0.001
+#T  : 1-cf
+
+# log(1-cf)/log(1-Alfa) = 100 frmaes
+
+# A threshold to decide if a pixel value match one of a existent Gaussian
+# distribution according to the distance.
+#Range : 4*4
+Range : 16
+
+# A threshold to decide if a pixel value match one of a existent Gaussian
+# distribution according to the distance. If it is not close to any a new
+# component will be generate a new one.
+# Normally, Gen < Range
+#Gen : 3*3:
+Gen : 9
+
+# complexity reduction prior. It is related to the number of samples needed
+# to accept a component actually exist. We use cT = 0.05 of all the saples.
+# By setting cT = 0 you get the standard Stauffer and Grimson algorithm.
+# Eq (13)
+# cT = 0.05;
+cT : 0.05
+
+# the threshold for shadow detection.
+Tau : 0.5
+
