@@ -46,6 +46,14 @@ find_library(Logging log4cplus PATHS /opt/local/lib)
 #ADD_LIBRARY(Background SHARED  mdgkt_filter background_subtraction ${OpenCV_LIBS})
 #set_property(TARGET Background PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
+ADD_EXECUTABLE( testVideoMdgkt mdgkt_filter.cpp testVideoMdgkt.cpp )
+TARGET_LINK_LIBRARIES( testVideoMdgkt ${OpenCV_LIBS} )
+set_property(TARGET testVideoMdgkt PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
+ADD_EXECUTABLE( testMdgkt mdgkt_filter.cpp testMdgkt.cpp )
+TARGET_LINK_LIBRARIES( testMdgkt ${OpenCV_LIBS} )
+set_property(TARGET testMdgkt PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
 ADD_EXECUTABLE( plot_point bg_points.cpp )
 TARGET_LINK_LIBRARIES( plot_point ${OpenCV_LIBS} ${Logging} )
 set_property(TARGET plot_point PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)

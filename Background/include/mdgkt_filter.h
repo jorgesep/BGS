@@ -27,6 +27,7 @@ public:
     void initialize();
     void initializeFirstImage(const Mat&);
     void initializeFirstImage(const vector<Mat>&);
+    int getTemporalWindow() { return TIME_WINDOW; };
 
 private:
     

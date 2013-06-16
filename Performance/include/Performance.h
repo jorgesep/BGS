@@ -14,6 +14,10 @@
 #include "opencv2/core/core.hpp"
 #include <opencv2/opencv.hpp>
 
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
+
 using namespace cv;
 using namespace std;
 
@@ -170,6 +174,17 @@ struct GlobalMetrics {
                    metricR(mR), 
                    metricG(mG), 
                    metricB(mB), 
+                   count(cn) {};
+
+    GlobalMetrics( ContingencyMatrix pR, 
+                   CommonMetrics     mR, 
+                   unsigned int cn):
+                   perfR(pR),   
+                   perfG(0,0,0,0),   
+                   perfB(0,0,0,0),
+                   metricR(mR), 
+                   metricG(0,0,0), 
+                   metricB(0,0,0), 
                    count(cn) {};
 
     GlobalMetrics (const GlobalMetrics & rhs) { *this = rhs; };

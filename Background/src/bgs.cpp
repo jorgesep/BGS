@@ -38,70 +38,6 @@ using namespace cv;
 using namespace std;
 using namespace bgs;
 
-/*
-string chomp (string dir)
-{
-    unsigned found = dir.find_last_of("/");
-    if (found == dir.size()-1)
-        return dir.substr(0,found);
-    return dir;
-}
-
-unsigned int name_to_number(string file)
-{
-    unsigned int sn;
-    string gt ("-");
-    string str(".");
-    //remove .PNG
-    size_t pos  = file.find(gt); 
-    size_t size = file.substr(pos+1).find_last_of(str);
-    string number = file.substr(pos+1,size);
-    stringstream tmpstr(number);
-    tmpstr >> sn;
-    //cout << number << ": " << sn << endl;
-    return sn;
-
-}
-
-void list_files(string directory, map<unsigned int,string>& list)
-{
-    DIR *dir;
-    struct dirent *entity;
-
-    dir = opendir(directory.c_str());
-    if (dir != NULL){
-        while ( (entity = readdir(dir)) ){
-            const string file_name = entity->d_name;
-            const string full_file_name = chomp(directory) + "/" + file_name;
-
-            if(entity->d_type == DT_DIR)
-                continue;
-            if(entity->d_type == DT_REG) {
-                size_t found = file_name.find(".PNG");
-                if (found!=std::string::npos)
-                    list[name_to_number(entity->d_name)]=full_file_name; 
-           }
-        }
-    }
-}
-
-
-
-
-
-static void help()
-{
-    cout
-    << "------------------------------------------------------------------------------" << endl
-    << "This test program compares two file images."                                    << endl
-    << "Usage:"                                                                         << endl
-    << "./main -v input_video -g ground truth images" << endl
-    << "--------------------------------------------------------------------------"     << endl
-    << endl;
-    exit( EXIT_FAILURE );
-}
-*/
-
 
 const char* keys =
 {
@@ -111,7 +47,8 @@ const char* keys =
     "{ m   | model      |           | Load background model from  file }"
     "{ s   | save       |           | Save background model to file }"
     "{ c   | config     |           | Load init config file }"
-    "{ f   | frame      | 0         | Shift ground-truth in +/- n frames, e.g -f -3 or -f 3}"
+    "{ n   | frame      | 0         | Shift ground-truth in +/- n frames, e.g -f -3 or -f 3}"
+    "{ f   | filter     | true      | Apply smooth preprocessing filter, Default true.}"
     "{ d   | display    | false     | Display video sequence }"
     "{ v   | verbose    | false     | Display output messages }"
     "{ p   | point      |           | Print out RGB values of point,  e.g -p 250,300 }"
@@ -145,8 +82,9 @@ int main( int argc, char** argv )
     const string bgModelName     = cmd.get<string>("model");
     const string saveName        = cmd.get<string>("save");
     const string initConfigName  = cmd.get<string>("config");
-    const string pointPosition   = cmd.get<string>("point");
+    const string displayPoint    = cmd.get<string>("point");
     const bool displayImages     = cmd.get<bool>("display");
+    const bool applyFilter       = cmd.get<bool>("filter");
     const bool verbose           = cmd.get<bool>("verbose");
     const int shiftFrame         = cmd.get<int>("frame");
 
@@ -154,14 +92,17 @@ int main( int argc, char** argv )
     map<unsigned int, string> gt_files;
     map<unsigned int, string>::iterator it;
     Mat gt_image;
-    stringstream msg;
-    ofstream outfile;
+    stringstream msg,ptmsg;
+    ofstream outfile, ptfile;
     BackgroundSubtractorMOG3 bg_model;
-    Mat img, fgmask, fgimg;
+    Mat img, fgmask, fgimg, ftimg,fgimg_final;
     bool update_bg_model = true;
     Mat frame;
     bool compare = false;
+    bool show_point = false;
     Performance perf;
+    int cntTemporalWindow = 0;
+    mdgkt *filter;
 
 
     if (inputVideoName.empty()) {
@@ -173,8 +114,11 @@ int main( int argc, char** argv )
     if (!groundTruthName.empty()) {
         compare=true;
         list_files(groundTruthName,gt_files);
-        namedWindow("GROUND TRUTH", CV_WINDOW_NORMAL);
         outfile.open("output.txt");
+        if (displayImages) {
+            namedWindow("GROUND THRUTH", CV_WINDOW_NORMAL);
+            moveWindow("GROUND THRUTH",400,300);
+        }
     }
 
     if (!initConfigName.empty()) {
@@ -182,15 +126,9 @@ int main( int argc, char** argv )
     }
 
     //Print out initialization parameters.
-    cout << bg_model.initParametersToString() << endl;
+    if (verbose)
+        cout << bg_model.initParametersToString() << endl;
     
-    // Create display windows 
-    if (displayImages) { 
-        namedWindow("image", CV_WINDOW_NORMAL);
-        namedWindow("foreground mask", CV_WINDOW_NORMAL);
-        namedWindow("foreground image", CV_WINDOW_NORMAL);
-    } 
-   
     //create video object.
     VideoCapture video(inputVideoName);
     
@@ -202,45 +140,69 @@ int main( int argc, char** argv )
     int width  = video.get(CV_CAP_PROP_FRAME_WIDTH);
     int height = video.get(CV_CAP_PROP_FRAME_HEIGHT);
     int delay  = 1000/rate;
-    //The frame counter will shifted 'n' backward/forward positions 
-    //of ground thruth sequence.
-    int cnt    = 0  + shiftFrame; 
  
 
-    //Get specific to be displayed in the image.
+    //Get specific point to be displayed in the image.
     //Check input point to display value
     int nl=0,nc=0;
     Point pt(0,0);
-    if (!pointPosition.empty()) {
-        pt = stringToPoint(pointPosition);
+    if (!displayPoint.empty()) {
+        pt = stringToPoint(displayPoint);
         nc = pt.x > width  ? width  : pt.x;
         nl = pt.y > height ? height : pt.y;
+        show_point = true;
+
+        //define outfile to save BGR pixel values
+        stringstream name(""); 
+        name << "pt_" << pt.x << "_" << pt.y << ".txt";
+        ptfile.open(name.str().c_str());
     }
 
    
-    
-    //spatio-temporal pre-processing filter for smoothing transform
-    mdgkt* preProc = mdgkt::Instance();
+    // Create display windows 
+    if (displayImages) { 
+        namedWindow("image", CV_WINDOW_NORMAL);
+        namedWindow("foreground mask", CV_WINDOW_NORMAL);
+        namedWindow("foreground image", CV_WINDOW_NORMAL);
+        moveWindow("image"           ,20,20);
+        moveWindow("foreground image",20,300);
+        moveWindow("foreground mask" ,400,20);
+    } 
 
-    video >> frame;
-    preProc->initializeFirstImage(frame);
-    preProc->SpatioTemporalPreprocessing(frame, img);
-    video >> frame;
-    preProc->SpatioTemporalPreprocessing(frame, img);
-    video >> frame;
-    preProc->SpatioTemporalPreprocessing(frame, img);
-    
+  
+    //spatio-temporal pre-processing filter for smoothing frames.
+    if (applyFilter) {
+        filter = mdgkt::Instance();
+        cntTemporalWindow = filter->getTemporalWindow();
+
+        for (int i=0; i<filter->getTemporalWindow(); i++) {
+            video >> frame;
+            if (i==0)
+                filter->initializeFirstImage(frame);
+            filter->SpatioTemporalPreprocessing(frame, img);
+        }
+    }
+
+    //Shift backward or forward ground thruth sequence counter.
+    //for compensating pre-processed frames in the filter.
+    int cnt    = 0  + shiftFrame + cntTemporalWindow; 
+
     // main loop 
     for(;;)
     {
-        video >> img;
-        //video >> frame;
-        
-        //preProc->SpatioTemporalPreprocessing(frame, img);
-        
-        if( img.empty() )
-            break;
-        
+        //Checks if option filter enabled.
+        if (applyFilter) {
+            video >> frame;
+            if (frame.empty()) 
+                break;
+
+            //Applies spatial and temporal filter
+            //note this filter return a Mat CV_32FC3 type.
+            filter->SpatioTemporalPreprocessing(frame, img);
+        }
+        else
+            video >> img;
+       
         if( fgimg.empty() )
             fgimg.create(img.size(), img.type());
        
@@ -251,39 +213,38 @@ int main( int argc, char** argv )
         
         img.copyTo(fgimg, fgmask);
         
-        //Mat bgimg;
-        //bg_model.getBackgroundImage(bgimg);
+        Mat bgimg;
+        bg_model.getBackgroundImage(bgimg);
 
+        // this is just for debugging, save pixel information in a file
+        if (show_point) {
+            ptmsg.str("");
+            ptmsg  << (int)img.at<Vec3b>(nl,nc)[0] << " " 
+                   << (int)img.at<Vec3b>(nl,nc)[1] << " " 
+                   << (int)img.at<Vec3b>(nl,nc)[2] ;
+            ptfile << ptmsg.str() << endl;
+        }
 
         //looking for ground truth file
         if ( cnt >=0 && compare && (it = gt_files.find(cnt)) != gt_files.end() ) {
 
+            // open ground thruth frame.
             gt_image = imread(it->second, CV_LOAD_IMAGE_GRAYSCALE);
 
             if( gt_image.data ) {
 
-                if (displayImages)
-                    imshow("GROUND TRUTH", gt_image);
-
                 //Compare both images
                 perf.pixelLevelCompare(gt_image, fgmask);
 
-                //uchar* dsp_point = img.ptr<uchar>(nl);
+                // display ground thruth
+                if (displayImages)
+                    imshow("GROUND THRUTH", gt_image);
 
-                //msg.str("");
-                //msg     << cnt << " " << perf.asString() << " " 
-                //        << (int)dsp_point[nc] << " " 
-                //        << (int)dsp_point[nc+1] << " " 
-                //        << (int)dsp_point[nc+2];
- 
-
-                //msg.str("");
+                //Print out debug messages to either file or std.
                 msg.str("");
-                //msg.str(   cnt + " " + perf.asString() + " " );
-                msg     << cnt << " " << perf.asString() << " " 
-                        << (int)fgmask.at<Vec3b>(nl,nc)[0] << " " 
-                        << (int)fgmask.at<Vec3b>(nl,nc)[1] << " " 
-                        << (int)fgmask.at<Vec3b>(nl,nc)[2];
+                msg     << cnt << " " << perf.asString() << " " ;
+                if (show_point) 
+                    msg << ptmsg.str();
 
                 outfile << msg.str() << endl;
 
@@ -294,67 +255,51 @@ int main( int argc, char** argv )
 
         //Display sequences
         if (displayImages) {
-            circle(fgmask,pt,8,Scalar(255,255,254),-1,8);
-            //circle(fgmask,Point(col,row),4,Scalar(0,0,254),-1,4);
-            imshow("image", img);
+            img.convertTo(ftimg, CV_8UC3);
+            if (show_point)
+                circle(ftimg,pt,8,Scalar(0,0,254),-1,8);
+            imshow("image", ftimg);
             imshow("foreground mask", fgmask);
             imshow("foreground image", fgimg);
+
+            //this is just to save frame 350.
+            if (cnt == 350) {
+                imwrite("350_fgmask.jpg",fgmask);
+                imwrite("350_fgimg.jpg",fgimg);
+            }
         }
 
  
         cnt++;
-        if (cv::waitKey(delay)>=0)
-            break;
+        
+        //just for debugging
+        if (cnt == 200)
+            continue;
+        //if (cv::waitKey(delay)>=0)
+        //    break;
  
         //char k = (char)waitKey(30);
-        //if( k == 27 ) break;
-        //if( k == ' ' )
-        //{
-        //    update_bg_model = !update_bg_model;
-        //    if(update_bg_model)
-        //        printf("Background update is on\n");
-        //    else
-        //        printf("Background update is off\n");
-        //}
+        char k = (char)waitKey(delay);
+        if( k == 27 ) { cout << "PRESSED BUTTON "<< endl; break;}
     }
+
 
     perf.calculateFinalPerformanceOfMetrics();
 
     if (!groundTruthName.empty()) {
-        cout    << perf.summaryAsString() << endl;
-        cout    << perf.averageSummaryAsString() << endl;
+        //cout    << perf.summaryAsString() << endl;
+        //cout    << perf.averageSummaryAsString() << endl;
         cout    << perf.metricsStatisticsAsString() << endl;
-        outfile << "# MeanR Sensitivity Specificity ...." << endl;
-        outfile << "#" << perf.metricsStatisticsAsString() << endl;
+        //outfile << "MeanR Sensitivity Specificity ...." << endl;
+        outfile << perf.metricsStatisticsAsString() << endl;
         //outfile << perf.summaryAsString() << endl;
         //outfile << perf.averageSummaryAsString() << endl;
         outfile.close();
     }
 
+    if (ptfile.is_open())
+        ptfile.close();
 
-    /*
-    Mat frame;
-    Mat img;
-    
-    video >> frame;
-    preProc->initializeFirstImage(frame);
-    preProc->SpatioTemporalPreprocessing(frame, img);
-    video >> frame;
-    preProc->SpatioTemporalPreprocessing(frame, img);
-    video >> frame;
-    preProc->SpatioTemporalPreprocessing(frame, img);
-    
-    
-    ofstream myfile;
-    myfile.open ("example.txt");
-    
-    vector<Mat> channels;
-    split(img,channels);
-    myfile << "KERNEL WEIGHT(0): " << endl << " " << channels.at(0) << endl << endl;
-    myfile << "KERNEL WEIGHT(1): " << endl << " " << channels.at(1) << endl << endl;
-    myfile << "KERNEL WEIGHT(2): " << endl << " " << channels.at(2) << endl << endl;
-    myfile.close();
-    */
     return 0;
 }
 

@@ -58,11 +58,10 @@ void mdgkt::SpatioTemporalPreprocessing(const Mat& src, Mat& dst)
         temporal_average.push_back(Mat::zeros(src.size(), CV_32FC1));        
     }
 
-    
     Mat E;
     src.convertTo(E, CV_32FC3);
     split(E,nchannels);
-    
+   
     
     brg.push_back( Mat(src.size(), CV_32FC1));
     brg.push_back( Mat(src.size(), CV_32FC1));
@@ -94,9 +93,9 @@ void mdgkt::SpatioTemporalPreprocessing(const Mat& src, Mat& dst)
         temporal_average.at(1)+= kernelImageG.at(i)*fptr[i];
         temporal_average.at(2)+= kernelImageB.at(i)*fptr[i];
     }
-  
+
+ 
     merge(temporal_average,dst);
-    
 
 }
 

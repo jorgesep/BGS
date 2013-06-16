@@ -28,6 +28,7 @@ TARGET_LINK_LIBRARIES( testPerformance Performance ${OpenCV_LIBS} )
 set_property(TARGET testPerformance PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_LIBRARY(Performance SHARED Performance)
+target_link_libraries(Performance ${OpenCV_LIBS})
 set_property(TARGET Performance PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
 

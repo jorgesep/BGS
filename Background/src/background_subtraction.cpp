@@ -291,7 +291,8 @@ public:
     globalChange = _globalChange;
     Cm0 = _Cm;
     Bg0 = _Bg;
-    Bg0 = _Fg;
+    //Bg0 = _Fg;
+    Fg0 = _Fg;
 
     cvtfunc = src->depth() != CV_32F ? getConvertFunc(src->depth(), CV_32F) : 0;
 }
@@ -327,7 +328,7 @@ void operator()(const Range& range) const
         float* fg        = Fg0 + ncols*y;
 
         //After each iteration per mixture:
-        // increment x
+        // increment x (note: x is a column)
         // data (buffer) incremented by number of channels.
         // ggm incremented number of Gaussians
         // data:
@@ -353,6 +354,11 @@ void operator()(const Range& range) const
             float* fg_m       = fg;
             float* bg_cnt     = cm;
 
+            //just for debugging
+            if (y0==200 && x==680)
+                int temporary = y0;
+            
+
             //////
             //go through all modes
             for( int mode = 0; mode < nmodes; mode++, mean_m += nchannels, bg_m +=nchannels )
@@ -376,9 +382,22 @@ void operator()(const Range& range) const
                     // d_dirac_m = x[t] - mu_m
                     if( nchannels == 3 )
                     {
-                        dData[0] = mean_m[0] - data[0]*globalChange;
-                        dData[1] = mean_m[1] - data[1]*globalChange;
-                        dData[2] = mean_m[2] - data[2]*globalChange;
+                        //just for debugging
+                        //dData[0] = mean_m[0] - data[0]*globalChange;
+                        //dData[1] = mean_m[1] - data[1]*globalChange;
+                        //dData[2] = mean_m[2] - data[2]*globalChange;
+                        float mean0 = mean_m[0];
+                        float mean1 = mean_m[1];
+                        float mean2 = mean_m[2];
+                        float data0 = data[0];
+                        float data1 = data[1];
+                        float data2 = data[2];
+                        data0 *=globalChange;
+                        data1 *=globalChange;
+                        data2 *=globalChange;
+                        dData[0] = mean0 - data0;
+                        dData[1] = mean1 - data1;
+                        dData[2] = mean2 - data2;
                         dist2 = dData[0]*dData[0] + dData[1]*dData[1] + dData[2]*dData[2];
                     }
                     else
@@ -391,6 +410,8 @@ void operator()(const Range& range) const
                         }
                     }
 
+                    // Eq (8)
+                    // SUM(Weight) > (1-Cf); TB=(1-Cf)
                     //background? - Tb - usually larger than Tg
                     if( totalWeight < TB && dist2 < Tb*var ) {
                         background = true;
@@ -670,6 +691,7 @@ void BackgroundSubtractorMOG3::initialize(Size _frameSize, int _frameType)
         ptrm->meanG = 1.0f;
         ptrm->meanB = 1.0f;
     }
+    GaussianModel = Scalar::all(1);
     
     CurrentGaussianModel.create(frameSize, CV_8U);
     //CurrentGaussianModel = Scalar(1,0,0,0);
@@ -749,6 +771,7 @@ void BackgroundSubtractorMOG3::getBackgroundImage(OutputArray backgroundImage) c
     int firstGaussianIdx = 0;
     const GMM* gmm = (GMM*)GaussianModel.data;
     const Vec3f* mean = reinterpret_cast<const Vec3f*>(gmm + frameSize.width*frameSize.height*nmixtures);
+    //const Vec3f* mean = reinterpret_cast<const Vec3f*>(gmm + frameSize.width*frameSize.height*nmixtures);
     for(int row=0; row<meanBackground.rows; row++)
     {
         for(int col=0; col<meanBackground.cols; col++)
@@ -814,7 +837,7 @@ void BackgroundSubtractorMOG3::loadInitParametersFromFile(const string initInput
     //Logging initialization
     //I'd like to use a logging tool, like boost-log to send all debug messages.
     //But just for now 'cout' seems to be good enough.
-    cout << "loadInitParametersFromFile : " << initInputParameters << endl;
+    //cout << "loadInitParametersFromFile : " << initInputParameters << endl;
     string line;
     while(getline(file, line)) {
         if(!line.length() || line[0] == '#') continue;
@@ -872,7 +895,7 @@ string BackgroundSubtractorMOG3::initParametersToString()
         << "Sigma       : " << fVarInit             << endl
         << "SigmaMax    : " << fVarMax              << endl
         << "SigmaMin    : " << fVarMin              << endl
-        << "Alpha       : " << setiosflags(ios::fixed | ios::showpoint | ios::right) <<  setprecision(2)     << fAlpha << endl
+        << "Alpha       : " << fAlpha               << endl
         << "cf          : " << nmixtures            << endl
         << "cT          : " << fCT                  << endl
         << "Range       : " << varThreshold         << endl
