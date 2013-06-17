@@ -44,7 +44,7 @@ link_directories(${BGS_SOURCE_DIR}/Performance)
 link_directories(${BGS_BINARY_DIR}/Utils) 
 
 
-find_library(Logging log4cplus PATHS /opt/local/lib)
+#find_library(Logging log4cplus PATHS /opt/local/lib)
 
 
 #ADD_LIBRARY(Background SHARED  mdgkt_filter background_subtraction ${OpenCV_LIBS})
@@ -59,11 +59,11 @@ TARGET_LINK_LIBRARIES( testMdgkt ${OpenCV_LIBS} )
 set_property(TARGET testMdgkt PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_EXECUTABLE( plot_point bg_points.cpp )
-TARGET_LINK_LIBRARIES( plot_point ${OpenCV_LIBS} ${Logging} )
+TARGET_LINK_LIBRARIES( plot_point ${OpenCV_LIBS} )
 set_property(TARGET plot_point PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_EXECUTABLE( bgs ${SRCS} )
-TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} ${Logging} Performance Utils)
+TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} Performance Utils)
 set_property(TARGET bgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)
