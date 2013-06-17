@@ -11,6 +11,10 @@ SET( CMAKE_C_FLAGS "-Wall -g" )
 #FILE ( GLOB SRCS *.cpp *.h )
 FILE ( GLOB SRCS background_subtraction.cpp  mdgkt_filter.cpp bgs.cpp *.h )
 
+
+FILE ( GLOB SCRIPTS ${PROJECT_SOURCE_DIR}/scripts/*.py ${PROJECT_SOURCE_DIR}/scripts/*.sh )
+
+
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/")
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/../include")
 INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/include")
@@ -61,3 +65,8 @@ set_property(TARGET plot_point PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DI
 ADD_EXECUTABLE( bgs ${SRCS} )
 TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} ${Logging} Performance Utils)
 set_property(TARGET bgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
+file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)
+file(COPY ${SCRIPTS} DESTINATION ${BGS_BINARY_DIR}/bin/)
+
+

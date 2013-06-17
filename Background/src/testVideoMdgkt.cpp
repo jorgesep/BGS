@@ -42,14 +42,6 @@ using namespace bgs;
 const char* keys =
 {
     "{ i   | input      |           | Input video }"
-    "{ o   | output     |           | Output video }"
-    "{ g   | gtruth     |           | Input ground-truth directory }"
-    "{ m   | model      |           | Load background model from  file }"
-    "{ s   | save       |           | Save background model to file }"
-    "{ c   | config     |           | Load init config file }"
-    "{ f   | frame      | 0         | Shift ground-truth in +/- n frames, e.g -f -3 or -f 3}"
-    "{ d   | display    | false     | Display video sequence }"
-    "{ v   | verbose    | false     | Display output messages }"
     "{ p   | point      |           | Print out RGB values of point,  e.g -p 250,300 }"
     "{ h   | help       | false     | Print help message }"
 };
@@ -91,9 +83,20 @@ int main( int argc, char** argv )
     //spatio-temporal pre-processing filter for smoothing transform
     mdgkt* preProc = mdgkt::Instance();
 
-    VideoCapture video("/Users/jsepulve/Tesis/Videos/WalkTurnBack-Camera_3-Person1.avi");
+    if (inputVideoName.empty()) {
+        cout << "Insert video name" << endl;
+        cmd.printParams();
+        return 0;
+    }
+
+    //VideoCapture video("/Users/jsepulve/Tesis/Videos/WalkTurnBack-Camera_3-Person1.avi");
+    //create video object.
+    VideoCapture video(inputVideoName);
+
+    // Check video has been opened sucessfully
     if (!video.isOpened())
         return -1;
+
 
     video >> frame;
     preProc->initializeFirstImage(frame);

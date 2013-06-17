@@ -355,8 +355,8 @@ void operator()(const Range& range) const
             float* bg_cnt     = cm;
 
             //just for debugging
-            if (y0==200 && x==680)
-                int temporary = y0;
+            //if (y0==200 && x==680)
+            //    int temporary = y0;
             
 
             //////
@@ -382,22 +382,22 @@ void operator()(const Range& range) const
                     // d_dirac_m = x[t] - mu_m
                     if( nchannels == 3 )
                     {
+                        dData[0] = mean_m[0] - data[0]*globalChange;
+                        dData[1] = mean_m[1] - data[1]*globalChange;
+                        dData[2] = mean_m[2] - data[2]*globalChange;
                         //just for debugging
-                        //dData[0] = mean_m[0] - data[0]*globalChange;
-                        //dData[1] = mean_m[1] - data[1]*globalChange;
-                        //dData[2] = mean_m[2] - data[2]*globalChange;
-                        float mean0 = mean_m[0];
-                        float mean1 = mean_m[1];
-                        float mean2 = mean_m[2];
-                        float data0 = data[0];
-                        float data1 = data[1];
-                        float data2 = data[2];
-                        data0 *=globalChange;
-                        data1 *=globalChange;
-                        data2 *=globalChange;
-                        dData[0] = mean0 - data0;
-                        dData[1] = mean1 - data1;
-                        dData[2] = mean2 - data2;
+                        //float mean0 = mean_m[0];
+                        //float mean1 = mean_m[1];
+                        //float mean2 = mean_m[2];
+                        //float data0 = data[0];
+                        //float data1 = data[1];
+                        //float data2 = data[2];
+                        //data0 *=globalChange;
+                        //data1 *=globalChange;
+                        //data2 *=globalChange;
+                        //dData[0] = mean0 - data0;
+                        //dData[1] = mean1 - data1;
+                        //dData[2] = mean2 - data2;
                         dist2 = dData[0]*dData[0] + dData[1]*dData[1] + dData[2]*dData[2];
                     }
                     else
@@ -691,7 +691,7 @@ void BackgroundSubtractorMOG3::initialize(Size _frameSize, int _frameType)
         ptrm->meanG = 1.0f;
         ptrm->meanB = 1.0f;
     }
-    GaussianModel = Scalar::all(1);
+    //GaussianModel = Scalar::all(1);
     
     CurrentGaussianModel.create(frameSize, CV_8U);
     //CurrentGaussianModel = Scalar(1,0,0,0);
@@ -771,7 +771,7 @@ void BackgroundSubtractorMOG3::getBackgroundImage(OutputArray backgroundImage) c
     int firstGaussianIdx = 0;
     const GMM* gmm = (GMM*)GaussianModel.data;
     const Vec3f* mean = reinterpret_cast<const Vec3f*>(gmm + frameSize.width*frameSize.height*nmixtures);
-    //const Vec3f* mean = reinterpret_cast<const Vec3f*>(gmm + frameSize.width*frameSize.height*nmixtures);
+
     for(int row=0; row<meanBackground.rows; row++)
     {
         for(int col=0; col<meanBackground.cols; col++)

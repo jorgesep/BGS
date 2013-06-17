@@ -273,8 +273,8 @@ int main( int argc, char** argv )
         cnt++;
         
         //just for debugging
-        if (cnt == 200)
-            continue;
+        //if (cnt == 200)
+        //    int tmp_cnt = cnt;
         //if (cv::waitKey(delay)>=0)
         //    break;
  

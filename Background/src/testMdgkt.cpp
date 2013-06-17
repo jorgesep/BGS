@@ -90,7 +90,7 @@ int main( int argc, char** argv )
     //spatio-temporal pre-processing filter for smoothing transform
     mdgkt* preProc = mdgkt::Instance();
 
-    frame = imread("/Users/jsepulve/Downloads/BGS/build/1.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("config/1.png", CV_LOAD_IMAGE_COLOR);
     preProc->initializeFirstImage(frame);
 
     preProc->SpatioTemporalPreprocessing(frame, image);
@@ -102,7 +102,7 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
 
-    frame = imread("/Users/jsepulve/Downloads/BGS/build/2.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("config/2.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     
     imshow("1",frame);
@@ -113,7 +113,7 @@ int main( int argc, char** argv )
         key = (char)waitKey(30);
     
     
-    frame = imread("/Users/jsepulve/Downloads/BGS/build/3.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("config/3.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     
     imshow("1",frame);
@@ -125,7 +125,7 @@ int main( int argc, char** argv )
     
     
     
-    frame = imread("/Users/jsepulve/Downloads/BGS/build/4.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("config/4.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
@@ -133,7 +133,7 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
     
-    frame = imread("/Users/jsepulve/Downloads/BGS/build/5.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("config/5.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
@@ -141,7 +141,7 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
    
-    frame = imread("/Users/jsepulve/Downloads/BGS/build/6.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("config/6.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
@@ -149,7 +149,7 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
  
-    frame = imread("/Users/jsepulve/Downloads/BGS/build/7.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("config/7.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
@@ -157,7 +157,7 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
  
-    frame = imread("/Users/jsepulve/Downloads/BGS/build/8.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("config/8.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
@@ -165,7 +165,7 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
  
-    frame = imread("/Users/jsepulve/Downloads/BGS/build/9.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("config/9.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
@@ -173,7 +173,7 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
 
-    frame = imread("/Users/jsepulve/Downloads/BGS/build/10.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("config/10.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
