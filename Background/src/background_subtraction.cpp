@@ -337,7 +337,7 @@ void operator()(const Range& range) const
         // |R |G |B |  |  |  |  |  |  |  |  |  |  |  |  |  |
         // |--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
         //
-        for( int x = 0; x < ncols; x++, data += nchannels, gmm += nmixtures, mean += nmixtures*nchannels )
+        for( int x = 0; x < ncols; x++, data += nchannels, gmm += nmixtures, mean += nmixtures*nchannels, cm+=nmixtures )
         {
             //calculate distances to the modes (+ sort)
             //here we need to go in descending order!!!
@@ -355,8 +355,8 @@ void operator()(const Range& range) const
             float* bg_cnt     = cm;
 
             //just for debugging
-            //if (y0==200 && x==680)
-            //    int temporary = y0;
+            if (y0==200 && x==680)
+                int temporary = y0;
             
 
             //////
@@ -382,22 +382,22 @@ void operator()(const Range& range) const
                     // d_dirac_m = x[t] - mu_m
                     if( nchannels == 3 )
                     {
-                        dData[0] = mean_m[0] - data[0]*globalChange;
-                        dData[1] = mean_m[1] - data[1]*globalChange;
-                        dData[2] = mean_m[2] - data[2]*globalChange;
+                        //dData[0] = mean_m[0] - data[0]*globalChange;
+                        //dData[1] = mean_m[1] - data[1]*globalChange;
+                        //dData[2] = mean_m[2] - data[2]*globalChange;
                         //just for debugging
-                        //float mean0 = mean_m[0];
-                        //float mean1 = mean_m[1];
-                        //float mean2 = mean_m[2];
-                        //float data0 = data[0];
-                        //float data1 = data[1];
-                        //float data2 = data[2];
-                        //data0 *=globalChange;
-                        //data1 *=globalChange;
-                        //data2 *=globalChange;
-                        //dData[0] = mean0 - data0;
-                        //dData[1] = mean1 - data1;
-                        //dData[2] = mean2 - data2;
+                        float mean0 = mean_m[0];
+                        float mean1 = mean_m[1];
+                        float mean2 = mean_m[2];
+                        float data0 = data[0];
+                        float data1 = data[1];
+                        float data2 = data[2];
+                        data0 *=globalChange;
+                        data1 *=globalChange;
+                        data2 *=globalChange;
+                        dData[0] = mean0 - data0;
+                        dData[1] = mean1 - data1;
+                        dData[2] = mean2 - data2;
                         dist2 = dData[0]*dData[0] + dData[1]*dData[1] + dData[2]*dData[2];
                     }
                     else
@@ -430,11 +430,20 @@ void operator()(const Range& range) const
 
                         //update distribution
                         modesUsed[mode] = mode + 1;
+                        
+                        //Increment background counter number
+                        bg_cnt[mode] += 1;
                                                
                         //New Beta dynamic learning rate, se eq. 4.7
                         //Beta=alfa(h+Cm)/Cm
                         //If the background changes quickly, Cm will become smaller, new beta learning rate will increase
-                        float Beta = alphaT/bg_cnt[mode]+alphaT;
+                        //
+                        //just for debugging
+                        //float Beta = alphaT/bg_cnt[mode]+alphaT;
+                        double aT    = (double)alphaT;
+                        double bgcnT = (double)bg_cnt[mode];
+                        double Beta  = aT/bgcnT;
+                        Beta += aT;
                         
                         //
                         float k = Beta/gmm[mode].weight;
@@ -471,6 +480,7 @@ void operator()(const Range& range) const
 
                             //swap one up
                             std::swap(gmm[i], gmm[i-1]);
+                            std::swap(cm[i], cm[i-1]);
                             for( int c = 0; c < nchannels; c++ )
                                 std::swap(mean[i*nchannels + c], mean[(i-1)*nchannels + c]);
                         }
@@ -502,6 +512,10 @@ void operator()(const Range& range) const
             //make new mode if needed and exit
             if( !fitsPDF )
             {
+                //just for debugging
+                if (y0==200 && x==680)
+                    int temporary = nNewModes;
+
                 // replace the weakest or add a new one
                 int mode = nmodes == nmixtures ? nmixtures-1 : nmodes++;
 
@@ -521,6 +535,7 @@ void operator()(const Range& range) const
                     mean[mode*nchannels + c] = data[c];
 
                 gmm[mode].variance = varInit;
+                bg_cnt[mode] = 1;
 
                 //sort
                 //find the new place for it
@@ -532,6 +547,7 @@ void operator()(const Range& range) const
 
                     // swap one up
                     std::swap(gmm[i], gmm[i-1]);
+                    std::swap(cm[i], cm[i-1]);
                     for( int c = 0; c < nchannels; c++ )
                         std::swap(mean[i*nchannels + c], mean[(i-1)*nchannels + c]);
                 }
@@ -679,6 +695,9 @@ void BackgroundSubtractorMOG3::initialize(Size _frameSize, int _frameType)
     
     MEAN* ptrMean = (MEAN*)(GaussianModel.data + 2*nmixtures*matSize);
     MEAN*  ptrm  = ptrMean;
+    
+    //int size1= sizeof(GMM);
+    //int size2 = sizeof(MEAN);
     
     for (int i=0; i<matSize; i++) {
         data = ptrGMM + i*nmixtures;
