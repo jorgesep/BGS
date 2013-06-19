@@ -269,8 +269,8 @@ void Performance::pixelLevelCompare(const Mat& imref, const Mat& imcmp)
             if (channels == 1) {
                 //convert images to 0 or 1, binary form
                 // 1: white 0: black
-                uchar uref = imref_data[i]/150;
-                uchar ucmp = imcmp_data[i]/150;
+                uchar uref = imref_data[i]/200;
+                uchar ucmp = imcmp_data[i]/200;
                 
                 if (uref == ucmp) {
                     if (uref)//silhouette
@@ -291,8 +291,8 @@ void Performance::pixelLevelCompare(const Mat& imref, const Mat& imcmp)
                     //convert images to 0 or 1, binary form
                     // 1: white
                     // 0: black
-                    uchar uref = imref_data[i*channels+k]/150;
-                    uchar ucmp = imcmp_data[i*channels+k]/150;
+                    uchar uref = imref_data[i*channels+k]/200;
+                    uchar ucmp = imcmp_data[i*channels+k]/200;
                     if (uref == ucmp) {
                         //silhouette, foreground pixel
                         if (uref)
