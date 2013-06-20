@@ -100,9 +100,9 @@ struct ContingencyMatrix
 
 //typedef struct CommonMetrics {
 struct CommonMetrics {
-    CommonMetrics (): sensitivity(0),specificity(0),precision(0) {};
+    CommonMetrics (): sensitivity(0),specificity(0),MCC(0) {};
     CommonMetrics(double se, double sp, double pr):
-        sensitivity(se),specificity(sp),precision(pr) {};
+        sensitivity(se),specificity(sp),MCC(pr) {};
     //copy constructor
     CommonMetrics (const CommonMetrics & rhs) { *this = rhs; };
     //Inequality operator
@@ -110,14 +110,14 @@ struct CommonMetrics {
     {
         return ((sensitivity != rhs.sensitivity)||
                 (specificity != rhs.specificity)||
-                (precision  != rhs.precision));
+                (MCC         != rhs.MCC));
     };
     //equality operator
     bool operator ==(const CommonMetrics &rhs) const
     {
         return ((sensitivity == rhs.sensitivity)&&
                 (specificity == rhs.specificity)&&
-                (precision  == rhs.precision));
+                (MCC         == rhs.MCC));
     };
     // assigment operator
     CommonMetrics &operator =(const CommonMetrics &rhs)
@@ -126,7 +126,7 @@ struct CommonMetrics {
         {
             sensitivity = rhs.sensitivity; 
             specificity = rhs.specificity; 
-            precision   = rhs.precision;
+            MCC         = rhs.MCC;
         }
         return *this;
     };
@@ -135,7 +135,7 @@ struct CommonMetrics {
     {
         sensitivity += rhs.sensitivity; 
         specificity += rhs.specificity; 
-        precision   += rhs.precision;
+        MCC         += rhs.MCC;
         return *this;
     };
 
@@ -147,7 +147,7 @@ struct CommonMetrics {
     // assigment operator
     double sensitivity;
     double specificity;
-    double precision;
+    double MCC;
 };
 
 //typedef struct GlobalMetrics {
@@ -414,6 +414,7 @@ public:
     string summaryAsString() const;
     string averageSummaryAsString() const;
     string metricsStatisticsAsString() const;
+    string rocAsString() const;
     void calculateFinalPerformanceOfMetrics();
 
 
@@ -426,9 +427,9 @@ public:
     /**
      * Compute number of TP and TN.
      */
-    void setPixelsReference(const Mat&);
+    void countPixelsReferenceImage(const Mat&);
     void setThreshold(int th) {threshold = th;};
-    ContingencyMatrix getContingencyMatrix(int idx) {return measure[idx];};
+    //ContingencyMatrix getContingencyMatrix(int idx) {return measure;};
 
     /**
      * Return performance indexes
@@ -444,16 +445,13 @@ public:
     inline float Sigma() {return Variance; };
     inline float Mu()  { return Mean;};
    
-    float getSensitivity(int);
-    float getSpecificity(int);
-    float getPrecision(int);
+    double getPSNR(Mat& src1, Mat& src2, int bb=0);
 
 private:
     /**
      * Obtaind perf indexes of the first channel
      */
-    void evaluatePerformanceContingencyMatrix();
-    void evaluatePerformanceContingencyMatrixPerChannel(int);
+    CommonMetrics getPerformance(const ContingencyMatrix&);
     void medianOfMetrics();
     void meanOfMetrics();
 
@@ -463,6 +461,7 @@ private:
     float specificity;
     float sensitivity;
     float precision;
+    float MCC;
     float medianR[2];
     float medianG;
     float medianB;
@@ -470,9 +469,9 @@ private:
     unsigned int nchannel;
 
     static const int MAX_NUMBER_CHANNELS = 3;
-    ContingencyMatrix refImageArray[3];
-    ContingencyMatrix measure[3];
-    GlobalMetrics global_metrics;
+    ContingencyMatrix reference;
+    ContingencyMatrix current_frame;
+    GlobalMetrics accumulated;
     CommonMetrics common_metrics;
     vector<GlobalMetrics> vectorMetrics;
     StatMetrics stat;

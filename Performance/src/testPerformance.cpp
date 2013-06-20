@@ -89,16 +89,16 @@ int main( int argc, char** argv )
         img2= input_image;
     }
     else {
-        string img  = "/Users/jsepulve/Tesis/Code/cpp/Modules/Performance/src/reference.jpg";
+        string img  = "/Users/jsepulve/Downloads/BGS/Performance/src/reference.jpg";
+        string ref  ("/Users/jsepulve/Downloads/BGS/Performance/src/reference.jpg");
+        string img2 ("/Users/jsepulve/Downloads/BGS/Performance/src/test1.jpg");
+        string img3 = "/Users/jsepulve/Downloads/BGS/Performance/src/test2.jpg";
         //string img1 = "/Users/jsepulve/Tesis/Code/cpp/Modules/Performance/src/GT-00000363.PNG";
         //string img2 = "/Users/jsepulve/Tesis/Code/cpp/Modules/Performance/src/363.png";
-        string ref = "/Users/jsepulve/Tesis/Code/cpp/Modules/Performance/src/reference.jpg";
-        string img2 = "/Users/jsepulve/Tesis/Code/cpp/Modules/Performance/src/test1.jpg";
-        string img3 = "/Users/jsepulve/Tesis/Code/cpp/Modules/Performance/src/test2.jpg";
     }
     Performance perf;
     Mat im;
-    im = imread(img);
+    im = imread(img.c_str(),CV_LOAD_IMAGE_COLOR);
 
     /*
     if(! im.data )                              // Check for invalid input
@@ -111,8 +111,8 @@ int main( int argc, char** argv )
     cout << perf.refToString();
     */
 
-    Mat im1 = imread(ref);
-    Mat im2 = imread(img2);
+    Mat im1 = imread(ref.c_str());
+    Mat im2 = imread(img2.c_str());
     //Mat im3 = imread(img3);
     
     if (!im1.data || !im2.data )

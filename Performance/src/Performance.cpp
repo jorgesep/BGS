@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "Performance.h"
+#include <math.h>
 
 using namespace cv;
 using namespace std;
@@ -26,20 +27,21 @@ namespace bgs {
 string Performance::asString() const
 {
     stringstream str;  
-    str << this->refToString() << " "
-        << measure[0].tp << " " << measure[0].tn << " " << measure[0].fp << " " << measure[0].fn << " "
-        << measure[1].tp << " " << measure[1].tn << " " << measure[1].fp << " " << measure[1].fn << " "
-        << measure[2].tp << " " << measure[2].tn << " " << measure[2].fp << " " << measure[2].fn << " "
-        << sensitivity << " " << specificity;
+    str << this->refToString() << "    "
+        << current_frame.tp    << " " 
+        << current_frame.tn    << " " 
+        << current_frame.fp    << " " 
+        << current_frame.fn    << "    "
+        << std::scientific     << sensitivity << " " 
+        << std::scientific     << specificity << " "
+        << std::scientific     << MCC;
     return str.str();
 }
 
 string Performance::refToString() const
 {
     stringstream str;
-    str << refImageArray[0].tp << " " << refImageArray[0].tn << " " 
-        << refImageArray[1].tp << " " << refImageArray[1].tn << " "
-        << refImageArray[2].tp << " " << refImageArray[2].tn;
+    str << reference.tp << " " << reference.tn;
     return str.str();
 
 }
@@ -48,15 +50,16 @@ string Performance::summaryAsString() const
 {
     stringstream str;
 
-    const GlobalMetrics *ptrGlobal = &global_metrics;
-    unsigned int i = ptrGlobal->count; 
-    str << i << " 0 0 0 0 0 0 " 
-        << ptrGlobal->perfR.tp << " " << ptrGlobal->perfR.tn << " " << ptrGlobal->perfR.fp << " " << ptrGlobal->perfR.fn << " "
-        << ptrGlobal->perfG.tp << " " << ptrGlobal->perfG.tn << " " << ptrGlobal->perfG.fp << " " << ptrGlobal->perfG.fn << " "
-        << ptrGlobal->perfB.tp << " " << ptrGlobal->perfB.tn << " " << ptrGlobal->perfB.fp << " " << ptrGlobal->perfB.fn << " "
-        << ptrGlobal->metricR.sensitivity << " " << ptrGlobal->metricR.specificity << " " 
-        << ptrGlobal->metricG.sensitivity << " " << ptrGlobal->metricG.specificity << " " 
-        << ptrGlobal->metricB.sensitivity << " " << ptrGlobal->metricB.specificity ;
+    const GlobalMetrics *acc = &accumulated;
+    unsigned int i = acc->count; 
+    str << i << " 0 0     " 
+        << acc->perfR.tp << " " 
+        << acc->perfR.tn << " " 
+        << acc->perfR.fp << " " 
+        << acc->perfR.fn << "    "
+        << std::scientific << acc->metricR.sensitivity << " " 
+        << std::scientific << acc->metricR.specificity << " "
+        << std::scientific << acc->metricR.MCC;
     return str.str();
 
 }
@@ -67,293 +70,182 @@ string Performance::averageSummaryAsString() const
 {
     stringstream str;
 
-    const GlobalMetrics *ptrGlobal = &global_metrics;
-    unsigned int i = ptrGlobal->count; 
-    str << i << " 0 0 0 0 0 0 " 
-        << ptrGlobal->perfR.tp/i << " " << ptrGlobal->perfR.tn/i << " " << ptrGlobal->perfR.fp/i << " " << ptrGlobal->perfR.fn/i << " "
-        << ptrGlobal->perfG.tp/i << " " << ptrGlobal->perfG.tn/i << " " << ptrGlobal->perfG.fp/i << " " << ptrGlobal->perfG.fn/i << " "
-        << ptrGlobal->perfB.tp/i << " " << ptrGlobal->perfB.tn/i << " " << ptrGlobal->perfB.fp/i << " " << ptrGlobal->perfB.fn/i << " "
-        << ptrGlobal->metricR.sensitivity/i << " " << ptrGlobal->metricR.specificity/i << " " 
-        << ptrGlobal->metricG.sensitivity/i << " " << ptrGlobal->metricG.specificity/i << " " 
-        << ptrGlobal->metricB.sensitivity/i << " " << ptrGlobal->metricB.specificity/i ;
+    const GlobalMetrics *acc = &accumulated;
+    unsigned int i = acc->count; 
+    str << i << " 0 0    " 
+        << acc->perfR.tp/i << " " 
+        << acc->perfR.tn/i << " " 
+        << acc->perfR.fp/i << " " 
+        << acc->perfR.fn/i << "    "
+        << std::scientific << acc->metricR.sensitivity/i << " " 
+        << std::scientific << acc->metricR.specificity/i << " "
+        << std::scientific << acc->metricR.MCC/i ;
     return str.str();
 
 }
 
 string Performance::metricsStatisticsAsString() const
 {
+    double mean   = 1-(double)stat.MeanR.specificity; 
+    double median = 1-(double)stat.MedianR.specificity;
+
     stringstream str;
-    str << std::scientific << stat.MeanR.sensitivity    << " " << std::scientific << stat.MeanR.specificity    << " "
-        << std::scientific << stat.MedianR.sensitivity  << " " << std::scientific << stat.MedianR.specificity  << "   "
-        << std::scientific << stat.MeanG.sensitivity    << " " << std::scientific << stat.MeanG.specificity    << " "
-        << std::scientific << stat.MedianG.sensitivity  << " " << std::scientific << stat.MedianG.specificity  << "   "
-        << std::scientific << stat.MeanB.sensitivity    << " " << std::scientific << stat.MeanB.specificity    << " "
-        << std::scientific << stat.MedianB.sensitivity  << " " << std::scientific << stat.MedianB.specificity;
+    str << std::scientific << stat.MeanR.sensitivity    << " " 
+        << std::scientific << mean                      << " "
+        << std::scientific << stat.MeanR.specificity    << " "
+        << std::scientific << stat.MeanR.MCC            << "    "
+        << std::scientific << stat.MedianR.sensitivity  << " " 
+        << std::scientific << median                    << " "
+        << std::scientific << stat.MedianR.specificity  << " "
+        << std::scientific << stat.MedianR.MCC;
+    return str.str();
+}
+
+string Performance::rocAsString() const
+{
+    double fpr1   = 1-(double)stat.MeanR.specificity; 
+    double fpr2   = 1-(double)stat.MedianR.specificity;
+
+    stringstream str;
+    str << std::scientific << stat.MeanR.sensitivity    << " " 
+        << std::scientific << fpr1                      << " "
+        << std::scientific << stat.MeanR.MCC            << "    "
+        << std::scientific << stat.MedianR.sensitivity  << " " 
+        << std::scientific << fpr2                      << " "
+        << std::scientific << stat.MedianR.MCC ;
     return str.str();
 }
 
 
-// This calcualte indexes just for first channel
-void Performance::evaluatePerformanceContingencyMatrix()
+// Calculate TPR and FPR 
+Performance::CommonMetrics 
+Performance::getPerformance(const ContingencyMatrix& mt)
 {
-    this->evaluatePerformanceContingencyMatrixPerChannel(0);
-}
-
-void Performance::evaluatePerformanceContingencyMatrixPerChannel(int ch)
-{
-    if (measure == 0 || ch > MAX_NUMBER_CHANNELS) {
+    if (mt == ContingencyMatrix(0,0,0,0) ) {
         sensitivity = 0;
         specificity = 0;
-        precision   = 0;
-        common_metrics = CommonMetrics(0,0,0);
-    }
-    else {
-        sensitivity = measure[ch].tp/(measure[ch].tp + measure[ch].fn);
-        //fpr = measure[ch].fp/(measure[ch].tn + measure[ch].fp);
-        specificity = measure[ch].tn/(measure[ch].tn + measure[ch].fp);
-        precision   = measure[ch].tp/(measure[ch].tp + measure[ch].fp);
-        common_metrics = CommonMetrics(sensitivity,specificity,precision);
+        MCC         = 0;
+        return CommonMetrics(0,0,0);
     }
 
-}
+    double TP = (double)mt.tp;
+    double TN = (double)mt.tn;
+    double FP = (double)mt.fp;
+    double FN = (double)mt.fn;
 
-float Performance::getSensitivity(int ch)
-{
+    sensitivity = TP/(TP + FN);
+    specificity = TN/(TN + FP);
+    precision   = TP/(TP + FP);
 
-    this->evaluatePerformanceContingencyMatrixPerChannel(ch);
-    return sensitivity;
-}
+    //MCC = ((TP*TN)–(FP*FN))/sqrt((TP + FP)*(TP + TN)*(FP + FN)*(TN + FN));
+    double numerator = ((TP*TN)-(FP*FN));
+    double denominator= sqrt((TP+FP)*(TP+TN)*(FP+FN)*(TN+FN));
+    MCC = numerator / denominator;
 
-float Performance::getSpecificity(int ch)
-{
 
-    this->evaluatePerformanceContingencyMatrixPerChannel(ch);
-    return specificity;
-}
-float Performance::getPrecision(int ch)
-{
-
-    this->evaluatePerformanceContingencyMatrixPerChannel(ch);
-    return precision;
+    return CommonMetrics(sensitivity,specificity,MCC);
 }
 
 
-/*
-void Performance::pixelLevelCompare(const Mat& imref, const Mat& imcmp)
-{
-    double duration;
-    duration = static_cast<double>(cv::getTickCount());
 
-    Mat imref_gray, img_gray;
-    Mat binMat, binMatI;
-    Mat imMat, imMatI;
-
-    int TP(0), TN(0), FP(0), FN(0);
-
-    /// Convert the image to Gray
-    if (imref.channels() > 1) 
-        cvtColor( imref, imref_gray, CV_RGB2GRAY );
-    else
-        imref_gray = imref; // only assingment of header
-
-    // Convert image to binary.
-    cv::threshold( imref_gray, binMat, 100, 255, THRESH_BINARY );
-    cv::threshold( imref_gray, binMatI, 100, 255, THRESH_BINARY_INV );
-
-    //Get TP and TN of reference and save them in refImageArray
-    this->setPixelsReference(binMat);
-    // Create pointer to contingency matrix to keep TP and TN
-    ContingencyMatrix *ref_p = refImageArray;
-
-    /// Convert the image to Gray
-    if (imcmp.channels() > 1) 
-        cvtColor( imcmp, img_gray, CV_RGB2GRAY );
-    else
-        img_gray = imcmp; // only assingment of header
-
-    //Copy only pixels inside of ground-thruth
-    img_gray.copyTo(imMat,binMat);
-    //copy pixels of the background
-    img_gray.copyTo(imMatI,binMat);
-
-
-
-    int nl= binMat.rows; // number of lines
-    int nc= binMat.cols;
-
-    if (binMat.isContinuous()) {
-        nc= nc*nl;  //then no padded pixels
-        nl= 1;     // it is now a 1D array
-    }
-    
-    //this loop is executed only once
-    // in case of continuous images
-    for (int j=0; j<nl; j++) {
-        //get a pointer of each row
-        const uchar* data  = binMat.ptr<uchar>(j);
-        const uchar* dataI = binMatI.ptr<uchar>(j);
-        for (int i=0; i<nc; i++) {
-            if (data[i] > 0)  TP++;
-            if (dataI[i] > 0) TN++;
-        } // end of line
-    }
-
-    ContingencyMatrix *m_p = new ContingencyMatrix;
-    m_p->tp = ref_p->tp;
-    m_p->tn = ref_p->tn;
-    m_p->fn = ref_p->tp - TP;
-    m_p->fp = ref_p->tn - TN;
-    measure[0] = *m_p;
-
-    //obtains sensitivity (TPR) and specificity (1-FPR)
-    //save them common_metrics
-    this->evaluatePerformanceContingencyMatrix();
-
-    GlobalMetrics *ptrGlobal = &global_metrics;
-    ptrGlobal->perfR   += *m_p;
-    ptrGlobal->metricR += common_metrics;
-    ptrGlobal->count += 1;
-    // Save each measure in a global vector
-    vectorMetrics.push_back(
-            GlobalMetrics(*m_p, CommonMetrics(common_metrics),ptrGlobal->count));
-
-}
-*/
-
-
-void Performance::pixelLevelCompare(const Mat& imref, const Mat& imcmp)
+void Performance::pixelLevelCompare(const Mat& _reference, const Mat& _image)
 {
     //double duration;
     //duration = static_cast<double>(cv::getTickCount());
 
-    if ( imref.dims > 2 || imcmp.dims > 2 ) {
-        cerr << "Invalid dimensions :  " << imref.dims << " " << imcmp.dims << endl;
+    if ( _reference.dims > 2 || _image.dims > 2 ) {
+        cerr << "Invalid dimensions :  " << _reference.dims << " " << _image.dims << endl;
         return;
     }
 
-    if ( imref.size() != imcmp.size() ) {
-        cerr << "Invalid size :  " << imref.size() << " " << imcmp.size() << endl;
+    if ( _reference.size() != _image.size() ) {
+        cerr << "Invalid size :  " << _reference.size() << " " << _image.size() << endl;
         return;
     }
-    if ( imref.type() != imcmp.type() ) {
+    if ( _reference.type() != _image.type() ) {
         cerr << "Invalid type :  " 
-            << imref.type() << " " << imref.depth() << " " << imref.channels() <<  "  "
-            << imcmp.type() << " " << imcmp.depth() << " " << imcmp.channels() <<  endl;
+            << _reference.type() << " " << _reference.depth() << " " << _reference.channels() <<  "  "
+            << _image.type() << " " << _image.depth() << " " << _image.channels() <<  endl;
         return;
     }
     
-    //Get TP and TN of reference and save them in refImageArray
-    this->setPixelsReference(imref);
-    
-    unsigned int channels = imref.channels();
-    nchannel = channels;
-    int nl= imref.rows; // number of lines
-    int nc= imref.cols;
+    // get Mat header for input image. This is O(1) operation
+    Mat _img = _image;
+    // Check and convert reference image to gray
+    if (_image.channels() > 1) 
+        cvtColor( _image, _img, CV_RGB2GRAY );
 
-    if ( imref.isContinuous() && imcmp.isContinuous() )
+    Mat _ref = _reference;
+    if (_reference.channels() > 1) 
+        cvtColor( _reference, _ref, CV_RGB2GRAY );
+
+
+    //Converted to gray in case of color image and
+    //counts TP and TN in pixelsRefImage variable
+    this->countPixelsReferenceImage(_ref);
+    
+    // number of lines
+    int nl= _ref.rows; 
+    int nc= _ref.cols;
+
+    if ( _ref.isContinuous() && _img.isContinuous() )
     {
         //then no padded pixels
         nc= nc*nl;
         nl= 1; // it is now a 1D array
     }
-    
-    ContingencyMatrix *m_ptr = new ContingencyMatrix[channels];
+   
+    //Initialize to zero all internal values of the struct.
+    current_frame = ContingencyMatrix();
+    ContingencyMatrix *m_ptr = &current_frame;
 
     for (int j=0; j<nl; j++) {
         //get a pointer of each row
-        const uchar* imref_data= imref.ptr<uchar>(j);
-        const uchar* imcmp_data= imcmp.ptr<uchar>(j);
+        const uchar* _ref_data= _ref.ptr<uchar>(j);
+        const uchar* _img_data= _img.ptr<uchar>(j);
         
         for (int i=0; i<nc; i++) {
             
-            if (channels == 1) {
-                //convert images to 0 or 1, binary form
-                // 1: white 0: black
-                uchar uref = imref_data[i]/200;
-                uchar ucmp = imcmp_data[i]/200;
-                
-                if (uref == ucmp) {
-                    if (uref)//silhouette
-                        m_ptr->tp++;
-                    else
-                        //background
-                        m_ptr->tn++;
-                }
-                else {
-                    if (uref)
-                        m_ptr->fn++;
-                    else
-                        m_ptr->fp++;
-                }
+            //convert images to 0 or 1, binary form
+            // 1: white 0: black
+            uchar uref = _ref_data[i]/200;
+            uchar ucmp = _img_data[i]/200;
+            
+            if (uref == ucmp) {
+                if (uref)//silhouette
+                    m_ptr->tp++;
+                else
+                    //background
+                    m_ptr->tn++;
             }
             else {
-                for (int k=0; k<channels; k++) {
-                    //convert images to 0 or 1, binary form
-                    // 1: white
-                    // 0: black
-                    uchar uref = imref_data[i*channels+k]/200;
-                    uchar ucmp = imcmp_data[i*channels+k]/200;
-                    if (uref == ucmp) {
-                        //silhouette, foreground pixel
-                        if (uref)
-                            (m_ptr+k)->tp++;
-                        else
-                            //background
-                            (m_ptr+k)->tn++;
-                    }
-                    else {
-                        if (uref)
-                            (m_ptr+k)->fn++;
-                        else
-                            (m_ptr+k)->fp++;
-                    }
-                }
+                if (uref)
+                    m_ptr->fn++;
+                else
+                    m_ptr->fp++;
             }
-            
-        } // end of line
+        }
     }
     
 
-    // Assign results to measure
-    for (int i=0; i<channels; i++)
-        measure[i] = m_ptr[i];
-
-   
     //calculate sensitivity (TPR) and specificity (1-FPR)
-    //puts result in common_metrics variable
-    //just for first channel
-    CommonMetrics _mR,_mG,_mB;
-    this->evaluatePerformanceContingencyMatrix();
-    _mR = common_metrics;
+    CommonMetrics img_metrics = getPerformance(current_frame);
 
-    GlobalMetrics *ptrGlobal = &global_metrics;
-    ptrGlobal->perfR += m_ptr[0];
-    ptrGlobal->metricR += common_metrics;
+    //save an accumulate value of TP,TN...
+    GlobalMetrics *ptrGlobal = &accumulated;
+    ptrGlobal->perfR   += current_frame;
+    ptrGlobal->metricR += img_metrics;
     ptrGlobal->count += 1;
-    if (channels == 3) {
-        ptrGlobal->perfG += m_ptr[1];
-        ptrGlobal->perfB += m_ptr[2];
-        this->evaluatePerformanceContingencyMatrixPerChannel(1);
-        ptrGlobal->metricG += common_metrics;
-        _mG = common_metrics;
-        this->evaluatePerformanceContingencyMatrixPerChannel(2);
-        ptrGlobal->metricB += common_metrics;
-        _mB = common_metrics;
-    }
 
-    // Save each measure in a global vector
+    // Save each current_frame in a global vector
     vectorMetrics.push_back(
-            GlobalMetrics(m_ptr[0],
-                          m_ptr[1],
-                          m_ptr[2],
-                          _mR,
-                          _mG,
-                          _mB,
-                          ptrGlobal->count));
-
-
-    delete[] m_ptr;
-    m_ptr=0;
+            GlobalMetrics(current_frame, 
+                ContingencyMatrix(0,0,0,0), 
+                ContingencyMatrix(0,0,0,0), 
+                img_metrics, 
+                CommonMetrics(0,0,0), 
+                CommonMetrics(0,0,0), 
+                ptrGlobal->count));
 
 
     //duration = static_cast<double>(cv::getTickCount())-duration;
@@ -365,16 +257,23 @@ void Performance::pixelLevelCompare(const Mat& imref, const Mat& imcmp)
 
 
 // Counts up from reference frame number of TP and TN
-void Performance::setPixelsReference(const Mat& image) 
+void Performance::countPixelsReferenceImage(const Mat& image) 
 {
-    unsigned int channels = image.channels();
+    // get Mat header for input image. This is O(1) operation
+    Mat img = image;
 
-    ContingencyMatrix *r_ptr = new ContingencyMatrix[channels];
+    // Check and convert reference image to gray
+    if (image.channels() > 1) 
+        cvtColor( image, img, CV_RGB2GRAY );
 
-    int nl= image.rows; // number of lines
-    int nc= image.cols;
 
-    if (image.isContinuous())
+    reference = ContingencyMatrix();
+    ContingencyMatrix *r_ptr = &reference;
+
+    int nl= img.rows; // number of lines
+    int nc= img.cols;
+
+    if (img.isContinuous())
     {
         //then no padded pixels
         nc= nc*nl;
@@ -385,44 +284,31 @@ void Performance::setPixelsReference(const Mat& image)
     // in case of continuous images
     for (int j=0; j<nl; j++) {
         //get a pointer of each row
-        const uchar* data= image.ptr<uchar>(j);
+        const uchar* data= img.ptr<uchar>(j);
         for (int i=0; i<nc; i++) {
 
-            if (channels == 1) {
                 if (data[i] > threshold)
                     r_ptr->tp++;
                 else
                     r_ptr->tn++;
-            }
-            else {
-                for (int k=0; k<channels; k++) {
-                    if (data[i*channels + k] > threshold)
-                        (r_ptr+k)->tp++;
-                    else
-                        (r_ptr+k)->tn++;
-                }
-            }
-
-        } // end of line
+        }
     }
 
-    for (int i=0; i<channels; i++)
-        refImageArray[i] = r_ptr[i];
-    delete[] r_ptr;
-    r_ptr=0;
 }
 
 void Performance::meanOfMetrics() 
 {
-    if (global_metrics.count == 0)
+    if (accumulated.count == 0)
         return;
 
-    GlobalMetrics *g_p = &global_metrics;
+    GlobalMetrics *g_p = &accumulated;
     unsigned int cnt = g_p->count;
 
-    stat.MeanR = CommonMetrics( g_p->metricR.sensitivity/cnt, g_p->metricR.specificity/cnt, 0 );
-    stat.MeanG = CommonMetrics( g_p->metricG.sensitivity/cnt, g_p->metricG.specificity/cnt, 0 );
-    stat.MeanB = CommonMetrics( g_p->metricB.sensitivity/cnt, g_p->metricB.specificity/cnt, 0 );
+    stat.MeanR = CommonMetrics( g_p->metricR.sensitivity/cnt, 
+                                g_p->metricR.specificity/cnt,
+                                g_p->metricR.MCC/cnt);
+    stat.MeanG = CommonMetrics( 0,0,0 );
+    stat.MeanB = CommonMetrics( 0,0,0 );
 
 }
 
@@ -430,52 +316,30 @@ void Performance::medianOfMetrics()
 {
     vector<double> sen;
     vector<double> spe;
+    vector<double> mcc;
     
-    vector<double> senG;
-    vector<double> speG;
-    vector<double> senB;
-    vector<double> speB;
-
     unsigned int i = (unsigned int)vectorMetrics.size()/2; 
-    bool even      = vectorMetrics.size()%2 ? false: true;
+    bool even      = vectorMetrics.size() % 2 ? false: true;
 
     for(vector<GlobalMetrics>::iterator it = vectorMetrics.begin(); 
                                         it != vectorMetrics.end(); ++it) 
     {
         sen.push_back(it->metricR.sensitivity);
         spe.push_back(it->metricR.specificity);
-
-        if (nchannel > 1) {
-            senG.push_back(it->metricG.sensitivity);
-            speG.push_back(it->metricG.specificity);
-
-            senB.push_back(it->metricB.sensitivity);
-            speB.push_back(it->metricB.specificity);
-        }
+        mcc.push_back(it->metricR.MCC);
     }
 
     sort (sen.begin(), sen.end());
     sort (spe.begin(), spe.end());
+    sort (mcc.begin(), mcc.end());
 
-    if (nchannel > 1) {
-        sort (senG.begin(), senG.end());
-        sort (speG.begin(), speG.end());
-        sort (senB.begin(), senB.end());
-        sort (speB.begin(), speB.end());
-    }
 
     if (even) {
-        stat.MedianR = CommonMetrics( (sen[i]+sen[i+1])/2,(spe[i]+spe[i+1])/2,0);
-        if (nchannel > 1) {
-            stat.MedianG = CommonMetrics( (senG[i]+senG[i+1])/2,(speG[i]+speG[i+1])/2,0);
-            stat.MedianB = CommonMetrics( (senB[i]+senB[i+1])/2,(speB[i]+speB[i+1])/2,0);
-        }
+        stat.MedianR = CommonMetrics( (sen[i]+sen[i+1])/2,
+                                      (spe[i]+spe[i+1])/2,
+                                      (mcc[i]+mcc[i+1])/2);
     } else {
-        stat.MedianR = CommonMetrics( sen[i+1],spe[i+1],0);
-        if (nchannel > 1) {
-            stat.MedianG = CommonMetrics( senG[i+1],speG[i+1],0);
-            stat.MedianB = CommonMetrics( senB[i+1],speB[i+1],0);
-        }
+        stat.MedianR = CommonMetrics( sen[i+1],spe[i+1],mcc[i+1]);
     }
 
 }
@@ -488,4 +352,38 @@ void Performance::calculateFinalPerformanceOfMetrics()
 
 }
 
+
+double getPSNR(Mat& src1, Mat& src2, int bb)
+{
+    int i,j;
+    double sse,mse,psnr;
+    sse = 0.0;
+
+    Mat s1,s2;
+    cvtColor(src1,s1,CV_BGR2GRAY);
+    cvtColor(src2,s2,CV_BGR2GRAY);
+
+    int count=0;
+    for(j=bb;j<s1.rows-bb;j++)
+    {
+        uchar* d=s1.ptr(j);
+        uchar* s=s2.ptr(j);
+
+        for(i=bb;i<s1.cols-bb;i++)
+        {
+            sse += ((d[i] - s[i])*(d[i] - s[i]));
+            count++;
+        }
+    }
+    if(sse == 0.0 || count==0)
+    {
+        return 0;
+    }
+    else
+    {
+        mse =sse /(double)(count);
+        psnr = 10.0*log10((255*255)/mse);
+        return psnr;
+    }
+}
 

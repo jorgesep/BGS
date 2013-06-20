@@ -93,7 +93,7 @@ int main( int argc, char** argv )
     map<unsigned int, string>::iterator it;
     Mat gt_image;
     stringstream msg,ptmsg;
-    ofstream outfile, ptfile;
+    ofstream outfile, ptfile, rocfile;
     BackgroundSubtractorMOG3 bg_model;
     Mat img, fgmask, fgimg, ftimg,fgimg_final;
     bool update_bg_model = true;
@@ -140,7 +140,7 @@ int main( int argc, char** argv )
     int width  = video.get(CV_CAP_PROP_FRAME_WIDTH);
     int height = video.get(CV_CAP_PROP_FRAME_HEIGHT);
     int delay  = 1000/rate;
- 
+
 
     //Get specific point to be displayed in the image.
     //Check input point to display value
@@ -277,24 +277,26 @@ int main( int argc, char** argv )
         //    int tmp_cnt = cnt;
         //if (cv::waitKey(delay)>=0)
         //    break;
- 
-        //char k = (char)waitKey(30);
-        char k = (char)waitKey(delay);
-        if( k == 27 ) { cout << "PRESSED BUTTON "<< endl; break;}
+
+        char key;
+        if (displayImages)
+            key = (char)waitKey(delay);
+        else
+            key = (char)waitKey(1);
+
+        if( key == 27 ) { cout << "PRESSED BUTTON "<< endl; break;}
     }
 
 
     perf.calculateFinalPerformanceOfMetrics();
 
     if (!groundTruthName.empty()) {
-        //cout    << perf.summaryAsString() << endl;
-        //cout    << perf.averageSummaryAsString() << endl;
         cout    << perf.metricsStatisticsAsString() << endl;
-        //outfile << "MeanR Sensitivity Specificity ...." << endl;
         outfile << perf.metricsStatisticsAsString() << endl;
-        //outfile << perf.summaryAsString() << endl;
-        //outfile << perf.averageSummaryAsString() << endl;
         outfile.close();
+        rocfile.open("roc.txt");
+        rocfile << perf.rocAsString();
+        rocfile.close();
     }
 
     if (ptfile.is_open())

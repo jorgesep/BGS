@@ -8,6 +8,8 @@ SET( Performance_PATCH_LEVEL 0 )
 
 SET( CMAKE_C_FLAGS   "-g -Wall" )
 
+FILE ( GLOB CONFIG ${PROJECT_SOURCE_DIR}/../config/*.jpg ${PROJECT_SOURCE_DIR}/../config/*.PNG ${PROJECT_SOURCE_DIR}/../config/*.png )
+
 #MESSAGE("Project Source Dir set to ${PROJECT_SOURCE_DIR}")
 #MESSAGE("Project Binary Dir set to ${PROJECT_BINARY_DIR}")
 #MESSAGE("BGS Binary Dir set to ${BGS_BINARY_DIR}")
@@ -31,4 +33,5 @@ ADD_LIBRARY(Performance SHARED Performance)
 target_link_libraries(Performance ${OpenCV_LIBS})
 set_property(TARGET Performance PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
+file(COPY ${CONFIG} DESTINATION ${BGS_BINARY_DIR}/config/)
 
