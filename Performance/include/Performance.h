@@ -446,6 +446,8 @@ public:
     inline float Mu()  { return Mean;};
    
     double getPSNR(Mat& src1, Mat& src2, int bb=0);
+    Scalar getMSSIM( const Mat&, const Mat&);
+
 
 private:
     /**
