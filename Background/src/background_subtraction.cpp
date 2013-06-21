@@ -915,7 +915,8 @@ string BackgroundSubtractorMOG3::initParametersToString()
         << "SigmaMax    : " << fVarMax              << endl
         << "SigmaMin    : " << fVarMin              << endl
         << "Alpha       : " << fAlpha               << endl
-        << "cf          : " << nmixtures            << endl
+        << "cf          : " << fCf                  << endl
+        << "bgRation    : " << backgroundRatio      << endl
         << "cT          : " << fCT                  << endl
         << "Range       : " << varThreshold         << endl
         << "Gen         : " << varThresholdGen      << endl

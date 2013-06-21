@@ -102,6 +102,8 @@ int main( int argc, char** argv )
     bool show_point = false;
     Performance perf;
     int cntTemporalWindow = 0;
+    int gt_cnt = 0;
+    int gt_size = -1;
     mdgkt *filter;
 
 
@@ -119,6 +121,7 @@ int main( int argc, char** argv )
             namedWindow("GROUND THRUTH", CV_WINDOW_NORMAL);
             moveWindow("GROUND THRUTH",400,300);
         }
+        gt_size = gt_files.size();
     }
 
     if (!initConfigName.empty()) {
@@ -251,6 +254,9 @@ int main( int argc, char** argv )
                 if (verbose) 
                     cout    << msg.str() << endl; 
             }
+
+            // counter of number of frame processed
+            gt_cnt++;
         }
 
         //Display sequences
@@ -278,13 +284,18 @@ int main( int argc, char** argv )
         //if (cv::waitKey(delay)>=0)
         //    break;
 
-        char key;
+        char key=0;
         if (displayImages)
             key = (char)waitKey(delay);
-        else
-            key = (char)waitKey(1);
+        //else
+        //    key = (char)waitKey(1);
 
         if( key == 27 ) { cout << "PRESSED BUTTON "<< endl; break;}
+
+        //in case of not display option stop execution after last gt file 
+        //was processed
+        if (!displayImages && compare && gt_cnt >= gt_size)
+            break;
     }
 
 
@@ -294,8 +305,10 @@ int main( int argc, char** argv )
         cout    << perf.metricsStatisticsAsString() << endl;
         outfile << perf.metricsStatisticsAsString() << endl;
         outfile.close();
-        rocfile.open("roc.txt");
-        rocfile << perf.rocAsString();
+        rocfile.open("roc.txt", std::fstream::out | std::fstream::app);
+        rocfile << bg_model.getRange() << " " 
+                << bg_model.getAlpha() << " "  
+                << perf.rocAsString();
         rocfile.close();
     }
 

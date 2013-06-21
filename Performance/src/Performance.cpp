@@ -139,7 +139,10 @@ Performance::getPerformance(const ContingencyMatrix& mt)
 
     //MCC = ((TP*TN)–(FP*FN))/sqrt((TP + FP)*(TP + TN)*(FP + FN)*(TN + FN));
     double numerator = ((TP*TN)-(FP*FN));
-    double denominator= sqrt((TP+FP)*(TP+TN)*(FP+FN)*(TN+FN));
+    //double denominator= sqrt((TP+FP)*(TP+TN)*(FP+FN)*(TN+FN));
+    double denominator= sqrt((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN));
+    if (denominator == 0)
+        denominator = 1;
     MCC = numerator / denominator;
 
 
@@ -355,6 +358,9 @@ void Performance::calculateFinalPerformanceOfMetrics()
 
 double getPSNR(Mat& src1, Mat& src2, int bb)
 {
+    double duration;
+    duration = static_cast<double>(cv::getTickCount());
+
     int i,j;
     double sse,mse,psnr;
     sse = 0.0;
@@ -375,6 +381,10 @@ double getPSNR(Mat& src1, Mat& src2, int bb)
             count++;
         }
     }
+
+    duration = static_cast<double>(cv::getTickCount())-duration;
+    duration /= cv::getTickFrequency(); //the elapsed time in ms
+    
     if(sse == 0.0 || count==0)
     {
         return 0;
@@ -386,4 +396,37 @@ double getPSNR(Mat& src1, Mat& src2, int bb)
         return psnr;
     }
 }
+
+
+/*
+double getPSNR(const Mat& I1, const Mat& I2)
+{
+    double duration;
+    duration = static_cast<double>(cv::getTickCount());
+
+    Mat s1;
+    absdiff(I1, I2, s1);       // |I1 - I2|
+    s1.convertTo(s1, CV_32F);  // cannot make a square on 8 bits
+    s1 = s1.mul(s1);           // |I1 - I2|^2
+
+    Scalar s = sum(s1);        // sum elements per channel
+
+    double sse = s.val[0] + s.val[1] + s.val[2]; // sum channels
+
+    duration = static_cast<double>(cv::getTickCount())-duration;
+    duration /= cv::getTickFrequency(); //the elapsed time in ms
+
+    if( sse <= 1e-10) // for small values return zero
+                return 0;
+    else
+    {
+        double mse  = sse / (double)(I1.channels() * I1.total());
+        double psnr = 10.0 * log10((255 * 255) / mse);
+        return psnr;
+    }
+}
+*/
+
+
+
 

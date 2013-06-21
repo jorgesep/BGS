@@ -39,6 +39,11 @@ public:
     virtual void saveBackgroundModelToFile(const string);
     virtual void loadInitParametersFromFile(const string);
     virtual string initParametersToString();
+    
+    inline float getAlpha() { return fAlpha; };
+    inline float getRange() { return varThreshold; };
+    void setAlpha(float _alpha) { fAlpha = _alpha;};
+    void setRange(float _range) { varThreshold = _range; };
 
 protected:
     Size frameSize;
