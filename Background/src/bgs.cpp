@@ -306,7 +306,8 @@ int main( int argc, char** argv )
 
     if (!groundTruthName.empty()) {
         cout    << perf.metricsStatisticsAsString() << endl;
-        outfile << perf.metricsStatisticsAsString() << endl;
+        outfile << "#TPR TNR SPE MCC  TPR TNR SPE MCC" << endl;
+        outfile << "#" << perf.metricsStatisticsAsString() << endl;
         outfile.close();
         rocfile.open("roc.txt", std::fstream::out | std::fstream::app);
         rocfile << bg_model.getRange() << " " 
