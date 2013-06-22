@@ -925,5 +925,20 @@ string BackgroundSubtractorMOG3::initParametersToString()
     return str.str();
 }
 
+string BackgroundSubtractorMOG3::initParametersAsOneLineString()
+{
+    stringstream str;
+    str << "# Alpha="      << fAlpha  
+        << " cf="          << fCf 
+        << " bgRation="    << backgroundRatio
+        << " Range="       << varThreshold
+        << " Gen="         << varThresholdGen
+        << " GaussiansNo=" <<  nmixtures
+        << " Sigma="       << fVarInit
+        << " cT="          << fCT
+        << " Tau="         << fTau;
+    return str.str();
+}
+
 
 /* End of file. */

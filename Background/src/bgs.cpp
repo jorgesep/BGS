@@ -113,17 +113,7 @@ int main( int argc, char** argv )
         return 0;
     }
 
-    if (!groundTruthName.empty()) {
-        compare=true;
-        list_files(groundTruthName,gt_files);
-        outfile.open("output.txt");
-        if (displayImages) {
-            namedWindow("GROUND THRUTH", CV_WINDOW_NORMAL);
-            moveWindow("GROUND THRUTH",400,300);
-        }
-        gt_size = gt_files.size();
-    }
-
+    //Load initialization parameters
     if (!initConfigName.empty()) {
         bg_model.loadInitParametersFromFile(initConfigName);
     }
@@ -131,7 +121,21 @@ int main( int argc, char** argv )
     //Print out initialization parameters.
     if (verbose)
         cout << bg_model.initParametersToString() << endl;
-    
+   
+    //Check ground-thruth
+    if (!groundTruthName.empty()) {
+        compare=true;
+        list_files(groundTruthName,gt_files);
+        outfile.open("output.txt");
+        outfile << bg_model.initParametersAsOneLineString() << endl;
+
+        if (displayImages) {
+            namedWindow("GROUND THRUTH", CV_WINDOW_NORMAL);
+            moveWindow("GROUND THRUTH",400,300);
+        }
+        gt_size = gt_files.size();
+    }
+
     //create video object.
     VideoCapture video(inputVideoName);
     
@@ -189,6 +193,8 @@ int main( int argc, char** argv )
     //Shift backward or forward ground thruth sequence counter.
     //for compensating pre-processed frames in the filter.
     int cnt    = 0  + shiftFrame + cntTemporalWindow; 
+
+    int tmp_cnt =0;
 
     // main loop 
     for(;;)
@@ -278,12 +284,6 @@ int main( int argc, char** argv )
  
         cnt++;
         
-        //just for debugging
-        //if (cnt == 200)
-        //    int tmp_cnt = cnt;
-        //if (cv::waitKey(delay)>=0)
-        //    break;
-
         char key=0;
         if (displayImages)
             key = (char)waitKey(delay);
@@ -292,10 +292,13 @@ int main( int argc, char** argv )
 
         if( key == 27 ) { cout << "PRESSED BUTTON "<< endl; break;}
 
-        //in case of not display option stop execution after last gt file 
-        //was processed
+        //in case of not display option enabled stop execution 
+        //after last ground-thruth file was processed
         if (!displayImages && compare && gt_cnt >= gt_size)
             break;
+
+        tmp_cnt++;
+        //cout << "CNT :" << tmp_cnt << endl;
     }
 
 
@@ -308,7 +311,7 @@ int main( int argc, char** argv )
         rocfile.open("roc.txt", std::fstream::out | std::fstream::app);
         rocfile << bg_model.getRange() << " " 
                 << bg_model.getAlpha() << " "  
-                << perf.rocAsString();
+                << perf.rocAsString() << endl;
         rocfile.close();
     }
 

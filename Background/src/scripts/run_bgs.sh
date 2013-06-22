@@ -2,26 +2,12 @@
 
 # Path to videos
 AVI="WalkTurnBack-Camera_3-Person1.avi"
-GROUNDT="jpeg/Person1/ground-truth"
+GROUNDT="ground-truth"
 VIDEOPATH="/Users/jsepulve/Tesis/Videos"
 VIDEO="$VIDEOPATH/$AVI"
 THRUTH="$VIDEOPATH/$GROUNDT"
 # end video definition
 
-# Function definition
-process_list() {
-    _para=`head -1 config/$file | awk '{print $1}'`
-    _list=`cat config/$file     | awk '{print $3}'`
-    for i in $_list
-    do
-        echo "Processing $_para : $i"
-        cat config/init.txt | grep -v $_para > init.txt
-        echo "$_para : $i" >> init.txt
-        $cmd $args
-        mv output.txt $DST/output_$range_$i.txt
-    done
-}
-#
 
 DATE=`date "+%Y-%m-%d_%H:%M:%S"`
 DST="results/`date "+%Y-%m-%d_%H-%M-%S"`"
@@ -54,17 +40,37 @@ fi
 
 cmd="./bin/bgs"
 
-#LIST_FILES="Range.txt Alpha.txt"
-#LIST_FILES="Alpha.txt"
-LIST_FILES="Range.txt"
-rnumbers=`cat config/Range.txt | awk '{print $3}'`
+loop1="config/Alpha.txt"
+loop2="config/Range.txt"
+_list_1=`cat $loop1 | awk '{print $3}'`
+_list_2=`cat $loop2 | awk '{print $3}'`
 
-for range in $rnumbers
+_param_1=`head -1 $loop1 | awk '{print $1}'`
+_param_2=`head -1 $loop2 | awk '{print $1}'`
+
+# one time loop 1
+_list_1='0.001'
+
+# Function definition
+process_list() {
+    for in2 in ${_list_2}
+    do
+        echo "Processing ${_param_1} : ${in1} ${in2}"
+        cat init.txt | grep -v ${_param_2} > init.tmp
+        echo "${_param_2} : ${in2}" >> init.tmp
+        mv init.tmp init.txt
+        $cmd $args
+        mv output.txt $DST/output_${in1}_${in2}.txt
+    done
+}
+#
+
+
+for in1 in ${_list_1}
 do
-    cat config/init.txt | grep -v Range > init.tmp
-    echo "Range : $range" >> init.tmp
-    mv init.tmp config/init.txt
-    file="Alpha.txt"
+    cat config/init.txt | grep -v ${_param_1} > init.tmp
+    echo "${_param_1} : ${in1}" >> init.tmp
+    mv init.tmp init.txt
     process_list
 done
 
