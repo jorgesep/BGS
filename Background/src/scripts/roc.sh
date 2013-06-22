@@ -1,0 +1,1 @@
+cat ../../config/Range.txt |awk '{print $3}' | while read i; do echo "================ $i ============="; ls output_${i}_* | while read j; do number=`echo $j|sed s/output_${i}_//|sed s/.txt//`; line=`tail -1 $j`; echo "$i $number $line" >> roc_${i}.txt; done; done
