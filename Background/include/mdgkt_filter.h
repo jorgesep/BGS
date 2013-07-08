@@ -44,8 +44,8 @@ private:
     Mat temporalGaussFilter;
     
 
-    static const int SPATIO_WINDOW;
-    static const int TIME_WINDOW;
+    static const unsigned char SPATIO_WINDOW;
+    static const unsigned char TIME_WINDOW;
     static const float SIGMA;
     
     static mdgkt* ptrInstance;

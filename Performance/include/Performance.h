@@ -316,15 +316,16 @@ public:
 
     //default constructor
     Performance () : 
-        FMeasure(0),Variance(0),Mean(0),threshold(250),
-        sensitivity(0),specificity(0),precision(0),nchannel(1)
+        FMeasure(0),Variance(0),Mean(0),
+        sensitivity(0),specificity(0),precision(0),
+        threshold(250),nchannel(1)
     { };
 
     //Parametric constructor
     Performance (float fm, float var, float mu, unsigned char thr, 
             float sn, float sp, float pr, int nch ) :
-        FMeasure(fm),Variance(var),Mean(mu),threshold(thr),
-        sensitivity(sn),specificity(sp),precision(pr),nchannel(nch)
+        FMeasure(fm),Variance(var),Mean(mu),
+        sensitivity(sn),specificity(sp),precision(pr),threshold(thr),nchannel(nch)
     { };
 
     //copy constructor
@@ -460,8 +461,8 @@ private:
     float FMeasure;
     float Variance;
     float Mean;
-    float specificity;
     float sensitivity;
+    float specificity;
     float precision;
     float MCC;
     float medianR[2];
