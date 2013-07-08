@@ -10,8 +10,8 @@
 #include "mdgkt_filter.h"
 
 const float mdgkt::SIGMA = 0.5;
-const int mdgkt::SPATIO_WINDOW = 3;
-const int mdgkt::TIME_WINDOW = 3;
+const unsigned char mdgkt::SPATIO_WINDOW = 3;
+const unsigned char mdgkt::TIME_WINDOW = 3;
 
 mdgkt* mdgkt::ptrInstance = NULL;
 int mdgkt::numInstances = 0;
@@ -21,6 +21,7 @@ int mdgkt::numInstances = 0;
 void mdgkt::initialize() 
 {
     // Matrix with gaussian values for processing temporal frames.
+    // thia return the following vector [0.106507,0.786986,0.106507]
     temporalGaussFilter = getGaussianKernel(TIME_WINDOW,SIGMA,CV_32F);
 }
 
@@ -30,9 +31,9 @@ void mdgkt::initializeFirstImage(const Mat& img)
     this->initialize();
     //Initialize vectors
     for (int i=0; i<SPATIO_WINDOW; i++) {
-        kernelImageR.push_back(Mat::zeros(img.size(), CV_32FC1));
-        kernelImageG.push_back(Mat::zeros(img.size(), CV_32FC1));
-        kernelImageB.push_back(Mat::zeros(img.size(), CV_32FC1));
+        kernelImageR.push_back(Mat::zeros(img.size(), CV_64F));
+        kernelImageG.push_back(Mat::zeros(img.size(), CV_64F));
+        kernelImageB.push_back(Mat::zeros(img.size(), CV_64F));
     }
     
     has_been_initialized = true;
@@ -54,18 +55,20 @@ void mdgkt::SpatioTemporalPreprocessing(const Mat& src, Mat& dst)
     vector<Mat> brg;
     vector<Mat> temporal_average;
 
-    for (int i=0; i<TIME_WINDOW; i++) {
-        temporal_average.push_back(Mat::zeros(src.size(), CV_32FC1));        
-    }
 
     Mat E;
-    src.convertTo(E, CV_32FC3);
+    //src.convertTo(E, CV_32FC3);
+    src.convertTo(E, CV_64FC3);
     split(E,nchannels);
    
-    
+    /*
     brg.push_back( Mat(src.size(), CV_32FC1));
     brg.push_back( Mat(src.size(), CV_32FC1));
     brg.push_back( Mat(src.size(), CV_32FC1));
+    */
+    brg.push_back( Mat::zeros(src.size(), CV_64F));
+    brg.push_back( Mat::zeros(src.size(), CV_64F));
+    brg.push_back( Mat::zeros(src.size(), CV_64F));
     
     //Spatial pre-processing
     GaussianBlur(nchannels.at(2), brg.at(2), Size(3,3), 0.5);
@@ -76,6 +79,9 @@ void mdgkt::SpatioTemporalPreprocessing(const Mat& src, Mat& dst)
     kernelImageR.push_back(brg.at(2));
     kernelImageG.push_back(brg.at(1));
     kernelImageB.push_back(brg.at(0));
+
+    
+    
     
     if (kernelImageB.size() > SPATIO_WINDOW )
         kernelImageB.erase(kernelImageB.begin());
@@ -84,19 +90,58 @@ void mdgkt::SpatioTemporalPreprocessing(const Mat& src, Mat& dst)
     if (kernelImageG.size() > SPATIO_WINDOW )
         kernelImageG.erase(kernelImageG.begin());
     
-    //Temporal pre-processing
-    const float* fptr=temporalGaussFilter.ptr<float>(0);
+    
+    //just for debugging, delete later.
+    /*
+    Mat roi(nchannels.at(2),Rect(40,12,6,6));
+    Mat roi2(temporal_average.at(2), Rect(40,12,6,6));
+    Mat roi1(temporal_average.at(1), Rect(61,12,6,6));
+    Mat roi0(temporal_average.at(0), Rect(76,12,6,6));
+     cout << roi << endl << endl;
+    */
+    ////////////////////
+    
 
     
+    //Temporal pre-processing
     for (int i=0; i<TIME_WINDOW; i++) {
-        temporal_average.at(0)+= kernelImageR.at(i)*fptr[i];
-        temporal_average.at(1)+= kernelImageG.at(i)*fptr[i];
-        temporal_average.at(2)+= kernelImageB.at(i)*fptr[i];
+        //temporal_average.push_back(Mat::zeros(src.size(), CV_32FC1));        
+        temporal_average.push_back(Mat::zeros(src.size(), CV_64F));        
     }
 
- 
-    merge(temporal_average,dst);
+    //Applies sequentially [0.106507,0.786986,0.106507] to each kernel
+    const float* tmp_filter = (float *)temporalGaussFilter.data;
+    
+    for (int i=0; i<TIME_WINDOW; i++) {
+                
+        temporal_average.at(2)+= kernelImageR.at(i)*tmp_filter[i];
+        temporal_average.at(1)+= kernelImageG.at(i)*tmp_filter[i];
+        temporal_average.at(0)+= kernelImageB.at(i)*tmp_filter[i];        
+    }
 
+    
+    //just for debugging
+    /*
+    Mat roiT2(temporal_average.at(2), Rect(40,12,6,6));
+    Mat roiT1(temporal_average.at(1), Rect(62,12,6,6));
+    Mat roiT0(temporal_average.at(0), Rect(76,12,6,6));
+    cout << roiT2 << endl;
+    cout << roiT1 << endl;
+    cout << roiT0 << endl;
+    */
+    
+    //cout << "--------------TEMPORAL -----------------" << endl;
+    /////////////////////////////////////////
+    
+    Mat dst_64;
+    merge(temporal_average,dst_64);
+    dst_64.convertTo(dst,CV_32F);
+    
+    
+    //Mat roiTo(dst,Rect(40,12,40,6));
+    //cout << roiTo << endl;
+
+    //cout << "==========================================================" << endl<< endl;
 }
 
 void mdgkt::deleteInstance () {
