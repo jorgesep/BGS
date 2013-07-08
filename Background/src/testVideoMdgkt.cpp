@@ -105,6 +105,7 @@ int main( int argc, char** argv )
     imshow("1",frame);
     imshow("2",img);
     char key = 0;
+    //Wait for ESC
     while (key != 27)
         key = (char)waitKey(30);
 
