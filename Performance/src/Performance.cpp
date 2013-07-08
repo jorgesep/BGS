@@ -176,11 +176,11 @@ void Performance::pixelLevelCompare(const Mat& _reference, const Mat& _image)
     Mat _img = _image;
     // Check and convert reference image to gray
     if (_image.channels() > 1) 
-        cvtColor( _image, _img, CV_RGB2GRAY );
+        cvtColor( _image, _img, CV_BGR2GRAY );
 
     Mat _ref = _reference;
     if (_reference.channels() > 1) 
-        cvtColor( _reference, _ref, CV_RGB2GRAY );
+        cvtColor( _reference, _ref, CV_BGR2GRAY );
 
 
     //Converted to gray in case of color image and
@@ -267,7 +267,7 @@ void Performance::countPixelsReferenceImage(const Mat& image)
 
     // Check and convert reference image to gray
     if (image.channels() > 1) 
-        cvtColor( image, img, CV_RGB2GRAY );
+        cvtColor( image, img, CV_BGR2GRAY );
 
 
     reference = ContingencyMatrix();
@@ -338,11 +338,11 @@ void Performance::medianOfMetrics()
 
 
     if (even) {
-        stat.MedianR = CommonMetrics( (sen[i]+sen[i+1])/2,
-                                      (spe[i]+spe[i+1])/2,
-                                      (mcc[i]+mcc[i+1])/2);
+        stat.MedianR = CommonMetrics( (sen[i]+sen[i-1])/2,
+                                      (spe[i]+spe[i-1])/2,
+                                      (mcc[i]+mcc[i-1])/2);
     } else {
-        stat.MedianR = CommonMetrics( sen[i+1],spe[i+1],mcc[i+1]);
+        stat.MedianR = CommonMetrics( sen[i],spe[i],mcc[i]);
     }
 
 }
