@@ -90,7 +90,10 @@ int main( int argc, char** argv )
     //spatio-temporal pre-processing filter for smoothing transform
     mdgkt* preProc = mdgkt::Instance();
 
-    frame = imread("config/1.png", CV_LOAD_IMAGE_COLOR);
+    string path = "/Users/jsepulve/Downloads/BGS/Background/";
+    
+    //frame = imread(path + "config/1.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("/Users/jsepulve/Tesis/Videos/jpeg/Person1/Camera_3/00000221.jpg", CV_LOAD_IMAGE_COLOR);
     preProc->initializeFirstImage(frame);
 
     preProc->SpatioTemporalPreprocessing(frame, image);
@@ -102,7 +105,8 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
 
-    frame = imread("config/2.png", CV_LOAD_IMAGE_COLOR);
+    //frame = imread(path + "config/2.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("/Users/jsepulve/Tesis/Videos/jpeg/Person1/Camera_3/00000222.jpg", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     
     imshow("1",frame);
@@ -113,7 +117,8 @@ int main( int argc, char** argv )
         key = (char)waitKey(30);
     
     
-    frame = imread("config/3.png", CV_LOAD_IMAGE_COLOR);
+    //frame = imread(path + "config/3.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("/Users/jsepulve/Tesis/Videos/jpeg/Person1/Camera_3/00000223.jpg", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     
     imshow("1",frame);
@@ -123,9 +128,18 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
     
+    Mat roiTo1(image,Rect(40,12,6,6));
+    //Mat roiTo2(image,Rect(62,12,18,6));
+    //Mat roiTo3(image,Rect(76,12,18,6));
+    cout << "+++++++++++++++++++++++++++++++++" << endl;
+    cout << roiTo1 << endl;
+    //cout << roiTo2 << endl; 
+    //cout << roiTo3 << endl;
+    cout << "+++++++++++++++++++++++++++++++++" << endl;
+
     
-    
-    frame = imread("config/4.png", CV_LOAD_IMAGE_COLOR);
+    //frame = imread(path + "config/4.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread("/Users/jsepulve/Tesis/Videos/jpeg/Person1/Camera_3/00000224.jpg", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
@@ -133,7 +147,7 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
     
-    frame = imread("config/5.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread(path + "config/5.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
@@ -141,7 +155,7 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
    
-    frame = imread("config/6.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread(path + "config/6.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
@@ -149,7 +163,7 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
  
-    frame = imread("config/7.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread(path + "config/7.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
@@ -157,7 +171,7 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
  
-    frame = imread("config/8.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread(path + "config/8.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
@@ -165,7 +179,7 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
  
-    frame = imread("config/9.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread(path + "config/9.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
@@ -173,7 +187,7 @@ int main( int argc, char** argv )
     while (key != 27)
         key = (char)waitKey(30);
 
-    frame = imread("config/10.png", CV_LOAD_IMAGE_COLOR);
+    frame = imread(path + "config/10.png", CV_LOAD_IMAGE_COLOR);
     preProc->SpatioTemporalPreprocessing(frame, image);
     imshow("1",frame);
     imshow("2",image);
