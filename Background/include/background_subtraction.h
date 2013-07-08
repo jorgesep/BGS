@@ -5,6 +5,10 @@
 #include "opencv2/core/core.hpp"
 #include <list>
 
+//#include <iostream>
+//#include <fstream>
+//#include <sstream>
+
 
 using namespace cv;
 
@@ -32,6 +36,9 @@ public:
 
     //! re-initiaization method
     virtual void initialize(Size frameSize, int frameType);
+    virtual void initializeModel(InputArray image);
+    virtual void loadModel();
+    virtual void saveModel();
 
     //virtual AlgorithmInfo* info() const;
 
@@ -40,15 +47,25 @@ public:
     virtual void loadInitParametersFromFile(const string);
     virtual string initParametersToString();
     virtual string initParametersAsOneLineString();
+    virtual void getBackground(OutputArray bgImage);
     
     inline float getAlpha() { return fAlpha; };
     inline float getRange() { return varThreshold; };
+    inline float getVariance() { return fVarInit; };
     void setAlpha(float _alpha) { fAlpha = _alpha;};
     void setRange(float _range) { varThreshold = _range; };
+    void setVariance(float _variance) { fVarInit = _variance; };
+    //void setPointToDebug(const Point _pt) { pointToDebug = _pt; };
+    void setPointToDebug (const Point);
+
+    //Calculate global intensity change
+    virtual float globalIntensity(const Mat&, const Mat&, string);
 
 protected:
     Size frameSize;
     int frameType;
+    int frameDepth;
+    
     Mat bgmodel;
     Mat bgmodelUsedModes;//keep track of number of modes per pixel
     int nframes;
@@ -149,6 +166,10 @@ protected:
     Mat Foreground;
 
     string initParametersName;
+    
+    bool alreadyInitialized;
+    Point pointToDebug;
+    std::ofstream outfile;
 
 };
 

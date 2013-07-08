@@ -7,9 +7,13 @@ SET( sagmm_MINOR_VERSION 1 )
 SET( sagmm_PATCH_LEVEL 0 )
 
 SET( CMAKE_C_FLAGS "-Wall -g" )
+#SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
+endif()
 
 #FILE ( GLOB SRCS *.cpp *.h )
-FILE ( GLOB SRCS background_subtraction.cpp  mdgkt_filter.cpp bgs.cpp *.h )
+FILE ( GLOB SRCS background_subtraction.cpp  mdgkt_filter.cpp icdm_model.cpp bgs.cpp *.h )
 
 
 FILE ( GLOB SCRIPTS ${PROJECT_SOURCE_DIR}/scripts/*.py ${PROJECT_SOURCE_DIR}/scripts/*.sh )
@@ -53,6 +57,10 @@ link_directories(${BGS_BINARY_DIR}/Utils)
 ADD_EXECUTABLE( testVideoMdgkt mdgkt_filter.cpp testVideoMdgkt.cpp )
 TARGET_LINK_LIBRARIES( testVideoMdgkt ${OpenCV_LIBS} )
 set_property(TARGET testVideoMdgkt PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
+ADD_EXECUTABLE( testIcdm icdm_model.cpp testIcdm.cpp )
+TARGET_LINK_LIBRARIES( testIcdm ${OpenCV_LIBS} )
+set_property(TARGET testIcdm PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_EXECUTABLE( testMdgkt mdgkt_filter.cpp testMdgkt.cpp )
 TARGET_LINK_LIBRARIES( testMdgkt ${OpenCV_LIBS} )

@@ -29,6 +29,7 @@
 
 
 #include "precomp.h"
+#include "icdm_model.h"
 
 using namespace std;
 using namespace cv;
@@ -202,9 +203,11 @@ struct MEAN
 static CV_INLINE bool
 detectShadowGMM(const float* data, int nchannels, int nmodes,
                 const GMM* gmm, const float* mean,
-                float Tb, float TB, float tau)
+                float Tb, float TB, float tau, float _globalChange)
 {
     float tWeight = 0;
+    float globalChange = _globalChange;
+    //globalChange = 1.0;
 
     // check all the components  marked as background:
     for( int mode = 0; mode < nmodes; mode++, mean += nchannels )
@@ -215,7 +218,8 @@ detectShadowGMM(const float* data, int nchannels, int nmodes,
         float denominator = 0.0f;
         for( int c = 0; c < nchannels; c++ )
         {
-            numerator   += data[c] * mean[c];
+            //numerator   += data[c] * mean[c];
+            numerator   += data[c] * mean[c] * globalChange;
             denominator += mean[c] * mean[c];
         }
 
@@ -226,16 +230,18 @@ detectShadowGMM(const float* data, int nchannels, int nmodes,
         // if tau < a < 1 then also check the color distortion
         if( numerator <= denominator && numerator >= tau*denominator )
         {
-            float a = numerator / denominator;
+            //float a = numerator / denominator;
+            float shadowAlfa = numerator / denominator;
             float dist2a = 0.0f;
 
             for( int c = 0; c < nchannels; c++ )
             {
-                float dD= a*mean[c] - data[c];
+                //float dD= a*mean[c] - data[c];
+                float dD= shadowAlfa * mean[c] - data[c] * globalChange;
                 dist2a += dD*dD;
             }
 
-            if (dist2a < Tb*g.variance*a*a)
+            if (dist2a < Tb*g.variance * shadowAlfa * shadowAlfa)
                 return true;
         };
 
@@ -268,7 +274,7 @@ public:
                                 uchar _shadowVal,
                                 float _globalChange,
                                 float* _Cm,
-                                float* _Bg,float* _Fg) 
+                                float* _Bg,float* _Fg, Point _debugPt) 
 {
     src = &_src;
     dst = &_dst;
@@ -294,6 +300,8 @@ public:
     //Bg0 = _Fg;
     Fg0 = _Fg;
 
+    debugPt = _debugPt;
+    
     cvtfunc = src->depth() != CV_32F ? getConvertFunc(src->depth(), CV_32F) : 0;
 }
 
@@ -302,7 +310,7 @@ void operator()(const Range& range) const
 {
     int y0 = range.start;
     int y1 = range.end;
-    
+        
     int ncols     = src->cols;
     int nchannels = src->channels();
     
@@ -311,6 +319,7 @@ void operator()(const Range& range) const
     float alpha1 = 1.f - alphaT;
     float dData[CV_CN_MAX];
 
+    //run for each row
     for( int y = y0; y < y1; y++ )
     {
         const float* data = buf;//data is pointer, which points to const float
@@ -319,6 +328,7 @@ void operator()(const Range& range) const
         else
             data = src->ptr<float>(y);
 
+        //'y' select number of row
         float* mean      = mean0 + ncols*nmixtures*nchannels*y;
         GMM*   gmm       = gmm0  + ncols*nmixtures*y;
         uchar* modesUsed = modesUsed0 + ncols*y;
@@ -334,10 +344,10 @@ void operator()(const Range& range) const
         // data:
         //
         // |--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
-        // |R |G |B |  |  |  |  |  |  |  |  |  |  |  |  |  |
+        // |B |G |R |  |  |  |  |  |  |  |  |  |  |  |  |  |
         // |--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
         //
-        for( int x = 0; x < ncols; x++, data += nchannels, gmm += nmixtures, mean += nmixtures*nchannels, cm+=nmixtures )
+        for( int x = 0; x < ncols; x++, data += nchannels, gmm += nmixtures, mean += nmixtures*nchannels, cm+=nmixtures, bg+=nchannels )
         {
             //calculate distances to the modes (+ sort)
             //here we need to go in descending order!!!
@@ -355,13 +365,16 @@ void operator()(const Range& range) const
             float* bg_cnt     = cm;
 
             //just for debugging
-            if (y0==200 && x==680)
+            if (y0==228 && x==670)
+            //if (y0==200 && x==680)
+            //if (y0==160 && x==400)    
                 int temporary = y0;
             
 
             //////
             //go through all modes
-            for( int mode = 0; mode < nmodes; mode++, mean_m += nchannels, bg_m +=nchannels )
+            //for( int mode = 0; mode < nmodes; mode++, mean_m += nchannels, bg_m +=nchannels )
+            for( int mode = 0; mode < nmodes; mode++, mean_m += nchannels)
             {
                 // prune = -learningRate*fCT = 1./500*0.05 = -0.0001
                 // Ownership Om set zero to obtain weight if fit is not found.
@@ -382,10 +395,8 @@ void operator()(const Range& range) const
                     // d_dirac_m = x[t] - mu_m
                     if( nchannels == 3 )
                     {
-                        //dData[0] = mean_m[0] - data[0]*globalChange;
-                        //dData[1] = mean_m[1] - data[1]*globalChange;
-                        //dData[2] = mean_m[2] - data[2]*globalChange;
                         //just for debugging
+                        /*
                         float mean0 = mean_m[0];
                         float mean1 = mean_m[1];
                         float mean2 = mean_m[2];
@@ -398,6 +409,11 @@ void operator()(const Range& range) const
                         dData[0] = mean0 - data0;
                         dData[1] = mean1 - data1;
                         dData[2] = mean2 - data2;
+                        */
+                        dData[0] = mean_m[0] - data[0]*globalChange;
+                        dData[1] = mean_m[1] - data[1]*globalChange;
+                        dData[2] = mean_m[2] - data[2]*globalChange;
+                        
                         dist2 = dData[0]*dData[0] + dData[1]*dData[1] + dData[2]*dData[2];
                     }
                     else
@@ -415,10 +431,11 @@ void operator()(const Range& range) const
                     //background? - Tb - usually larger than Tg
                     if( totalWeight < TB && dist2 < Tb*var ) {
                         background = true;
-                        /*
+                        
                         for( int c = 0; c < nchannels; c++ )
-                            bg_m[c] = dData[c];
-                         */
+                            bg_m[c] = mean_m[c];
+                            //bg_m[c] = dData[c];
+                        
                     }
 
                     //check fit
@@ -429,7 +446,7 @@ void operator()(const Range& range) const
                         fitsPDF = true;
 
                         //update distribution
-                        modesUsed[mode] = mode + 1;
+                        //modesUsed[mode] = mode + 1;
                         
                         //Increment background counter number
                         bg_cnt[mode] += 1;
@@ -439,13 +456,13 @@ void operator()(const Range& range) const
                         //If the background changes quickly, Cm will become smaller, new beta learning rate will increase
                         //
                         //just for debugging
-                        //float Beta = alphaT/bg_cnt[mode]+alphaT;
-                        double aT    = (double)alphaT;
-                        double bgcnT = (double)bg_cnt[mode];
-                        double Beta  = aT/bgcnT;
-                        Beta += aT;
+                        //double aT    = (double)alphaT;
+                        //double bgcnT = (double)bg_cnt[mode];
+                        //double Beta  = aT/bgcnT;
+                        //Beta += aT;
                         
-                        //
+                        float Beta = alphaT/bg_cnt[mode]+alphaT;
+                        //see eq. (4.8) (4.9)
                         float k = Beta/gmm[mode].weight;
                         
                         // Update Weight
@@ -512,9 +529,6 @@ void operator()(const Range& range) const
             //make new mode if needed and exit
             if( !fitsPDF )
             {
-                //just for debugging
-                if (y0==200 && x==680)
-                    int temporary = nNewModes;
 
                 // replace the weakest or add a new one
                 int mode = nmodes == nmixtures ? nmixtures-1 : nmodes++;
@@ -551,14 +565,42 @@ void operator()(const Range& range) const
                     for( int c = 0; c < nchannels; c++ )
                         std::swap(mean[i*nchannels + c], mean[(i-1)*nchannels + c]);
                 }
-            }
+            }//make new mode if needed and exit
 
+            //just for debugging save parameters to output file
+            if ( debugPt != Point(0,0) ) {
+                
+                if (debugPt.x == x && debugPt.y == y0){
+                    //if (y0==240 && x==670) {
+                    //if (y0==228 && x==670) {
+                    //if (y0==160 && x==400) {
+                    //std::ofstream outfile;
+                    //outfile.open("bg_params_670_240.txt",ios::out | ios::app);
+                    std::cout.precision(5);
+                    cout 
+                    << debugPt.x << " " << debugPt.y << " "
+                    << "mode: " << nmodes 
+                    << " data: "   << (int)data[0]           << " " << (int)data[1]              << " " << (int)data[2]
+                    << " bg_cnt: " << (int)bg_cnt[0]         << " " << (int)bg_cnt[1]            << " " << (int)bg_cnt[2]       << " " << (int)bg_cnt[3]
+                    << " mean: "   << (int)mean[0]           << " " << (int)mean[1]              << " " << (int)mean[2] 
+                    << " ; "       << (int)mean[1*nchannels] << " " << (int)mean[1*nchannels +1] << " " << (int)mean[1*nchannels +2] 
+                    << " ; "       << (int)mean[2*nchannels] << " " << (int)mean[2*nchannels +1] << " " << (int)mean[2*nchannels +2] 
+                    << " ; "       << (int)mean[3*nchannels] << " " << (int)mean[3*nchannels +1] << " " << (int)mean[3*nchannels +2] 
+                    << " var: "    << gmm[0].variance        << " " << gmm[1].variance           << " " << gmm[2].variance       << " " << gmm[3].variance
+                    << " weight: " << gmm[0].weight          << " " << gmm[1].weight              << " " << gmm[2].weight        << " " << gmm[3].weight
+                    << endl;
+                    //outfile.close();
+                }
+            }
+            
+            
             //set the number of modes
-            modesUsed[x] = uchar(nmodes);
+            //modesUsed[x] = uchar(nmodes);
+            modesUsed[x] = (uchar)nmodes;
             mask[x] = background ? 0 :
-                detectShadows && detectShadowGMM(data, nchannels, nmodes, gmm, mean, Tb, TB, tau) ?
+                detectShadows && detectShadowGMM(data, nchannels, nmodes, gmm, mean, Tb, TB, tau, globalChange) ?
                 shadowVal : 255;
-        }
+        }//end columns for
     }
 }
 
@@ -579,6 +621,8 @@ void operator()(const Range& range) const
     float* Cm0;
     float* Bg0;
     float* Fg0;
+    
+    Point debugPt;
     
     BinaryFunc cvtfunc;
 };
@@ -605,6 +649,9 @@ BackgroundSubtractorMOG3::BackgroundSubtractorMOG3()
     fCT              = CT;
     nShadowDetection =  defaultnShadowDetection2;
     fTau             = Tau;
+    
+    alreadyInitialized = false;
+    pointToDebug = Point(0,0);
 
 }
 
@@ -630,6 +677,9 @@ BackgroundSubtractorMOG3::BackgroundSubtractorMOG3(int _history,  float _varThre
     fCT              = CT;
     nShadowDetection =  defaultnShadowDetection2;
     fTau             = Tau;
+
+    alreadyInitialized = false;
+    pointToDebug = Point(0,0);
 
 }
 
@@ -658,12 +708,116 @@ BackgroundSubtractorMOG3::BackgroundSubtractorMOG3(string init)
     initParametersName = init;
     loadInitParametersFromFile(init);
 
+    alreadyInitialized = false;
+    pointToDebug = Point(0,0);
+
 }
 
 
 BackgroundSubtractorMOG3::~BackgroundSubtractorMOG3()
 {
 }
+
+
+void BackgroundSubtractorMOG3::initializeModel(InputArray _image)
+{
+    Mat image = _image.getMat();
+    frameSize = image.size();
+    frameType = image.type();
+    frameDepth= image.depth();
+    
+    nframes = 0;
+    
+    int nchannels = CV_MAT_CN(frameType);
+    CV_Assert( nchannels <= CV_CN_MAX );
+        
+    // number of lines
+    int nl= frameSize.height; 
+    int nc= frameSize.width;
+    
+    int matSize   = frameSize.height*frameSize.width;
+    int columnsNo = matSize*nmixtures*(2 + nchannels);
+    
+    //Keep a result of background and foreground every call processing
+    //Background.create(1, matSize*nchannels, frameDepth);
+    Background.create(1, matSize*nchannels, CV_32F);
+    //Background.create(1, matSize, CV_32FC(nchannels));
+    Foreground.create(1, matSize, CV_32F);
+    Background = Scalar::all(0);
+    Foreground = Scalar::all(0);
+    float* ptrBG  = (float *)Background.data;
+    float* Bg     = ptrBG;
+
+    
+    // for each gaussian mixture of each pixel bg model we store ...
+    // the mixture weight (w),
+    // the mean (nchannels values) and
+    // the covariance
+    GaussianModel.create(1, columnsNo, CV_32F );
+    GaussianModel = Scalar::all(0);
+    
+    GMM* ptrGMM = (GMM*)GaussianModel.data;
+    GMM*   data  = ptrGMM;
+    
+    MEAN* ptrMean = (MEAN*)(GaussianModel.data + sizeof(GMM)*nmixtures*matSize);
+    MEAN*  ptrm  = ptrMean;
+    
+    if ( image.isContinuous() )
+    {
+        //then no padded pixels
+        nc= nc*nl;
+        nl= 1; // it is now a 1D array
+    }
+    
+    
+    for (int j=0; j<nl; j++) {
+        for (int i=0; i<nc; i++) {
+            
+            data = ptrGMM + i*nmixtures + j*nmixtures*nc;
+            data->weight     = 1.0f;
+            data->variance = fVarInit;
+            
+            //increment pointer in a 'j' row and 'i' column
+            ptrm = ptrMean + i*nmixtures + j*nmixtures*nc;
+            ptrm->meanB = static_cast<float>(image.at<Vec3b>(j,i)[0]);
+            ptrm->meanG = static_cast<float>(image.at<Vec3b>(j,i)[1]);
+            ptrm->meanR = static_cast<float>(image.at<Vec3b>(j,i)[2]);
+            
+            //initialize background with current input image.
+            Bg    = ptrBG + i*nchannels + j*nchannels*nc;
+            Bg[0] = image.at<Vec3f>(j,i)[0];
+            Bg[1] = image.at<Vec3f>(j,i)[1];
+            Bg[2] = image.at<Vec3f>(j,i)[2];
+            
+            
+        }
+    }    
+    /*
+    cout
+    << "(0,0): [" << *(ptrBG + 0) << "," << *(ptrBG + 1) << "," << *(ptrBG + 2) << "] "
+    << "(0,1): [" << *(ptrBG + 3) << "," << *(ptrBG + 4) << "," << *(ptrBG + 5) << "] "
+    << "(1,0): [" << *(ptrBG + 6) << "," << *(ptrBG + 7) << "," << *(ptrBG + 8) << "] "
+    << "(1,1): [" << *(ptrBG + 9) << "," << *(ptrBG + 10) << "," << *(ptrBG + 11) << "] "
+    << endl;
+    */
+    
+    CurrentGaussianModel.create(frameSize, CV_8U);
+    CurrentGaussianModel = Scalar::all(0);
+    
+    
+    BackgroundNumberCounter.create(1, frameSize.height*frameSize.width*nmixtures, CV_32F);
+    BackgroundNumberCounter = Scalar::all(0);
+    float* ptrCnt = (float*)BackgroundNumberCounter.data;
+    int ncols= BackgroundNumberCounter.cols * BackgroundNumberCounter.channels();
+    for (int i=0; i<ncols; i+=nmixtures)
+        ptrCnt[i]= 1.0f;
+    
+    
+    
+    alreadyInitialized = true;
+    //outfile.open("internal_values.txt");
+}
+
 
 
 void BackgroundSubtractorMOG3::initialize(Size _frameSize, int _frameType)
@@ -693,7 +847,8 @@ void BackgroundSubtractorMOG3::initialize(Size _frameSize, int _frameType)
     GMM* ptrGMM = (GMM*)GaussianModel.data;
     GMM*   data  = ptrGMM;
     
-    MEAN* ptrMean = (MEAN*)(GaussianModel.data + 2*nmixtures*matSize);
+    //MEAN* ptrMean = (MEAN*)(GaussianModel.data + 2*nmixtures*matSize);
+    MEAN* ptrMean = (MEAN*)(GaussianModel.data + sizeof(GMM)*nmixtures*matSize);
     MEAN*  ptrm  = ptrMean;
     
     //int size1= sizeof(GMM);
@@ -718,6 +873,8 @@ void BackgroundSubtractorMOG3::initialize(Size _frameSize, int _frameType)
     
     
     BackgroundNumberCounter.create(1, frameSize.height*frameSize.width*nmixtures, CV_32F);
+    BackgroundNumberCounter = Scalar::all(0);
+
     float* ptrCnt = (float*)BackgroundNumberCounter.data;
     int nc= BackgroundNumberCounter.cols * BackgroundNumberCounter.channels();
     for (int i=0; i<nc; i+=nmixtures)
@@ -727,16 +884,18 @@ void BackgroundSubtractorMOG3::initialize(Size _frameSize, int _frameType)
     Background.create(1, matSize*nchannels, CV_32F);
     Foreground.create(1, matSize,           CV_32F);
     
+
     
+
 }
 
 void BackgroundSubtractorMOG3::operator()(InputArray _image, OutputArray _fgmask, double learningRate)
 {
     Mat image = _image.getMat();
-    bool needToInitialize = nframes == 0 || 
+    bool needToInitialize = (nframes == 0 || 
                             learningRate >= 1 || 
                             image.size() != frameSize || 
-                            image.type() != frameType;
+                            image.type() != frameType) && !alreadyInitialized;
 
     if( needToInitialize )
         initialize(image.size(), image.type());
@@ -745,7 +904,10 @@ void BackgroundSubtractorMOG3::operator()(InputArray _image, OutputArray _fgmask
     Mat fgmask = _fgmask.getMat();
 
     ++nframes;
-
+    
+    //Mat bg;
+    //getBackgroundImage(bg);
+    
     //learningRate = learningRate >= 0 && nframes > 1 ? learningRate : 1./min( 2*nframes, history );
     //learningRate = Alpha;
     learningRate = fAlpha;
@@ -754,7 +916,17 @@ void BackgroundSubtractorMOG3::operator()(InputArray _image, OutputArray _fgmask
     //Global illumination changing factor 'g' between reference image ir and current image ic.
     float globalIlluminationFactor = 1.0;
     
-  
+    Mat bg;
+    getBackgroundImage(bg);
+    //getBackground(bg);
+    globalIlluminationFactor = icdm::Instance()->getIlluminationFactor(bg,image);
+        
+    if (globalIlluminationFactor > 2)
+        globalIlluminationFactor = 2;
+    //cout << "GLOBAL ILLUMINATION FACTOR: " << globalIlluminationFactor << endl;
+    
+    //globalIlluminationFactor = 1;
+    
     BackgroundSubtractionInvoker invoker(
             image, 
             fgmask, 
@@ -775,7 +947,7 @@ void BackgroundSubtractorMOG3::operator()(InputArray _image, OutputArray _fgmask
             nShadowDetection,
             globalIlluminationFactor,
             (float *)BackgroundNumberCounter.data,
-            (float *)Background.data, (float *)Foreground.data);
+            (float *)Background.data, (float *)Foreground.data, pointToDebug);
     
     parallel_for_(Range(0, image.rows), invoker);
 
@@ -833,6 +1005,46 @@ void BackgroundSubtractorMOG3::getBackgroundImage(OutputArray backgroundImage) c
     default:
         CV_Error(CV_StsUnsupportedFormat, "");
     }
+}
+
+void BackgroundSubtractorMOG3::getBackground(OutputArray _bgImage)
+{
+    int nchannels = CV_MAT_CN(frameType);
+    //CV_MAT_TYPE(<#flags#>)
+    CV_Assert( nchannels == 3 );
+    _bgImage.create(frameSize, CV_8UC3);
+
+    // get Mat header.
+    Mat bg0 = _bgImage.getMat();
+    bg0     = Scalar::all(0);
+    
+    // number of lines
+    int nl= bg0.rows; 
+    int nc= bg0.cols;
+    
+    if ( Background.isContinuous() && bg0.isContinuous() )
+    {
+        //then no padded pixels
+        nc= nc*nl;
+        nl= 1; // it is now a 1D array
+    }
+
+    const float* bg1_data;
+    uchar* bg0_data;
+    
+    for (int j=0; j<nl; j++) {
+        //get a pointer of each row
+        bg1_data = Background.ptr<float>(j);
+        bg0_data = bg0.ptr<uchar>(j);
+        
+        for (int i=0; i<nc*nchannels; i++) {
+            uchar tmp = static_cast<uchar>(bg1_data[i]);
+            //bg0_data[i] = (uchar)bg1_data[i];
+            bg0_data[i] = tmp;
+        }
+    }
+
+    
 }
 
 void BackgroundSubtractorMOG3::loadBackgroundModelFromFile(const string bgModelInputName)
@@ -900,8 +1112,6 @@ void BackgroundSubtractorMOG3::loadInitParametersFromFile(const string initInput
         }
     }
 
-    //print out parameters
-    //cout << this->initParametersToString() << endl;
 
 }
 
@@ -939,6 +1149,47 @@ string BackgroundSubtractorMOG3::initParametersAsOneLineString()
         << " Tau="         << fTau;
     return str.str();
 }
+
+float BackgroundSubtractorMOG3::
+globalIntensity(const Mat& _ref, const Mat& _current, string _method)
+{
+
+    return 0.0;
+}
+
+
+void BackgroundSubtractorMOG3::
+saveModel()
+{
+    
+    FileStorage fs("BackgroundModel.yml", FileStorage::WRITE);
+    fs << "GaussianModel" << GaussianModel;
+    fs << "CurrentGaussianModel" << CurrentGaussianModel;
+    fs << "BackgroundNumberCounter" << BackgroundNumberCounter;
+    fs << "Background" << Background ;
+    fs << "Foreground" << Foreground;
+    fs.release();
+}
+
+void BackgroundSubtractorMOG3::loadModel()
+{
+    FileStorage fs("BackgroundModel.yml", FileStorage::READ);
+    fs["GaussianModel"] >> GaussianModel;
+    fs["CurrentGaussianModel"] >> CurrentGaussianModel;
+    fs["BackgroundNumberCounter"] >> BackgroundNumberCounter;
+    fs["Background"] >> Background;
+    fs["Foreground"] >> Foreground;
+    alreadyInitialized = true;
+
+}
+
+void BackgroundSubtractorMOG3::setPointToDebug(const Point _pt) 
+{ 
+    pointToDebug.x = _pt.x;
+    pointToDebug.y = _pt.y;
+    
+    cout << "Setting point: " << pointToDebug.x << " " << pointToDebug.y <<  endl;
+};
 
 
 /* End of file. */

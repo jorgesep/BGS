@@ -34,6 +34,8 @@
 #include "Performance.h"
 #include "utils.h"
 
+#include "icdm_model.h"
+
 using namespace cv;
 using namespace std;
 using namespace bgs;
@@ -41,18 +43,19 @@ using namespace bgs;
 
 const char* keys =
 {
-    "{ i   | input      |           | Input video }"
-    "{ o   | output     |           | Output video }"
-    "{ g   | gtruth     |           | Input ground-truth directory }"
-    "{ m   | model      |           | Load background model from  file }"
-    "{ s   | save       |           | Save background model to file }"
-    "{ c   | config     |           | Load init config file }"
-    "{ n   | frame      | 0         | Shift ground-truth in +/- n frames, e.g -f -3 or -f 3}"
-    "{ f   | filter     | true      | Apply smooth preprocessing filter, Default true.}"
-    "{ d   | display    | false     | Display video sequence }"
-    "{ v   | verbose    | false     | Display output messages }"
-    "{ p   | point      |           | Print out RGB values of point,  e.g -p 250,300 }"
-    "{ h   | help       | false     | Print help message }"
+    "{ i | input   |       | Input video }"
+    "{ o | output  |       | Output video }"
+    "{ g | gtruth  |       | Input ground-truth directory }"
+    "{ r | read    |       | Read background model from  file }"
+    "{ w | write   |       | Write background model in a file }"
+    "{ c | config  |       | Load init config file }"
+    "{ n | frame   | 0     | Shift ground-truth in +/- n frames, e.g -n -3 or -n 3}"
+    "{ f | filter  | true  | Apply smooth preprocessing filter, Default true.}"
+    "{ p | point   |       | Print out RGB values of point,  e.g -p 250,300 }"
+    "{ v | verbose | false | Print out output messages by console}"
+    "{ d | debug   | false | Debug mode, print by console internal gaussian parameters }"
+    "{ s | show    | false | Show images of video sequence }"
+    "{ h | help    | false | Print help message }"
 };
 
 
@@ -60,7 +63,6 @@ const char* keys =
 int main( int argc, char** argv )
 {
 
-    showMultipleImages();
 
     //Parse console parameters
     CommandLineParser cmd(argc, argv, keys);
@@ -79,14 +81,15 @@ int main( int argc, char** argv )
     const string inputVideoName  = cmd.get<string>("input");
     const string outputVideoName = cmd.get<string>("output");
     const string groundTruthName = cmd.get<string>("gtruth");
-    const string bgModelName     = cmd.get<string>("model");
-    const string saveName        = cmd.get<string>("save");
+    const string bgModelName     = cmd.get<string>("read");
+    const string saveName        = cmd.get<string>("write");
     const string initConfigName  = cmd.get<string>("config");
     const string displayPoint    = cmd.get<string>("point");
-    const bool displayImages     = cmd.get<bool>("display");
-    const bool applyFilter       = cmd.get<bool>("filter");
-    const bool verbose           = cmd.get<bool>("verbose");
     const int shiftFrame         = cmd.get<int>("frame");
+    const bool displayImages     = cmd.get<bool>("show");
+    const bool applyFilter       = cmd.get<bool>("filter");
+    const bool debugPoint        = cmd.get<bool>("debug");
+    bool verbose                 = cmd.get<bool>("verbose");
 
     //declaration of local variables.
     map<unsigned int, string> gt_files;
@@ -106,7 +109,7 @@ int main( int argc, char** argv )
     int gt_size = -1;
     mdgkt *filter;
 
-
+    
     if (inputVideoName.empty()) {
         cout << "Insert video name" << endl;
         cmd.printParams();
@@ -121,8 +124,8 @@ int main( int argc, char** argv )
     //Print out initialization parameters.
     if (verbose)
         cout << bg_model.initParametersToString() << endl;
-   
-    //Check ground-thruth
+
+    //Check ground-truth
     if (!groundTruthName.empty()) {
         compare=true;
         list_files(groundTruthName,gt_files);
@@ -130,11 +133,17 @@ int main( int argc, char** argv )
         outfile << bg_model.initParametersAsOneLineString() << endl;
 
         if (displayImages) {
-            namedWindow("GROUND THRUTH", CV_WINDOW_NORMAL);
-            moveWindow("GROUND THRUTH",400,300);
+            namedWindow("GROUND TRUTH", CV_WINDOW_NORMAL);
+            moveWindow("GROUND TRUTH",400,300);
         }
         gt_size = gt_files.size();
+        
+        if (gt_size == 0) {
+            cout << "Not valid ground truth directory ... " << endl;
+            return -1;
+        }
     }
+
 
     //create video object.
     VideoCapture video(inputVideoName);
@@ -165,7 +174,24 @@ int main( int argc, char** argv )
         ptfile.open(name.str().c_str());
     }
 
-   
+
+    
+    //check if debug option is enabled
+    //this will disable verbose mode
+    if (debugPoint) {
+        cout << "Debug" << endl; 
+        if ( pt.x == 0 && pt.y == 0 )
+            pt = Point(width/2,height/2);
+        
+        //stop printing out messages
+        verbose = false;
+            
+        bg_model.setPointToDebug(pt);
+        
+    }
+
+
+    
     // Create display windows 
     if (displayImages) { 
         namedWindow("image", CV_WINDOW_NORMAL);
@@ -174,33 +200,56 @@ int main( int argc, char** argv )
         moveWindow("image"           ,20,20);
         moveWindow("foreground image",20,300);
         moveWindow("foreground mask" ,400,20);
+        //namedWindow("background image", CV_WINDOW_NORMAL);
+        //moveWindow("background image" ,20,500);
+        
+        //namedWindow("BG0", CV_WINDOW_NORMAL);
+        //namedWindow("BG1", CV_WINDOW_NORMAL);
     } 
 
-  
+
+
+    
     //spatio-temporal pre-processing filter for smoothing frames.
     if (applyFilter) {
+        
         filter = mdgkt::Instance();
         cntTemporalWindow = filter->getTemporalWindow();
-
+        
         for (int i=0; i<filter->getTemporalWindow(); i++) {
+
             video >> frame;
+            
+            // Initialize in zero three channels of img kernel.
             if (i==0)
                 filter->initializeFirstImage(frame);
+            
+            //Apply filter and puts result in img.
             filter->SpatioTemporalPreprocessing(frame, img);
+            
+
         }
     }
+    
 
-    //Shift backward or forward ground thruth sequence counter.
+    
+    bg_model.initializeModel(img);
+    //bg_model.loadModel();
+
+    
+    //Shift backward or forward ground truth sequence counter.
     //for compensating pre-processed frames in the filter.
     int cnt    = 0  + shiftFrame + cntTemporalWindow; 
 
-    int tmp_cnt =0;
 
     // main loop 
     for(;;)
     {
-        //Checks if option filter enabled.
+        img = Scalar::all(0);
+        
+        //Checks if filter option was enabled.
         if (applyFilter) {
+
             video >> frame;
             if (frame.empty()) 
                 break;
@@ -211,7 +260,8 @@ int main( int argc, char** argv )
         }
         else
             video >> img;
-       
+               
+            
         if( fgimg.empty() )
             fgimg.create(img.size(), img.type());
        
@@ -221,23 +271,17 @@ int main( int argc, char** argv )
         fgimg = Scalar::all(0);
         
         img.copyTo(fgimg, fgmask);
-        
-        Mat bgimg;
-        bg_model.getBackgroundImage(bgimg);
+       
+        //Get background image
+        //Mat bgimg;
+        //bg_model.getBackground(bgimg);
+        //bg_model.getBackgroundImage(bgimg);
 
-        // this is just for debugging, save pixel information in a file
-        if (show_point) {
-            ptmsg.str("");
-            ptmsg  << (int)img.at<Vec3b>(nl,nc)[0] << " " 
-                   << (int)img.at<Vec3b>(nl,nc)[1] << " " 
-                   << (int)img.at<Vec3b>(nl,nc)[2] ;
-            ptfile << ptmsg.str() << endl;
-        }
 
         //looking for ground truth file
         if ( cnt >=0 && compare && (it = gt_files.find(cnt)) != gt_files.end() ) {
 
-            // open ground thruth frame.
+            // open ground truth frame.
             gt_image = imread(it->second, CV_LOAD_IMAGE_GRAYSCALE);
 
             if( gt_image.data ) {
@@ -245,9 +289,9 @@ int main( int argc, char** argv )
                 //Compare both images
                 perf.pixelLevelCompare(gt_image, fgmask);
 
-                // display ground thruth
+                // display ground truth
                 if (displayImages)
-                    imshow("GROUND THRUTH", gt_image);
+                    imshow("GROUND TRUTH", gt_image);
 
                 //Print out debug messages to either file or std.
                 msg.str("");
@@ -264,15 +308,29 @@ int main( int argc, char** argv )
             // counter of number of frame processed
             gt_cnt++;
         }
+        
+        // Save pixel information in a local file
+        if (show_point) {
+            ptmsg.str("");
+            ptmsg  << (int)img.at<Vec3f>(nl,nc)[0] << " " 
+                   << (int)img.at<Vec3f>(nl,nc)[1] << " " 
+                   << (int)img.at<Vec3f>(nl,nc)[2] ;
+            ptfile << ptmsg.str() << endl;
+        }
+
 
         //Display sequences
         if (displayImages) {
             img.convertTo(ftimg, CV_8UC3);
-            if (show_point)
+            if (show_point){
                 circle(ftimg,pt,8,Scalar(0,0,254),-1,8);
+                circle(fgmask,pt,8,Scalar(155,155,155),-1,8);
+            }
+            
             imshow("image", ftimg);
             imshow("foreground mask", fgmask);
             imshow("foreground image", fgimg);
+            //imshow("background image", bgimg);
 
             //this is just to save frame 350.
             if (cnt == 350) {
@@ -287,18 +345,17 @@ int main( int argc, char** argv )
         char key=0;
         if (displayImages)
             key = (char)waitKey(delay);
-        //else
-        //    key = (char)waitKey(1);
-
         if( key == 27 ) { cout << "PRESSED BUTTON "<< endl; break;}
 
         //in case of not display option enabled stop execution 
-        //after last ground-thruth file was processed
+        //after last ground-truth file was processed
         if (!displayImages && compare && gt_cnt >= gt_size)
             break;
 
-        tmp_cnt++;
-        //cout << "CNT :" << tmp_cnt << endl;
+        //save model
+        if (cnt == 500)
+            bg_model.saveModel();
+        
     }
 
 

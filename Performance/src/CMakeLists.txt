@@ -25,6 +25,10 @@ set(OpenCV_DIR "/usr/local/share/OpenCV"
        CACHE PATH "The path where OpenCVConfig.cmake is placed")
 FIND_PACKAGE( OpenCV REQUIRED )
 
+ADD_EXECUTABLE( testMatBinary testMatBinary )
+TARGET_LINK_LIBRARIES( testMatBinary ${OpenCV_LIBS} )
+#set_property(TARGET testMatBinary PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
 ADD_EXECUTABLE( testPerformance testPerformance )
 TARGET_LINK_LIBRARIES( testPerformance Performance ${OpenCV_LIBS} )
 set_property(TARGET testPerformance PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
