@@ -148,10 +148,11 @@ def create_general_gnuplot_configuration_for_mcc_curve(_title,_desc,_inv=True):
         _cfg    ="mcc_param1_param2.cfg" 
         _png    ="mcc_param1_param2.png" 
 
-     # create plot lines
+    # create plot lines
+    #print len(_desc.split())
     _nl = 4
-    if _nl > len(_desc):
-        _nl = len(_desc)
+    if _nl > len(_desc.split()):
+        _nl = len(_desc.split()[1:])
 
     _plmean   = ", ".join(["meanfile u 1:%d w lp lw 1.5 t '%s'"  %(i+2,str(_desc.split()[1:][i])) for i in range(_nl)])
     _plmedian = ", ".join(["medianfile u 1:%d w lp lw 1.5 t '%s'"%(i+2,str(_desc.split()[1:][i])) for i in range(_nl)])
@@ -184,7 +185,7 @@ plot %s
 
 def get_lists( _path, _transpose=False):
 
-    onlyfiles = [ f for f in listdir(_path) if isfile(join(_path,f)) and f.find('output_') == 0]
+    onlyfiles = [ f for f in listdir(_path) if isfile(join(_path,f)) and f.find('output_') == 0 or f.find('matlab_output_') == 0]
 
     _tmp1= list(set([f.strip('output_.txt').split('_')[0] for f in onlyfiles]))
     _tmp2= list(set([f.strip('output_.txt').split('_')[1] for f in onlyfiles]))
@@ -363,6 +364,7 @@ def mcctable(_path,_inv=False):
     _list = f.readlines()
     f.close()
 
+    #print "LIST 1 %s" % (_list[1])
     create_general_gnuplot_configuration_for_mcc_curve(_title,_list[1],_inv)
 
 
