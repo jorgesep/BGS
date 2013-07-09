@@ -22,7 +22,7 @@ string chomp (string dir);
 unsigned int name_to_number(string file);
 
 //Return a list of PNG files from ground-truth directory
-void list_files(string directory, map<unsigned int,string>& list);
+void list_files(string directory, map<unsigned int,string>& list, string type = ".PNG");
 
 //Return a a point (x,y) from string 'x,y'
 Point stringToPoint(string);

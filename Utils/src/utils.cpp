@@ -44,7 +44,7 @@ unsigned int name_to_number(string file)
     return sn;
 }
   
-void list_files(string directory, map<unsigned int,string>& list)
+void list_files(string directory, map<unsigned int,string>& list, string type)
 {
     DIR *dir;
     struct dirent *entity;
@@ -58,7 +58,8 @@ void list_files(string directory, map<unsigned int,string>& list)
             if(entity->d_type == DT_DIR)
                 continue;
             if(entity->d_type == DT_REG) {
-                size_t found = file_name.find(".PNG");
+                //size_t found = file_name.find(".PNG");
+                size_t found = file_name.find(type);
                 if (found!=std::string::npos)
                     list[name_to_number(entity->d_name)]=full_file_name; 
            }
