@@ -82,6 +82,7 @@ int main( int argc, char** argv )
         }
         
     }
+    Performance perf;
 
     string ref, img2, img3, img;
     if (!reference.empty() && !input_image.empty()) {
@@ -89,14 +90,48 @@ int main( int argc, char** argv )
         img2= input_image;
     }
     else {
-        string img  = "/Users/jsepulve/Downloads/BGS/Performance/src/reference.jpg";
-        string ref  ("/Users/jsepulve/Downloads/BGS/Performance/src/reference.jpg");
-        string img2 ("/Users/jsepulve/Downloads/BGS/Performance/src/test1.jpg");
-        string img3 = "/Users/jsepulve/Downloads/BGS/Performance/src/test2.jpg";
+        string ref1,ref2,m_im1,m_im2,o_im1,o_im2;
+
+        //string img  = "/Users/jsepulve/Downloads/BGS/Performance/src/reference.jpg";
+        //string ref  ("/Users/jsepulve/Downloads/BGS/Performance/src/reference.jpg");
+        
+        ref1 = "/Users/jsepulve/Downloads/BGS/build/GT-00000216.PNG";
+        ref2 = "/Users/jsepulve/Downloads/BGS/build/GT-00000217.PNG";
+
+        m_im1 = "/Users/jsepulve/Downloads/BGS/build/matlab_fgkernel_216.png";
+        m_im2 = "/Users/jsepulve/Downloads/BGS/build/matlab_fgkernel_217.png";
+
+        o_im1 = "/Users/jsepulve/Downloads/BGS/build/216_fgmask.png";
+        o_im2 = "/Users/jsepulve/Downloads/BGS/build/217_fgmask.png";
+
+        Mat r1 = imread(ref1);
+        Mat r2 = imread(ref2);
+
+        Mat m1 = imread(m_im1);
+        Mat m2 = imread(m_im2);
+        
+        Mat o1 = imread(o_im1);
+        Mat o2 = imread(o_im2);
+        
+        //perf.countPixelsReferenceImage(r1);
+        //cout << perf.refToString() << endl;
+        
+        perf.pixelLevelCompare(r1, m1);
+        cout << perf.refToString() << endl;
+        cout << perf.asString() << endl;
+        perf.pixelLevelCompare(r2, m2);
+        cout << perf.asString() << endl;
+
+        perf.pixelLevelCompare(r1, o1);
+        cout << perf.asString() << endl;
+        perf.pixelLevelCompare(r2, o2);
+        cout << perf.asString() << endl;
+        
         //string img1 = "/Users/jsepulve/Tesis/Code/cpp/Modules/Performance/src/GT-00000363.PNG";
         //string img2 = "/Users/jsepulve/Tesis/Code/cpp/Modules/Performance/src/363.png";
     }
-    Performance perf;
+    
+    
     Mat im;
     im = imread(img.c_str(),CV_LOAD_IMAGE_COLOR);
 
@@ -120,6 +155,9 @@ int main( int argc, char** argv )
         cerr << "Could not open or find the images" << endl;
         return -1;
     }
+    
+    perf.countPixelsReferenceImage(im1);
+    cout << perf.refToString() << endl;
     
     //Performance::ContingencyMatrix index[3];
     perf.pixelLevelCompare(im1, im2);
