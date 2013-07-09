@@ -366,8 +366,6 @@ void operator()(const Range& range) const
 
             //just for debugging
             if (y0==228 && x==670)
-            //if (y0==200 && x==680)
-            //if (y0==160 && x==400)    
                 int temporary = y0;
             
 
@@ -567,18 +565,23 @@ void operator()(const Range& range) const
                 }
             }//make new mode if needed and exit
 
+            //set the number of modes
+            //modesUsed[x] = uchar(nmodes);
+            modesUsed[x] = (uchar)nmodes;
+            mask[x] = background ? 0 :
+            detectShadows && detectShadowGMM(data, nchannels, nmodes, gmm, mean, Tb, TB, tau, globalChange) ?
+            shadowVal : 255;
+                        
+            
             //just for debugging save parameters to output file
             if ( debugPt != Point(0,0) ) {
-                
                 if (debugPt.x == x && debugPt.y == y0){
-                    //if (y0==240 && x==670) {
                     //if (y0==228 && x==670) {
-                    //if (y0==160 && x==400) {
                     //std::ofstream outfile;
                     //outfile.open("bg_params_670_240.txt",ios::out | ios::app);
                     std::cout.precision(5);
                     cout 
-                    << debugPt.x << " " << debugPt.y << " "
+                    //<< debugPt.x << " " << debugPt.y << " "
                     << "mode: " << nmodes 
                     << " data: "   << (int)data[0]           << " " << (int)data[1]              << " " << (int)data[2]
                     << " bg_cnt: " << (int)bg_cnt[0]         << " " << (int)bg_cnt[1]            << " " << (int)bg_cnt[2]       << " " << (int)bg_cnt[3]
@@ -594,12 +597,6 @@ void operator()(const Range& range) const
             }
             
             
-            //set the number of modes
-            //modesUsed[x] = uchar(nmodes);
-            modesUsed[x] = (uchar)nmodes;
-            mask[x] = background ? 0 :
-                detectShadows && detectShadowGMM(data, nchannels, nmodes, gmm, mean, Tb, TB, tau, globalChange) ?
-                shadowVal : 255;
         }//end columns for
     }
 }
