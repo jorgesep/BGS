@@ -93,7 +93,9 @@ int main( int argc, char** argv )
 
     //declaration of local variables.
     map<unsigned int, string> gt_files;
+    map<unsigned int, string> im_files;
     map<unsigned int, string>::iterator it;
+    map<unsigned int, string>::iterator it_im;
     Mat gt_image;
     stringstream msg,ptmsg;
     ofstream outfile, ptfile, rocfile;
@@ -107,14 +109,31 @@ int main( int argc, char** argv )
     int cntTemporalWindow = 0;
     int gt_cnt = 0;
     int gt_size = -1;
+    int im_size = -1;
     mdgkt *filter;
+    bool processing_video = false;
 
     
     if (inputVideoName.empty()) {
         cout << "Insert video name" << endl;
         cmd.printParams();
-        return 0;
+        return -1;
     }
+    
+    //Check if input name if either a video or directory of jpeg files
+    if (FileExists(inputVideoName.c_str())) {
+        processing_video = true;
+    }
+    else {
+        // Read files from input deirectory
+        list_files(inputVideoName,im_files, ".jpg");
+        im_size = im_files.size();
+            
+        if (im_size == -1 || im_size == 0) {
+            cout << "Not valid ground images directory ... " << endl;
+            return -1;
+        }
+    }    
 
     //Load initialization parameters
     if (!initConfigName.empty()) {
@@ -144,19 +163,37 @@ int main( int argc, char** argv )
         }
     }
 
-
-    //create video object.
-    VideoCapture video(inputVideoName);
+    int width;
+    int height;
+    int delay;
+    VideoCapture video;
     
-    // Check video has been opened sucessfully
-    if (!video.isOpened())
-        return 0;
-
-    double rate= video.get(CV_CAP_PROP_FPS);
-    int width  = video.get(CV_CAP_PROP_FRAME_WIDTH);
-    int height = video.get(CV_CAP_PROP_FRAME_HEIGHT);
-    int delay  = 1000/rate;
-
+    if (processing_video) {
+        //create video object.
+        //VideoCapture video(inputVideoName);
+        video.open(inputVideoName);
+        
+        // Check video has been opened sucessfully
+        if (!video.isOpened())
+            return 0;
+        
+        double rate   = video.get(CV_CAP_PROP_FPS);
+        width         = video.get(CV_CAP_PROP_FRAME_WIDTH);
+        height        = video.get(CV_CAP_PROP_FRAME_HEIGHT);
+        delay         = 1000/rate;
+    }
+    else {
+        //create video object.
+        Mat imfile = imread(im_files[1]);
+        
+        // Check file has been opened sucessfully
+        if (imfile.data == NULL )
+            return 0;
+        
+        width  = imfile.cols;
+        height = imfile.rows;
+        delay  = 25;
+    }
 
     //Get specific point to be displayed in the image.
     //Check input point to display value
@@ -173,8 +210,6 @@ int main( int argc, char** argv )
         name << "pt_" << pt.x << "_" << pt.y << ".txt";
         ptfile.open(name.str().c_str());
     }
-
-
     
     //check if debug option is enabled
     //this will disable verbose mode
@@ -189,8 +224,6 @@ int main( int argc, char** argv )
         bg_model.setPointToDebug(pt);
         
     }
-
-
     
     // Create display windows 
     if (displayImages) { 
@@ -200,15 +233,7 @@ int main( int argc, char** argv )
         moveWindow("image"           ,20,20);
         moveWindow("foreground image",20,300);
         moveWindow("foreground mask" ,400,20);
-        //namedWindow("background image", CV_WINDOW_NORMAL);
-        //moveWindow("background image" ,20,500);
-        
-        //namedWindow("BG0", CV_WINDOW_NORMAL);
-        //namedWindow("BG1", CV_WINDOW_NORMAL);
     } 
-
-
-
     
     //spatio-temporal pre-processing filter for smoothing frames.
     if (applyFilter) {
@@ -218,20 +243,23 @@ int main( int argc, char** argv )
         
         for (int i=0; i<filter->getTemporalWindow(); i++) {
 
-            video >> frame;
+            frame = Scalar::all(0);
+            if (processing_video)
+                video >> frame;
+            else
+                frame = imread(im_files[i+1]);
             
             // Initialize in zero three channels of img kernel.
             if (i==0)
                 filter->initializeFirstImage(frame);
             
             //Apply filter and puts result in img.
+            //Note this filter also keeps internal copy of filter result.
             filter->SpatioTemporalPreprocessing(frame, img);
             
 
         }
     }
-    
-
     
     bg_model.initializeModel(img);
     //bg_model.loadModel();
@@ -245,14 +273,20 @@ int main( int argc, char** argv )
     // main loop 
     for(;;)
     {
-        img = Scalar::all(0);
-        frame = Scalar::all(0);
+        //clean up all Mat structures.
+        //This is done because, performance was improved.
+        img    = Scalar::all(0);
+        frame  = Scalar::all(0);
         fgmask = Scalar::all(0);
         
         //Checks if filter option was enabled.
         if (applyFilter) {
 
-            video >> frame;
+            if (processing_video)
+                video >> frame;
+            else
+                frame = imread(im_files[cnt+1]);
+
             if (frame.empty()) 
                 break;
 
@@ -260,9 +294,12 @@ int main( int argc, char** argv )
             //note this filter return a Mat CV_32FC3 type.
             filter->SpatioTemporalPreprocessing(frame, img);
         }
-        else
-            video >> img;
-               
+        else {
+            if (processing_video)
+                video >> img;
+            else
+                img = imread(im_files[cnt+1]);
+        } 
             
         if( fgimg.empty() )
             fgimg.create(img.size(), img.type());

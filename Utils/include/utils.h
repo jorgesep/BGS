@@ -30,5 +30,7 @@ Point stringToPoint(string);
 //This function show four images in one window.
 void showMultipleImages();
 
+bool FileExists( const char* );
+
 }
 #endif

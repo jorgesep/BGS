@@ -93,5 +93,34 @@ void showMultipleImages()
     //cout << "HOLA" << endl;
 }
 
+    
+bool FileExists( const char* FileName )
+{
+    DIR *dir;
+    struct dirent *entity;
+    dir = opendir(FileName);
+    if (dir != NULL){
+        entity = readdir(dir);
+        if(entity->d_type == DT_DIR)
+            return false;
+        if(entity->d_type == DT_REG)
+           return true;
+
+    }
+    return true;
+
+    /*
+    FILE* fp = NULL;
+        
+    fp = fopen( FileName, "rb" );
+    if( fp != NULL )
+    {
+        fclose( fp );
+        return true;
+    }       
+    return false;
+    */
+}    
+    
 
 }
