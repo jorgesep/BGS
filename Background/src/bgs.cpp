@@ -246,6 +246,8 @@ int main( int argc, char** argv )
     for(;;)
     {
         img = Scalar::all(0);
+        frame = Scalar::all(0);
+        fgmask = Scalar::all(0);
         
         //Checks if filter option was enabled.
         if (applyFilter) {
