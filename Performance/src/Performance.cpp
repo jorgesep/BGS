@@ -208,11 +208,10 @@ void Performance::pixelLevelCompare(const Mat& _reference, const Mat& _image)
         const uchar* _img_data= _img.ptr<uchar>(j);
         
         for (int i=0; i<nc; i++) {
-            
             //convert images to 0 or 1, binary form
             // 1: white 0: black
-            uchar uref = _ref_data[i]/200;
-            uchar ucmp = _img_data[i]/200;
+            uchar uref = _ref_data[i] > 0 ? 1 : 0;
+            uchar ucmp = _img_data[i] > 128 ? 1 : 0;
             
             if (uref == ucmp) {
                 if (uref)//silhouette
@@ -290,10 +289,11 @@ void Performance::countPixelsReferenceImage(const Mat& image)
         const uchar* data= img.ptr<uchar>(j);
         for (int i=0; i<nc; i++) {
 
-                if (data[i] > threshold)
-                    r_ptr->tp++;
-                else
-                    r_ptr->tn++;
+            //if (data[i] > threshold)
+            if (data[i] > 0)
+                r_ptr->tp++;
+            else
+                r_ptr->tn++;
         }
     }
 
