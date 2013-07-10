@@ -241,14 +241,14 @@ int main( int argc, char** argv )
         filter = mdgkt::Instance();
         cntTemporalWindow = filter->getTemporalWindow();
         
-        for (int i=0; i<filter->getTemporalWindow(); i++) {
+        for (int i=0; i<cntTemporalWindow; i++) {
 
             frame = Scalar::all(0);
             if (processing_video)
                 video >> frame;
             else
                 frame = imread(im_files[i+1]);
-            
+
             // Initialize in zero three channels of img kernel.
             if (i==0)
                 filter->initializeFirstImage(frame);
@@ -261,8 +261,23 @@ int main( int argc, char** argv )
         }
     }
     
+    
+    //
+//    vector<Mat> nchannels;
+//    split(img,nchannels);
+//    cout << nchannels.at(2) << endl;    
+//    cout << nchannels.at(1) << endl;    
+//    cout << nchannels.at(0) << endl;    
+//    cout << img << endl;   
+    //
+    
+    
+    
+    
     bg_model.initializeModel(img);
     //bg_model.loadModel();
+    Mat bgimg;
+    bg_model.getBackground(bgimg);
 
     
     //Shift backward or forward ground truth sequence counter.
@@ -278,6 +293,9 @@ int main( int argc, char** argv )
         img    = Scalar::all(0);
         frame  = Scalar::all(0);
         fgmask = Scalar::all(0);
+        
+        //before processing image get background
+        
         
         //Checks if filter option was enabled.
         if (applyFilter) {
@@ -303,10 +321,18 @@ int main( int argc, char** argv )
             
         if( fgimg.empty() )
             fgimg.create(img.size(), img.type());
-       
-        //Calling background subtraction algorithm.
-        bg_model(img, fgmask, update_bg_model ? -1 : 0);
         
+        //Global illumination changing factor 'g' between reference image ir and current image ic.
+        //double globalIlluminationFactor = icdm::Instance()->getIlluminationFactor(bgimg,img);
+        double globalIlluminationFactor = icdm::Instance()->getIlluminationFactor(img,bgimg);
+        //cout << "GLOBAL: " << globalIlluminationFactor << endl;
+        //globalIlluminationFactor = 1.0;
+
+        //Calling background subtraction algorithm.
+        bg_model(img, fgmask, update_bg_model ? -1 : 0, globalIlluminationFactor);
+        
+        bg_model.getBackgroundImage(bgimg);
+
         fgimg = Scalar::all(0);
         
         img.copyTo(fgimg, fgmask);
@@ -402,8 +428,8 @@ int main( int argc, char** argv )
 
     if (!groundTruthName.empty()) {
         cout    << perf.metricsStatisticsAsString() << endl;
-        outfile << "#TPR TNR SPE MCC  TPR TNR SPE MCC" << endl;
-        outfile << "#" << perf.metricsStatisticsAsString() << endl;
+        outfile << "# TPR FPR SPE MCC  TPR TNR SPE MCC" << endl;
+        outfile << "# " << perf.metricsStatisticsAsString() << endl;
         outfile.close();
         rocfile.open("roc.txt", std::fstream::out | std::fstream::app);
         rocfile << bg_model.getRange() << " " 

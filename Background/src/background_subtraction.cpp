@@ -886,7 +886,7 @@ void BackgroundSubtractorMOG3::initialize(Size _frameSize, int _frameType)
 
 }
 
-void BackgroundSubtractorMOG3::operator()(InputArray _image, OutputArray _fgmask, double learningRate)
+void BackgroundSubtractorMOG3::operator()(InputArray _image, OutputArray _fgmask, double learningRate, double globalIlluminationFactor)
 {
     Mat image = _image.getMat();
     bool needToInitialize = (nframes == 0 || 
@@ -911,9 +911,10 @@ void BackgroundSubtractorMOG3::operator()(InputArray _image, OutputArray _fgmask
     CV_Assert(learningRate >= 0);
 
     //Global illumination changing factor 'g' between reference image ir and current image ic.
-    float globalIlluminationFactor = 1.0;
-    
+    //float globalIlluminationFactor = 1.0;
+    /*
     Mat bg;
+    bg = Scalar::all(0);
     getBackgroundImage(bg);
     //getBackground(bg);
     globalIlluminationFactor = icdm::Instance()->getIlluminationFactor(bg,image);
@@ -922,7 +923,8 @@ void BackgroundSubtractorMOG3::operator()(InputArray _image, OutputArray _fgmask
         globalIlluminationFactor = 2;
     //cout << "GLOBAL ILLUMINATION FACTOR: " << globalIlluminationFactor << endl;
     
-    //globalIlluminationFactor = 1;
+    //globalIlluminationFactor = 1.0;
+    */
     
     BackgroundSubtractionInvoker invoker(
             image, 
@@ -950,11 +952,12 @@ void BackgroundSubtractorMOG3::operator()(InputArray _image, OutputArray _fgmask
 
 }
 
+
 void BackgroundSubtractorMOG3::getBackgroundImage(OutputArray backgroundImage) const
 {
     int nchannels = CV_MAT_CN(frameType);
     CV_Assert( nchannels == 3 );
-    Mat meanBackground(frameSize, CV_8UC3, Scalar::all(0));
+    Mat meanBackground(frameSize, CV_32FC3, Scalar::all(0));
 
     int firstGaussianIdx = 0;
     const GMM* gmm = (GMM*)GaussianModel.data;
@@ -978,7 +981,7 @@ void BackgroundSubtractorMOG3::getBackgroundImage(OutputArray backgroundImage) c
             }
 
             meanVal *= (1.f / totalWeight);
-            meanBackground.at<Vec3b>(row, col) = Vec3b(meanVal);
+            meanBackground.at<Vec3f>(row, col) = Vec3f(meanVal);
             firstGaussianIdx += nmixtures;
         }
     }
@@ -1004,16 +1007,77 @@ void BackgroundSubtractorMOG3::getBackgroundImage(OutputArray backgroundImage) c
     }
 }
 
+
+
+/*
+void BackgroundSubtractorMOG3::getBackgroundImage(OutputArray backgroundImage) const
+{
+    int nchannels = CV_MAT_CN(frameType);
+    CV_Assert( nchannels == 3 );
+    Mat meanBackground(frameSize, CV_8UC3, Scalar::all(0));
+    
+    int firstGaussianIdx = 0;
+    const GMM* gmm = (GMM*)GaussianModel.data;
+    const Vec3f* mean = reinterpret_cast<const Vec3f*>(gmm + frameSize.width*frameSize.height*nmixtures);
+    
+    for(int row=0; row<meanBackground.rows; row++)
+    {
+        for(int col=0; col<meanBackground.cols; col++)
+        {
+            int nmodes = CurrentGaussianModel.at<uchar>(row, col);
+            Vec3f meanVal;
+            float totalWeight = 0.f;
+            for(int gaussianIdx = firstGaussianIdx; gaussianIdx < firstGaussianIdx + nmodes; gaussianIdx++)
+            {
+                GMM gaussian = gmm[gaussianIdx];
+                meanVal += gaussian.weight * mean[gaussianIdx];
+                totalWeight += gaussian.weight;
+                
+                if(totalWeight > backgroundRatio)
+                    break;
+            }
+            
+            meanVal *= (1.f / totalWeight);
+            meanBackground.at<Vec3b>(row, col) = Vec3b(meanVal);
+            firstGaussianIdx += nmixtures;
+        }
+    }
+    
+    switch(CV_MAT_CN(frameType))
+    {
+        case 1:
+        {
+            vector<Mat> channels;
+            split(meanBackground, channels);
+            channels[0].copyTo(backgroundImage);
+            break;
+        }
+            
+        case 3:
+        {
+            meanBackground.copyTo(backgroundImage);
+            break;
+        }
+            
+        default:
+            CV_Error(CV_StsUnsupportedFormat, "");
+    }
+}
+*/
+
+
+
 void BackgroundSubtractorMOG3::getBackground(OutputArray _bgImage)
 {
     int nchannels = CV_MAT_CN(frameType);
-    //CV_MAT_TYPE(<#flags#>)
     CV_Assert( nchannels == 3 );
-    _bgImage.create(frameSize, CV_8UC3);
+    //_bgImage.create(frameSize, CV_8UC3);
+    _bgImage.create(frameSize, CV_32FC3);
 
     // get Mat header.
     Mat bg0 = _bgImage.getMat();
     bg0     = Scalar::all(0);
+    //Background = Scalar::all(0);
     
     // number of lines
     int nl= bg0.rows; 
@@ -1027,17 +1091,18 @@ void BackgroundSubtractorMOG3::getBackground(OutputArray _bgImage)
     }
 
     const float* bg1_data;
-    uchar* bg0_data;
+    float* bg0_data;
     
     for (int j=0; j<nl; j++) {
         //get a pointer of each row
         bg1_data = Background.ptr<float>(j);
-        bg0_data = bg0.ptr<uchar>(j);
+        bg0_data = bg0.ptr<float>(j);
         
         for (int i=0; i<nc*nchannels; i++) {
-            uchar tmp = static_cast<uchar>(bg1_data[i]);
+            //uchar tmp = static_cast<uchar>(bg1_data[i]);
             //bg0_data[i] = (uchar)bg1_data[i];
-            bg0_data[i] = tmp;
+            //bg0_data[i] = tmp;
+            bg0_data[i] = bg1_data[i];
         }
     }
 

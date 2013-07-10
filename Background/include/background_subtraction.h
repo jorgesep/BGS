@@ -29,7 +29,7 @@ public:
     //! the destructor
     virtual ~BackgroundSubtractorMOG3();
     //! the update operator
-    virtual void operator()(InputArray image, OutputArray fgmask, double learningRate=-1);
+    virtual void operator()(InputArray image, OutputArray fgmask, double learningRate=-1, double globalIlluminationFactor=1);
 
     //! computes a background image which are the mean of all background gaussians
     virtual void getBackgroundImage(OutputArray backgroundImage) const;
