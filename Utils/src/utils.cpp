@@ -30,6 +30,17 @@ string chomp (string dir)
     return dir;
 }
 
+string fileName (const string dir) 
+{
+    string _dir = chomp(dir);
+    unsigned found = _dir.find_last_of("/");
+    if (found != string::npos )
+        return _dir.substr(found+1,_dir.size());
+    return _dir;
+        
+}
+    
+    
 unsigned int name_to_number(string file)
 {
     unsigned int sn;

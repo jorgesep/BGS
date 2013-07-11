@@ -17,6 +17,9 @@ namespace bgs {
 
 // Remove last position slash of input string.
 string chomp (string dir);
+    
+// Remove slash and return file name.
+string fileName(const string dir);
 
 // Convert name of ground-truth files in a number identifier.
 unsigned int name_to_number(string file);

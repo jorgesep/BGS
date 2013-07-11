@@ -18,6 +18,14 @@ FILE ( GLOB CONFIG ${PROJECT_SOURCE_DIR}/../config/*.jpg ${PROJECT_SOURCE_DIR}/.
 #MESSAGE("Performance Source Dir set to ${Performance_SOURCE_DIR}")
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/../include)
+INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include)
+# This include was added to support boost/program_options.hpp
+#INCLUDE_DIRECTORIES("/opt/local/include")
+find_package( Boost REQUIRED COMPONENTS program_options regex )
+include_directories( ${Boost_INCLUDE_DIRS} )
+#find_library(Logging log4cplus PATHS /opt/local/lib)
+
+link_directories(${BGS_BINARY_DIR}/Utils)
 
 # Set DEBUG option
 OPTION(DEBUG "DEBUG option to print out more info" ON)
@@ -32,6 +40,10 @@ TARGET_LINK_LIBRARIES( testMatBinary ${OpenCV_LIBS} )
 ADD_EXECUTABLE( testPerformance testPerformance )
 TARGET_LINK_LIBRARIES( testPerformance Performance ${OpenCV_LIBS} )
 set_property(TARGET testPerformance PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
+ADD_EXECUTABLE( pmbgs Measure )
+TARGET_LINK_LIBRARIES( pmbgs Performance ${Boost_PROGRAM_OPTIONS_LIBRARY} Utils )
+set_property(TARGET pmbgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_LIBRARY(Performance SHARED Performance)
 target_link_libraries(Performance ${OpenCV_LIBS})
