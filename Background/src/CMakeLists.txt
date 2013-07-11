@@ -7,7 +7,8 @@ SET( sagmm_MINOR_VERSION 1 )
 SET( sagmm_PATCH_LEVEL 0 )
 
 SET( CMAKE_C_FLAGS "-Wall -g" )
-#SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
+#SET( CMAKE_CXX_FLAGS "-Wall -g -03" )
+SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
 endif()
