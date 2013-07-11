@@ -120,12 +120,12 @@ int main( int argc, char** argv )
         return -1;
     }
     
-    //Check if input name if either a video or directory of jpeg files
+    //Check if input name is either a video or jpeg files directory 
     if (FileExists(inputVideoName.c_str())) {
         processing_video = true;
     }
     else {
-        // Read files from input deirectory
+        // Read files from input directory
         list_files(inputVideoName,im_files, ".jpg");
         im_size = im_files.size();
             
@@ -165,7 +165,7 @@ int main( int argc, char** argv )
 
     int width;
     int height;
-    int delay;
+    int delay = 25;
     VideoCapture video;
     
     if (processing_video) {
@@ -192,7 +192,6 @@ int main( int argc, char** argv )
         
         width  = imfile.cols;
         height = imfile.rows;
-        delay  = 25;
     }
 
     //Get specific point to be displayed in the image.
@@ -262,17 +261,6 @@ int main( int argc, char** argv )
     }
     
     
-    //
-//    vector<Mat> nchannels;
-//    split(img,nchannels);
-//    cout << nchannels.at(2) << endl;    
-//    cout << nchannels.at(1) << endl;    
-//    cout << nchannels.at(0) << endl;    
-//    cout << img << endl;   
-    //
-    
-    
-    
     
     bg_model.initializeModel(img);
     //bg_model.loadModel();
@@ -323,10 +311,8 @@ int main( int argc, char** argv )
             fgimg.create(img.size(), img.type());
         
         //Global illumination changing factor 'g' between reference image ir and current image ic.
-        //double globalIlluminationFactor = icdm::Instance()->getIlluminationFactor(bgimg,img);
         double globalIlluminationFactor = icdm::Instance()->getIlluminationFactor(img,bgimg);
         //cout << "GLOBAL: " << globalIlluminationFactor << endl;
-        //globalIlluminationFactor = 1.0;
 
         //Calling background subtraction algorithm.
         bg_model(img, fgmask, update_bg_model ? -1 : 0, globalIlluminationFactor);

@@ -42,6 +42,8 @@ private:
     vector<Mat> kernelImageB;
 
     Mat temporalGaussFilter;
+    Mat spatialGaussFilter;
+
     
 
     static const unsigned char SPATIO_WINDOW;
