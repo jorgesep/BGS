@@ -52,6 +52,7 @@ const char* keys =
     "{ n | frame   | 0     | Shift ground-truth in +/- n frames, e.g -n -3 or -n 3}"
     "{ f | filter  | true  | Apply smooth preprocessing filter, Default true.}"
     "{ p | point   |       | Print out RGB values of point,  e.g -p 250,300 }"
+    "{ m | mask    | false | Save foreground masks to fgmask directory}"
     "{ v | verbose | false | Print out output messages by console}"
     "{ d | debug   | false | Debug mode, print by console internal gaussian parameters }"
     "{ s | show    | false | Show images of video sequence }"
@@ -70,10 +71,12 @@ int main( int argc, char** argv )
     if (cmd.get<bool>("help"))
     {
         cout << "Background Subtraction Program." << endl;
-        cout << "------------------------------------------------------------------------------" << endl;
-        cout << "Process input video comparing with its ground truth." << endl;
+        cout << "------------------------------------------------------------" << endl;
+        cout << "Process input video comparing with its ground truth.        " << endl;
+        cout << "Example:                                                    " << endl;
+        cout << "./bgs -i dir_jpeg/ -g ground_truth/ -c config/init.txt -s   " << endl << endl;
         cmd.printParams();
-        cout << "------------------------------------------------------------------------------" << endl <<endl;
+        cout << "------------------------------------------------------------" << endl <<endl;
         return 0;
     }
 
@@ -89,6 +92,7 @@ int main( int argc, char** argv )
     const bool displayImages     = cmd.get<bool>("show");
     const bool applyFilter       = cmd.get<bool>("filter");
     const bool debugPoint        = cmd.get<bool>("debug");
+    const bool saveMask          = cmd.get<bool>("mask");
     bool verbose                 = cmd.get<bool>("verbose");
 
     //declaration of local variables.
@@ -112,6 +116,7 @@ int main( int argc, char** argv )
     int im_size = -1;
     mdgkt *filter;
     bool processing_video = false;
+    
 
     
     if (inputVideoName.empty()) {
@@ -120,7 +125,7 @@ int main( int argc, char** argv )
         return -1;
     }
     
-    //Check if input name is either a video or jpeg files directory 
+    //Input name could be either a video or jpeg files directory 
     if (FileExists(inputVideoName.c_str())) {
         processing_video = true;
     }
@@ -144,6 +149,14 @@ int main( int argc, char** argv )
     if (verbose)
         cout << bg_model.initParametersToString() << endl;
 
+    //Create foreground mask directory
+    if (saveMask) {
+        CreateDirectory("fgmask");
+        outfile.open("fgmask/parameters.txt");
+        outfile << bg_model.initParametersAsOneLineString() << endl;
+        outfile.close();
+    }
+    
     //Check ground-truth
     if (!groundTruthName.empty()) {
         compare=true;
@@ -170,7 +183,6 @@ int main( int argc, char** argv )
     
     if (processing_video) {
         //create video object.
-        //VideoCapture video(inputVideoName);
         video.open(inputVideoName);
         
         // Check video has been opened sucessfully
@@ -322,11 +334,18 @@ int main( int argc, char** argv )
         fgimg = Scalar::all(0);
         
         img.copyTo(fgimg, fgmask);
+        
+        //save mask to local directory
+        if (saveMask) {
+            stringstream str;
+            str << "fgmask/FG_" <<  cnt << ".jpg";
+            
+            vector<int> compression_params;
+            compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+            compression_params.push_back(100);
+            imwrite(str.str(), fgmask, compression_params);
+        }
        
-        //Get background image
-        //Mat bgimg;
-        //bg_model.getBackground(bgimg);
-        //bg_model.getBackgroundImage(bgimg);
 
 
         //looking for ground truth file
@@ -409,10 +428,10 @@ int main( int argc, char** argv )
         
     }
 
-
-    perf.calculateFinalPerformanceOfMetrics();
-
-    if (!groundTruthName.empty()) {
+    if (!groundTruthName.empty() && compare) {
+        
+        perf.calculateFinalPerformanceOfMetrics();
+        
         cout    << perf.metricsStatisticsAsString() << endl;
         outfile << "# TPR FPR SPE MCC  TPR TNR SPE MCC" << endl;
         outfile << "# " << perf.metricsStatisticsAsString() << endl;
