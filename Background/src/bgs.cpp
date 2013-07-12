@@ -126,7 +126,7 @@ int main( int argc, char** argv )
     }
     
     //Input name could be either a video or jpeg files directory 
-    if (FileExists(inputVideoName.c_str())) {
+    if (!DirectoryExists(inputVideoName.c_str())) {
         processing_video = true;
     }
     else {

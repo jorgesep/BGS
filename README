@@ -3,6 +3,9 @@ Silhouette modules
 All BGS modules can be built out of source directory with CMake tool. 
 Check that all OpenCV libraries must be installed previous to build BGS modules.
 
+0.- Install boost
+$ sudo apt-get install libboost-program-options
+
 1.- Get BGS modules, e.g clone from http://github.com
 2.- Make a build directory from outside of BGS
    $ mkdir build

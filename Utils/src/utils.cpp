@@ -36,7 +36,7 @@ string chomp (string dir)
 string fileName (const string dir) 
 {
     string _dir = chomp(dir);
-    unsigned found = _dir.find_last_of("/");
+    size_t  found = _dir.find_last_of("/");
     if (found != string::npos )
         return _dir.substr(found+1,_dir.size());
     return _dir;
@@ -153,6 +153,7 @@ void showMultipleImages()
     
 bool FileExists( const char* FileName )
 {
+
     DIR *dir;
     struct dirent *entity;
     dir = opendir(FileName);
@@ -164,7 +165,7 @@ bool FileExists( const char* FileName )
            return true;
 
     }
-    return false;
+    return true;
 
     /*
     FILE* fp = NULL;
