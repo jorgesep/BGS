@@ -59,6 +59,7 @@ int main( int argc, char** argv )
     bool verbose = false;
     string mask_dir;
     string ground_dir;
+    string param("parameters.txt");
 
     /** Define and parse the program options 
      */ 
@@ -70,6 +71,7 @@ int main( int argc, char** argv )
         ("verbose,v", "display messages")
         ("ground,g", po::value<string>(), "input ground-truth directory")
         ("mask,m",   po::value<string>(), "input foreground mask directory")
+        ("param,p",   po::value<string>(), "file with message that contains main parameters of algorithm.")
         ;
 
         po::variables_map vm;
@@ -96,7 +98,7 @@ int main( int argc, char** argv )
             ground_dir = vm["ground"].as<string>();
             
             // Read files from input directory
-            list_files(ground_dir,gt_files, ".jpg");
+            list_files(ground_dir,gt_files);
             gt_size = gt_files.size();
             
             if (gt_size == -1 || gt_size == 0) {
@@ -108,15 +110,20 @@ int main( int argc, char** argv )
         if (vm.count("mask")) {
             mask_dir = vm["mask"].as<string>();
             
+            param = mask_dir + "/" +  param;
             // Read files from input directory
-            list_files(mask_dir,gt_files);
+            list_files(mask_dir,fg_files, ".jpg");
             fg_size = fg_files.size();
             
             if (fg_size == -1 || fg_size == 0) {
-                cout << "Not valid ground-truth images directory ... " << endl;
+                cout << "Not valid foreground mask directory ... " << endl;
                 return -1;
             }
 
+        }
+        
+        if (vm.count("param")) {
+            param = vm["param"].as<string>();
         }
 
     }
@@ -135,19 +142,43 @@ int main( int argc, char** argv )
     stringstream msg,ptmsg;
     ofstream outfile, ptfile, rocfile;
 
-    int cnt = 0;
+    int cnt  = 0;
+    int size = 0;
     Mat gtimg;
     Mat fgmask;
+    string header("# ");
     
     //Comparing size of both lists.
     //In case they are not the similar takes lower size
-    cnt = fg_size <= gt_size ? fg_size : gt_size;
+    size = fg_size <= gt_size ? fg_size : gt_size;
+    
+    // Takes ground truth as reference for counter.
+    cnt = gt_files.begin()->first;
+    
+    //for (gt_it = gt_files.begin(); gt_it != gt_files.end(); gt_it++)
+    //    cout << gt_it->first << " " << gt_it->second << endl;
     
     //Opening result file.
-    outfile.open("measure.txt");
-    outfile << "# " << mask_dir << " " <<  ground_dir  << endl; 
+    ifstream infile (param.c_str());
+    if (infile.is_open()) {
+        stringstream lines;
+        string line;
+        
+        while ( infile.good() ) {
+            getline (infile,line);
+            lines << line;
+        }
+        
+        header = lines.str();
+        
+        infile.close();
+    }
 
-    for (int i=0; i<cnt; i++)
+    outfile.open("measure.txt");
+    outfile << header << endl;
+    //outfile << "# " << mask_dir << " " <<  ground_dir  << endl; 
+
+    for ( int i= cnt; i<size + cnt; i++)
     {
         if ( (gt_it = gt_files.find(i)) != gt_files.end() && (fg_it = fg_files.find(i)) != fg_files.end()) {
         
@@ -167,7 +198,7 @@ int main( int argc, char** argv )
                 
                 //Debug messages.
                 msg.str("");
-                msg     << i << " " << fileName(fg_it->second) << " " << measure->asString() << " " ;
+                msg     << fileName(fg_it->second) << " " << measure->asString() << " " ;
                 outfile << msg.str() << endl;
                 
                 if (verbose)
