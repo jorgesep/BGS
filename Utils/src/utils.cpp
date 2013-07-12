@@ -17,6 +17,9 @@
 #include <opencv2/opencv.hpp>
 #include "utils.h"
 
+#include <list>
+#include <regex.h>
+
 using namespace cv;
 using namespace std;
 
@@ -43,11 +46,19 @@ string fileName (const string dir)
     
 unsigned int name_to_number(string file)
 {
+    
+    //std::regex e ("-|_|.");
     unsigned int sn;
     string gt ("-");
     string str(".");
     //Remove ".png"
     size_t pos  = file.find(gt);
+    
+    if (pos == string::npos) {
+        pos = -1;
+        pos = file.find("_");
+    }
+    
     size_t size = file.substr(pos+1).find_last_of(str);
     string number = file.substr(pos+1,size);
     stringstream tmpstr(number);
@@ -59,7 +70,7 @@ void list_files(string directory, map<unsigned int,string>& list, string type)
 {
     DIR *dir;
     struct dirent *entity;
-
+    
     dir = opendir(directory.c_str());
     if (dir != NULL){
         while ( (entity = readdir(dir)) ){
@@ -78,6 +89,41 @@ void list_files(string directory, map<unsigned int,string>& list, string type)
     }
 }
 
+
+void find_dir_by_name(string name, map<unsigned int,string>& list)
+{
+    DIR *dir;
+    struct dirent *entity;
+    
+    std::list<string> _list;
+    std::list<std::string>::iterator it;
+    
+    dir = opendir(".");
+    if (dir != NULL){
+        while ( (entity = readdir(dir)) ){
+            const string file_name = entity->d_name;
+            //const string full_file_name = chomp(directory) + "/" + file_name;
+            if(entity->d_type == DT_REG)
+                continue;
+            if(entity->d_type == DT_DIR){
+                size_t found = file_name.find(name);
+                if (found!=std::string::npos)
+                    _list.push_back(entity->d_name);
+            }
+        }
+    }
+    if (_list.size() > 0 ) {
+        _list.sort();
+        int i = 1;
+        for (it=_list.begin(); it!=_list.end(); ++it) {
+            list[i++] = *it;
+        }
+    }
+}
+
+    
+    
+    
 Point stringToPoint(string _point)
 {
     if (_point.empty())
@@ -118,7 +164,7 @@ bool FileExists( const char* FileName )
            return true;
 
     }
-    return true;
+    return false;
 
     /*
     FILE* fp = NULL;
@@ -134,4 +180,43 @@ bool FileExists( const char* FileName )
 }    
     
 
+bool DirectoryExists( const char* path )
+{
+    if ( path == NULL) return false;
+    
+    DIR *pDir;
+    bool bExists = false;
+    
+    pDir = opendir (path);
+    
+    if (pDir != NULL)
+    {
+        bExists = true;    
+        (void) closedir (pDir);
+    }
+    
+    return bExists;
+}    
+    
+void CreateDirectory( const char* path) 
+{
+    map<unsigned int,string> maplist;
+    
+    if (DirectoryExists(path)) {
+        find_dir_by_name(path,maplist);
+        map<unsigned int, string>::iterator it = maplist.end();
+        it--;
+        int number = (*it).first;
+        
+        stringstream str;
+        
+        str << path << "." << number;
+        cout << "Moving directory " << path << " to " << str.str() << endl;
+
+        rename(path, str.str().c_str());
+    }
+    
+    mkdir(path,S_IRWXU|S_IRGRP|S_IXGRP);
+}
+    
 }

@@ -7,6 +7,7 @@
 #include <map>
 #include <iomanip>
 #include <dirent.h>
+#include <sys/stat.h>
 
 #include <opencv2/opencv.hpp>
 
@@ -26,7 +27,9 @@ unsigned int name_to_number(string file);
 
 //Return a list of PNG files from ground-truth directory
 void list_files(string directory, map<unsigned int,string>& list, string type = ".PNG");
+void find_dir_by_name(string , map<unsigned int,string>& );
 
+    
 //Return a a point (x,y) from string 'x,y'
 Point stringToPoint(string);
 
@@ -34,6 +37,8 @@ Point stringToPoint(string);
 void showMultipleImages();
 
 bool FileExists( const char* );
+bool DirectoryExists( const char* path );
+void CreateDirectory( const char* path);
 
 }
 #endif
