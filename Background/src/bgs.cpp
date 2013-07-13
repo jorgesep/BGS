@@ -73,6 +73,7 @@ int main( int argc, char** argv )
         cout << "Background Subtraction Program." << endl;
         cout << "------------------------------------------------------------" << endl;
         cout << "Process input video comparing with its ground truth.        " << endl;
+        cout << "OpenCV Version : "  << CV_VERSION << endl;
         cout << "Example:                                                    " << endl;
         cout << "./bgs -i dir_jpeg/ -g ground_truth/ -c config/init.txt -s   " << endl << endl;
         cmd.printParams();
