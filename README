@@ -1,26 +1,32 @@
-Silhouette modules
-==================
+Background Subtraction modules
+==============================
 All BGS modules can be built out of source directory with CMake tool. 
 Check that all OpenCV libraries must be installed previous to build BGS modules.
 
-0.- Install boost
+Ubuntu Installation
+------------------
+1.- Install OpenCV
+2.- Install boost packages
+
 $ sudo apt-get install libboost-program-options
+$ sudo apt-get install libboost-regexp
 
-1.- Get BGS modules, e.g clone from http://github.com
-2.- Make a build directory from outside of BGS
-   $ mkdir build
-   $ cd build
-3.- MAC OS X 
-   $ export CC=gcc; export CXX=g++; cmake ../BGS
-4.- Linux
-   $ cmake ../BGS
-5.- Build modules
-
-5.1.- Linux commands
+3.- Get BGS modules from github
 $ git clone https://github.com/jorgesep/BGS.git
+
+4.- Make a build directory from outside of BGS
+$ cd BGS
 $ mkdir build
 $ cd build
-$ cmake -G "Unix Makefiles" ../BGS
+
+5.- run cmake command.
+$ cmake ..
+
+6.- Build modules
 $ make
+
+MAC OS X Installation
+---------------------
+$ export CC=gcc; export CXX=g++; cmake ../BGS
 
 
