@@ -15,7 +15,9 @@ SET( CMAKE_CXX_FLAGS "-g" )
 #    set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
 #endif()
 
-FILE ( GLOB SRCS *.cpp *.h )
+FILE ( GLOB TEST test*.cpp *.h )
+FILE ( GLOB SRCS NP*.cpp *.h )
+#FILE ( GLOB SRCS *.cpp *.h )
 find_package( Boost REQUIRED COMPONENTS program_options )
 
 # openCV library
@@ -30,6 +32,10 @@ INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/ThirdParty/bg_subt_code)
 link_directories(${BGS_BINARY_DIR}/Utils)
 link_directories(${BGS_BINARY_DIR}/Performance)
 link_directories(${BGS_BINARY_DIR}/lib)
+
+ADD_EXECUTABLE( testNP ${TEST} )
+TARGET_LINK_LIBRARIES( testNP  ${OpenCV_LIBS} NonParametricModel  ${Boost_PROGRAM_OPTIONS_LIBRARY} )
+set_property(TARGET testNP PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_EXECUTABLE( npbgs ${SRCS} )
 TARGET_LINK_LIBRARIES( npbgs NonParametricModel  Utils Performance ${Boost_PROGRAM_OPTIONS_LIBRARY} ${OpenCV_LIBS} )

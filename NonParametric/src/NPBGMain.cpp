@@ -77,7 +77,7 @@ int main( int argc, char** argv )
     const string groundTruthName = cmd.get<string>("gtruth");
     const string initConfigName  = cmd.get<string>("config");
     const string displayPoint    = cmd.get<string>("point");
-    const int shiftFrame         = cmd.get<int>("frame");
+    int shiftFrame         = cmd.get<int>("frame");
     const bool saveMask          = cmd.get<bool>("mask");
     bool verbose                 = cmd.get<bool>("verbose");
     const bool displayImages     = cmd.get<bool>("show");
@@ -165,7 +165,8 @@ int main( int argc, char** argv )
         
         delay         = 1000/video.get(CV_CAP_PROP_FPS);
         video >> imframe;
-        video.set(CV_CAP_PROP_POS_FRAMES,0);
+        //video.set(CV_CAP_PROP_POS_FRAMES,0);
+        shiftFrame += 1;
         
     }
     else {
@@ -240,7 +241,7 @@ int main( int argc, char** argv )
     BGModel->SetThresholds(th,ap);
     
     unsigned int bgflag = 1;
-    //BGModel->SetUpdateFlag(bgflag);
+    BGModel->SetUpdateFlag(bgflag);
     
     //Shift backward or forward ground truth sequence counter.
     //for compensating pre-processed frames in the filter.
