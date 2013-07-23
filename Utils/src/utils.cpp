@@ -1,6 +1,6 @@
 /*******************************************************************************
- * <Self-Adaptive Gaussian Mixture Model.>
- * Copyright (C) <2013>  <name of author>
+ * This file is part of libraries to evaluate performance of Background 
+ * Subtraction algorithms.
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -219,5 +219,50 @@ void CreateDirectory( const char* path)
     
     mkdir(path,S_IRWXU|S_IRGRP|S_IXGRP);
 }
-    
+
+NPBGConfig* loadInitParametersFromFile(string config)
+{
+    NPBGConfig * cfg = new NPBGConfig;
+
+    ifstream file(config.c_str());
+    if (!file.good()) return cfg;
+
+    string line;
+    while(getline(file, line)) {
+        if(!line.length() || line[0] == '#') continue;
+        else {
+            //Removing spaces
+            string::iterator end_pos = std::remove(line.begin(), line.end(), ' ');
+            line.erase(end_pos, line.end());
+            size_t pos = line.find(":");
+            size_t end = line.size() - pos;
+          
+            if (pos != string::npos) {
+                stringstream strval( line.substr( pos+1,end ) );
+               
+                if      (line.substr(0,pos) == "FramesToLearn" )
+                    strval >> cfg->FramesToLearn;
+                else if (line.substr(0,pos) == "SequenceLength" )
+                    strval >> cfg->SequenceLength;
+                else if (line.substr(0,pos) == "TimeWindowSize" )
+                     strval >> cfg->TimeWindowSize;
+                else if (line.substr(0,pos) == "SDEstimationFlag" )
+                     strval >> cfg->SDEstimationFlag;
+                else if (line.substr(0,pos) == "SDEstimationFlag" )
+                     strval >> cfg->SDEstimationFlag;
+                else if (line.substr(0,pos) == "UseColorRatiosFlag" )
+                     strval >> cfg->UseColorRatiosFlag;
+                else if (line.substr(0,pos) == "Threshold1" )
+                     strval >> cfg->Threshold1;
+                else if (line.substr(0,pos) == "Threshold2" )
+                     strval >> cfg->Threshold2;
+                else if (line.substr(0,pos) == "Alpha" )
+                    strval >> cfg->Alpha;
+            }
+        }
+    }
+    return cfg;
+}
+
+
 }

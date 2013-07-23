@@ -1,6 +1,6 @@
 /*******************************************************************************
- * <Self-Adaptive Gaussian Mixture Model.>
- * Copyright (C) <2013>  <name of author>
+ * This file is part of libraries to evaluate performance of Background 
+ * Subtraction algorithms.
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

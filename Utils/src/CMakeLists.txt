@@ -39,6 +39,6 @@ set(OpenCV_DIR "/usr/local/share/OpenCV"
            CACHE PATH "The path where OpenCVConfig.cmake is placed")
 FIND_PACKAGE( OpenCV REQUIRED )
 
-ADD_LIBRARY(Utils ${SRCS}) 
-#set_property(TARGET Util PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
+ADD_LIBRARY(Utils SHARED ${SRCS}) 
+set_property(TARGET Utils PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
