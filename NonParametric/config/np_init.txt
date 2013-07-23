@@ -1,0 +1,8 @@
+FramesToLearn : 10
+SequenceLength : 50
+TimeWindowSize : 100
+SDEstimationFlag : 1
+UseColorRatiosFlag : 1
+Threshold1 : 10e-8
+Threshold2 : 10e-8
+Alpha : 0.3
