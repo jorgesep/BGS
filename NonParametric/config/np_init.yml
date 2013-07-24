@@ -1,0 +1,11 @@
+%YAML:1.0
+FramesToLearn: 10
+SequenceLength: 50
+TimeWindowSize: 100
+UpdateFlag: 1
+SDEstimationFlag: 1
+UseColorRatiosFlag: 1
+Threshold: 10.0e-08
+Alpha: 0.3
+InitFGMaskFrame: 216
+EndFGMaskFrame: 682 

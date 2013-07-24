@@ -72,39 +72,39 @@ static char THIS_FILE[]=__FILE__;
 
 
 void BGR2SnGnRn(unsigned char * in_image,
-				unsigned char * out_image,
-				unsigned int rows,
-				unsigned int cols)
+                unsigned char * out_image,
+                unsigned int rows,
+                unsigned int cols)
 {
-	unsigned int i;
-	unsigned int r1,r2,r3;
-	unsigned int r,g,b;
-	double s;
-
-	for (i=0;i<rows*cols*3;i+=3) {
-		b=in_image[i];
-		g=in_image[i+1];
-		r=in_image[i+2];
-
-		// calculate color ratios
-		s = (double) 255 / (double) (b+g+r+30);
-
-		/*
-		r1 =(unsigned int) ((b+10) * s);
-		r2 =(unsigned int) ((g+10) * s);
-		r3 =(unsigned int) ((r+10) * s);
-
-		*/
-
-		r2 =(unsigned int) ((g+10) * s );
-		r3 =(unsigned int) ((r+10) * s );
-
-
-		out_image[i]  =(unsigned char) (((unsigned int) b+g+r) / 3);
-		out_image[i+1]=(unsigned char) (r2 > 255 ? 255 : r2) ;
-		out_image[i+2]=(unsigned char) (r3 > 255 ? 255 : r3) ;
-
-	}
+    unsigned int i;
+    unsigned int r1,r2,r3;
+    unsigned int r,g,b;
+    double s;
+    
+    for (i=0;i<rows*cols*3;i+=3) {
+        b=in_image[i];
+        g=in_image[i+1];
+        r=in_image[i+2];
+        
+        // calculate color ratios
+        s = (double) 255 / (double) (b+g+r+30);
+        
+        /*
+        r1 =(unsigned int) ((b+10) * s);
+        r2 =(unsigned int) ((g+10) * s);
+        r3 =(unsigned int) ((r+10) * s);
+        
+        */
+        
+        r2 =(unsigned int) ((g+10) * s );
+        r3 =(unsigned int) ((r+10) * s );
+        
+        
+        out_image[i]  =(unsigned char) (((unsigned int) b+g+r) / 3);
+        out_image[i+1]=(unsigned char) (r2 > 255 ? 255 : r2) ;
+        out_image[i+2]=(unsigned char) (r3 > 255 ? 255 : r3) ;
+        
+    }
 
 }
 
@@ -112,29 +112,29 @@ void BGR2SnGnRn(unsigned char * in_image,
 
 
 void UpdateDiffHist(unsigned char * image1,
-					unsigned char * image2,
-					DynamicMedianHistogram * pHist)
+                    unsigned char * image2,
+                    DynamicMedianHistogram * pHist)
 {
-	unsigned int j;
-	int bin,diff;
-
-	unsigned int  imagesize	=pHist->imagesize;
-	unsigned char histbins	=pHist->histbins;
-	unsigned char * pAbsDiffHist =pHist->Hist;
-
-
-	int histbins_1=histbins-1;
-	for (j=0;j<imagesize;j++) {
-		diff=(int) image1[j] - (int) image2[j];
-
-		diff=abs(diff);
-
-		// update histogram
-
-		bin=(diff < histbins ? diff : histbins_1);
-
-		pAbsDiffHist[j*histbins+bin]++;
-	}
+    unsigned int j;
+    int bin,diff;
+    
+    unsigned int  imagesize    =pHist->imagesize;
+    unsigned char histbins    =pHist->histbins;
+    unsigned char * pAbsDiffHist =pHist->Hist;
+    
+    
+    int histbins_1=histbins-1;
+    for (j=0;j<imagesize;j++) {
+        diff=(int) image1[j] - (int) image2[j];
+        
+        diff=abs(diff);
+        
+        // update histogram
+        
+        bin=(diff < histbins ? diff : histbins_1);
+        
+        pAbsDiffHist[j*histbins+bin]++;
+    }
 
 
 }
@@ -142,190 +142,189 @@ void UpdateDiffHist(unsigned char * image1,
 
 void FindHistMedians(DynamicMedianHistogram * pAbsDiffHist)
 {
-	unsigned char * Hist		=pAbsDiffHist->Hist;
-	unsigned char * MedianBins	=pAbsDiffHist->MedianBins;
-	unsigned char * AccSum		=pAbsDiffHist->AccSum;
-	unsigned char histsum		=pAbsDiffHist->histsum;
-	unsigned char histbins		=pAbsDiffHist->histbins;
-	unsigned int imagesize		=pAbsDiffHist->imagesize;
-
-	int sum;
-	int bin;
-	unsigned int histindex;
-	unsigned char medianCount=histsum/2;
-	unsigned int j;
-
-	// find medians
-	for (j=0;j<imagesize;j++) {
-		// find the median
-		bin=0;
-		sum=0;
-
-		histindex=j*histbins;
-
-		while (sum < medianCount) {
-			sum+=Hist[histindex+bin];
-			bin++;
-		}
-
-		bin--;
-		
-		MedianBins[j]=bin;
-		//pMedianFreq[j]=medianCount+pAbsDiffHist[histindex+bin]-sum;
-		AccSum[j]=sum;
-
-		//assert(pMedianFreq[j] >=0 && pMedianFreq[j] <= pAbsDiffHist[histindex+bin] );
-	}
-
+    unsigned char * Hist        =pAbsDiffHist->Hist;
+    unsigned char * MedianBins    =pAbsDiffHist->MedianBins;
+    unsigned char * AccSum        =pAbsDiffHist->AccSum;
+    unsigned char histsum        =pAbsDiffHist->histsum;
+    unsigned char histbins        =pAbsDiffHist->histbins;
+    unsigned int imagesize        =pAbsDiffHist->imagesize;
+    
+    int sum;
+    int bin;
+    unsigned int histindex;
+    unsigned char medianCount=histsum/2;
+    unsigned int j;
+    
+    // find medians
+    for (j=0;j<imagesize;j++) {
+        // find the median
+        bin=0;
+        sum=0;
+        
+        histindex=j*histbins;
+        
+        while (sum < medianCount) {
+            sum+=Hist[histindex+bin];
+            bin++;
+        }
+        
+        bin--;
+        
+        MedianBins[j]=bin;
+        //pMedianFreq[j]=medianCount+pAbsDiffHist[histindex+bin]-sum;
+        AccSum[j]=sum;
+        
+        //assert(pMedianFreq[j] >=0 && pMedianFreq[j] <= pAbsDiffHist[histindex+bin] );
+    }
+    
 }
 
 
 DynamicMedianHistogram
 BuildAbsDiffHist(unsigned char * pSequence,
-				unsigned int rows,
-				unsigned int cols,
-				unsigned int color_channels,
-				unsigned int SequenceLength,
-				unsigned int histbins)
+                 unsigned int rows,
+                 unsigned int cols,
+                 unsigned int color_channels,
+                 unsigned int SequenceLength,
+                 unsigned int histbins)
 {
-	
-	unsigned int imagesize=rows*cols*color_channels;
-	unsigned int i;
-
-	DynamicMedianHistogram Hist;
-
-	unsigned char * pAbsDiffHist = 
-		new unsigned char[rows*cols*color_channels*histbins];
-
-	unsigned char * pMedianBins =
-		new unsigned char[rows*cols*color_channels];
-
-	unsigned char * pMedianFreq =
-		new unsigned char[rows*cols*color_channels];
-
-
-	unsigned char * pAccSum =
-		new unsigned char[rows*cols*color_channels];
-
-
-	memset(pAbsDiffHist,0,rows*cols*color_channels*histbins);
-
-
-	Hist.Hist=pAbsDiffHist;
-	Hist.MedianBins=pMedianBins;
-	Hist.MedianFreq=pMedianFreq;
-	Hist.AccSum=pAccSum;
-	Hist.histbins=histbins;
-	Hist.imagesize=rows*cols*color_channels;
-	Hist.histsum=SequenceLength-1;
-
-	unsigned char * image1, * image2;
-	for (i=1;i<SequenceLength;i++) {
-		// find diff between frame i,i-1;
-		
-		image1=pSequence+(i-1)*imagesize;
-		image2=pSequence+(i)*imagesize;
-
-		UpdateDiffHist(image1,image2,&Hist);
-
-	}
-
-
-	FindHistMedians(&Hist);
-
-	/*
-	int sum;
-	int bin;
-	unsigned int histindex;
-	unsigned char medianCount=Hist.histsum/2;
-
-	// find medians
-	for (j=0;j<imagesize;j++) {
-		// find the median
-		bin=0;
-		sum=0;
-
-		histindex=j*histbins;
-
-		while (sum < medianCount) {
-			sum+=pAbsDiffHist[histindex+bin];
-			bin++;
-		}
-
-		bin--;
-		
-		pMedianBins[j]=bin;
-		pMedianFreq[j]=medianCount+pAbsDiffHist[histindex+bin]-sum;
-		pAccSum[j]=sum;
-
-		//assert(pMedianFreq[j] >=0 && pMedianFreq[j] <= pAbsDiffHist[histindex+bin] );
-	}
-	*/
-	return Hist;
+    
+    unsigned int imagesize=rows*cols*color_channels;
+    unsigned int i;
+    
+    DynamicMedianHistogram Hist;
+    
+    unsigned char * pAbsDiffHist = 
+        new unsigned char[rows*cols*color_channels*histbins];
+    
+    unsigned char * pMedianBins =
+        new unsigned char[rows*cols*color_channels];
+    
+    unsigned char * pMedianFreq =
+        new unsigned char[rows*cols*color_channels];
+    
+    unsigned char * pAccSum =
+        new unsigned char[rows*cols*color_channels];
+    
+    
+    memset(pAbsDiffHist,0,rows*cols*color_channels*histbins);
+    
+    
+    Hist.Hist=pAbsDiffHist;
+    Hist.MedianBins=pMedianBins;
+    Hist.MedianFreq=pMedianFreq;
+    Hist.AccSum=pAccSum;
+    Hist.histbins=histbins;
+    Hist.imagesize=rows*cols*color_channels;
+    Hist.histsum=SequenceLength-1;
+    
+    unsigned char * image1, * image2;
+    for (i=1;i<SequenceLength;i++) {
+        // find diff between frame i,i-1;
+        
+        image1=pSequence+(i-1)*imagesize;
+        image2=pSequence+(i)*imagesize;
+        
+        UpdateDiffHist(image1,image2,&Hist);
+    
+    }
+    
+    
+    FindHistMedians(&Hist);
+    
+    /*
+    int sum;
+    int bin;
+    unsigned int histindex;
+    unsigned char medianCount=Hist.histsum/2;
+    
+    // find medians
+    for (j=0;j<imagesize;j++) {
+        // find the median
+        bin=0;
+        sum=0;
+        
+        histindex=j*histbins;
+        
+        while (sum < medianCount) {
+            sum+=pAbsDiffHist[histindex+bin];
+            bin++;
+        }
+        
+        bin--;
+        
+        pMedianBins[j]=bin;
+        pMedianFreq[j]=medianCount+pAbsDiffHist[histindex+bin]-sum;
+        pAccSum[j]=sum;
+        
+        //assert(pMedianFreq[j] >=0 && pMedianFreq[j] <= pAbsDiffHist[histindex+bin] );
+    }
+    */
+    return Hist;
 
 }
 
 
 
 void EstimateSDsFromAbsDiffHist(DynamicMedianHistogram * pAbsDiffHist,
-								unsigned char * pSDs,
-								unsigned int imagesize,
-								double MinSD,
-								double MaxSD,
-								unsigned int kernelbins)
+                                unsigned char * pSDs,
+                                unsigned int imagesize,
+                                double MinSD,
+                                double MaxSD,
+                                unsigned int kernelbins)
 {
 
-	double v;
-	double kernelbinfactor=(kernelbins-1)/(MaxSD-MinSD);
-	int medianCount; 
-	int sum;
-	int bin;
-	unsigned int histindex;
-	unsigned int j;
-	unsigned int x1,x2;
-
-	unsigned char * Hist		=pAbsDiffHist->Hist;
-	unsigned char * MedianBins	=pAbsDiffHist->MedianBins;
-	unsigned char * AccSum		=pAbsDiffHist->AccSum;
-	unsigned char histsum		=pAbsDiffHist->histsum;
-	unsigned char histbins		=pAbsDiffHist->histbins;
-
-	medianCount=(histsum)/2 ;
-
-	for (j=0;j<imagesize;j++) {
-
-		histindex=j*histbins;
-
-		bin=MedianBins[j];
-		sum=AccSum[j];
-
-		x1=sum-Hist[histindex+bin];
-		x2=sum;
-
-		// interpolate to get the median
-		// x1 < 50 % < x2
-		
-		v =1.04 * ((double) bin-(double) (x2-medianCount)/ (double) (x2-x1));
-
-
-		v=( v <= MinSD ? MinSD : v);
-
-		// convert sd to kernel table bin
-
-		bin=(int) (v>=MaxSD ? kernelbins-1 : floor((v-MinSD)*kernelbinfactor+.5));
-			
-		assert(bin>=0 && bin < kernelbins );
-
-		
-		pSDs[j]=bin;
-
-
-
-	}
+    double v;
+    double kernelbinfactor=(kernelbins-1)/(MaxSD-MinSD);
+    int medianCount; 
+    int sum;
+    int bin;
+    unsigned int histindex;
+    unsigned int j;
+    unsigned int x1,x2;
+    
+    unsigned char * Hist        =pAbsDiffHist->Hist;
+    unsigned char * MedianBins    =pAbsDiffHist->MedianBins;
+    unsigned char * AccSum      =pAbsDiffHist->AccSum;
+    unsigned char histsum       =pAbsDiffHist->histsum;
+    unsigned char histbins      =pAbsDiffHist->histbins;
+    
+    medianCount=(histsum)/2 ;
+    
+    for (j=0;j<imagesize;j++) {
+    
+        histindex=j*histbins;
+        
+        bin=MedianBins[j];
+        sum=AccSum[j];
+        
+        x1=sum-Hist[histindex+bin];
+        x2=sum;
+        
+        // interpolate to get the median
+        // x1 < 50 % < x2
+        
+        v =1.04 * ((double) bin-(double) (x2-medianCount)/ (double) (x2-x1));
+        
+        
+        v=( v <= MinSD ? MinSD : v);
+        
+        // convert sd to kernel table bin
+        
+        bin=(int) (v>=MaxSD ? kernelbins-1 : floor((v-MinSD)*kernelbinfactor+.5));
+            
+        assert(bin>=0 && bin < kernelbins );
+        
+        
+        pSDs[j]=bin;
+    
+    
+    
+    }
 
 
 }
-				 
+                 
 
 
 
@@ -346,106 +345,104 @@ NPBGSubtractor::~NPBGSubtractor()
 
 
 int NPBGSubtractor::Intialize(unsigned int prows,
-															unsigned int pcols,
-															unsigned int pcolor_channels,
-															unsigned int SequenceLength,
-															unsigned int pTimeWindowSize,
-															unsigned char pSDEstimationFlag,
-															unsigned char pUseColorRatiosFlag)
+                              unsigned int pcols,
+                              unsigned int pcolor_channels,
+                              unsigned int SequenceLength,
+                              unsigned int pTimeWindowSize,
+                              unsigned char pSDEstimationFlag,
+                              unsigned char pUseColorRatiosFlag)
 {
 
-	rows=prows;
-	cols=pcols;
-	color_channels=pcolor_channels;
-	imagesize=rows*cols*color_channels;
-	SdEstimateFlag = pSDEstimationFlag;
-	UseColorRatiosFlag=pUseColorRatiosFlag;
-	//SampleSize = SequenceLength;
-
-	AdaptBGFlag=false;
-	//
-	SubsetFlag=true;
-
-	UpdateSDRate=0;
-
-	BGModel = new NPBGmodel(rows,cols,color_channels,SequenceLength,pTimeWindowSize,500);
-
-	Pimage1= new double[rows*cols];
-	Pimage2= new double[rows*cols];
-
-	tempFrame= new unsigned char[rows*cols*3];
-
-	imageindex = new ImageIndex;
-	imageindex->List= new unsigned int [rows*cols];
-
-	// error checking
-	if (BGModel==NULL)
-		return 0;
-
-	return 1;
+    rows=prows;
+    cols=pcols;
+    color_channels=pcolor_channels;
+    imagesize=rows*cols*color_channels;
+    SdEstimateFlag = pSDEstimationFlag;
+    UseColorRatiosFlag=pUseColorRatiosFlag;
+    //SampleSize = SequenceLength;
+    
+    AdaptBGFlag=false;
+    //
+    SubsetFlag=true;
+    
+    UpdateSDRate=0;
+    
+    BGModel = new NPBGmodel(rows,cols,color_channels,SequenceLength,pTimeWindowSize,500);
+    
+    Pimage1= new double[rows*cols];
+    Pimage2= new double[rows*cols];
+    
+    tempFrame= new unsigned char[rows*cols*3];
+    
+    imageindex = new ImageIndex;
+    imageindex->List= new unsigned int [rows*cols];
+    
+    // error checking
+    if (BGModel==NULL)
+        return 0;
+    
+    return 1;
 
 }
 
 void NPBGSubtractor::AddFrame(unsigned char * ImageBuffer)
 {
 
-		if (UseColorRatiosFlag && color_channels==3) {
-			BGR2SnGnRn(ImageBuffer,ImageBuffer,rows,cols);
-		}
-
-
-		BGModel->AddFrame(ImageBuffer);
-		
+    if (UseColorRatiosFlag && color_channels==3) {
+        BGR2SnGnRn(ImageBuffer,ImageBuffer,rows,cols);
+    }
+    
+    BGModel->AddFrame(ImageBuffer);
+        
 }
 
 void NPBGSubtractor::Estimation()
 {
 
-	int SampleSize=BGModel->SampleSize;
-
-
-	memset(BGModel->TemporalMask,0,rows*cols*BGModel->TemporalBufferLength);
-
-	BGModel->AccMask= new unsigned int [rows*cols];
-	memset(BGModel->AccMask,0,rows*cols*sizeof(unsigned int));
-
-
-	unsigned char * pSDs = new unsigned char[rows*cols*color_channels];
-	
-	//DynamicMedianHistogram AbsDiffHist;
-
-	int Abshistbins = 20;
-	
-	TimeIndex=0;
-
-	// estimate standard deviations 
-	
-	if (SdEstimateFlag){
-		
-		//EstimateSDs(pSequence,rows,cols,color_channels,
-		//	Length,5,segmamin,segmamax,kernelbins,pSDs);		
-
-		AbsDiffHist=BuildAbsDiffHist(BGModel->Sequence,rows,cols,color_channels,SampleSize,Abshistbins);
-
-		EstimateSDsFromAbsDiffHist(&AbsDiffHist,pSDs,imagesize,SEGMAMIN,SEGMAMAX,SEGMABINS);
-		
-
-	}
-	else
-	{
-		unsigned int bin;
-
-		bin=(unsigned int) floor(((DEFAULTSEGMA-SEGMAMIN)*SEGMABINS)/(SEGMAMAX-SEGMAMIN));
-
-		memset(pSDs,bin,rows*cols*color_channels*sizeof(unsigned char));
-	}
-
-
-	BGModel->SDbinsImage=pSDs;
-
-
-	// Generate the Kernel
-	KernelTable=new KernelLUTable(KERNELHALFWIDTH,SEGMAMIN,SEGMAMAX,SEGMABINS);
+    int SampleSize=BGModel->SampleSize;
+    
+    
+    memset(BGModel->TemporalMask,0,rows*cols*BGModel->TemporalBufferLength);
+    
+    BGModel->AccMask= new unsigned int [rows*cols];
+    memset(BGModel->AccMask,0,rows*cols*sizeof(unsigned int));
+    
+    
+    unsigned char * pSDs = new unsigned char[rows*cols*color_channels];
+    
+    //DynamicMedianHistogram AbsDiffHist;
+    
+    int Abshistbins = 20;
+    
+    TimeIndex=0;
+    
+    // estimate standard deviations 
+    
+    if (SdEstimateFlag){
+        
+        //EstimateSDs(pSequence,rows,cols,color_channels,
+        //    Length,5,segmamin,segmamax,kernelbins,pSDs);        
+        
+        AbsDiffHist=BuildAbsDiffHist(BGModel->Sequence,rows,cols,color_channels,SampleSize,Abshistbins);
+        
+        EstimateSDsFromAbsDiffHist(&AbsDiffHist,pSDs,imagesize,SEGMAMIN,SEGMAMAX,SEGMABINS);
+    
+    }
+    else
+    {
+        unsigned int bin;
+        
+        bin=(unsigned int) floor(((DEFAULTSEGMA-SEGMAMIN)*SEGMABINS)/(SEGMAMAX-SEGMAMIN));
+        
+        memset(pSDs,bin,rows*cols*color_channels*sizeof(unsigned char));
+    }
+    
+    
+    BGModel->SDbinsImage=pSDs;
+    
+    
+    // Generate the Kernel
+    KernelTable=new KernelLUTable(KERNELHALFWIDTH,SEGMAMIN,SEGMAMAX,SEGMABINS);
 
 
 
@@ -455,89 +452,89 @@ void NPBGSubtractor::Estimation()
 /*********************************************************************/
 
 void BuildImageIndex(unsigned char * Image,
-					 ImageIndex * imageIndex,
-					 unsigned int rows,
-					 unsigned int cols)
+                     ImageIndex * imageIndex,
+                     unsigned int rows,
+                     unsigned int cols)
 {
-	unsigned int i,j;
-	unsigned int r,c;
-	unsigned int * image_list;
+    unsigned int i,j;
+    unsigned int r,c;
+    unsigned int * image_list;
 
-	j=cols+1;
-	i=0;
-	image_list=imageIndex->List;
+    j=cols+1;
+    i=0;
+    image_list=imageIndex->List;
 
-	for (r=1;r<rows-1;r++){
-		for (c=1;c<cols-1;c++){
-			if (Image[j]) {
-				image_list[i++]=j;
-			}
-			j++;
-		}
-		j+=2;
-	}
-	
-	imageIndex->cnt=i;
+    for (r=1;r<rows-1;r++){
+        for (c=1;c<cols-1;c++){
+            if (Image[j]) {
+                image_list[i++]=j;
+            }
+            j++;
+        }
+        j+=2;
+    }
+    
+    imageIndex->cnt=i;
 
 }
 
 /*********************************************************************/
 
 void HystExpandOperatorIndexed(unsigned char * inImage,
-							ImageIndex * inIndex,
-							double * Pimage,
-							double hyst_th,
-							unsigned char * outImage,
-							ImageIndex * outIndex,
-							unsigned int urows,
-							unsigned int ucols)
+                            ImageIndex * inIndex,
+                            double * Pimage,
+                            double hyst_th,
+                            unsigned char * outImage,
+                            ImageIndex * outIndex,
+                            unsigned int urows,
+                            unsigned int ucols)
 {
-	unsigned int * in_list;
-	unsigned int in_cnt;
-	unsigned int * out_list;
+    unsigned int * in_list;
+    unsigned int in_cnt;
+    unsigned int * out_list;
 
-	int rows,cols;
+    int rows,cols;
 
-	int Nbr[9];
-	unsigned int i,j;
-	unsigned int k;
-	unsigned int idx;
+    int Nbr[9];
+    unsigned int i,j;
+    unsigned int k;
+    unsigned int idx;
 
-	rows=(int)  urows;
-	cols=(int)  ucols;
+    rows=(int)  urows;
+    cols=(int)  ucols;
 
-	in_cnt=inIndex->cnt;
-	in_list=inIndex->List;
+    in_cnt=inIndex->cnt;
+    in_list=inIndex->List;
 
-	Nbr[0]=-cols-1;
-	Nbr[1]=-cols;
-	Nbr[2]=-cols+1;
-	Nbr[3]=-1;
-	Nbr[4]=0;
-	Nbr[5]=1;
-	Nbr[6]=cols-1;
-	Nbr[7]=cols;
-	Nbr[8]=cols+1;
-
-
-	memset(outImage,0,rows*cols);
+    Nbr[0]=-cols-1;
+    Nbr[1]=-cols;
+    Nbr[2]=-cols+1;
+    Nbr[3]=-1;
+    Nbr[4]=0;
+    Nbr[5]=1;
+    Nbr[6]=cols-1;
+    Nbr[7]=cols;
+    Nbr[8]=cols+1;
 
 
-	out_list=outIndex->List;
-	k=0;
-	for (i=0; i<in_cnt;i++)
-		for (j=0;j<9;j++) {
-			idx=in_list[i]+Nbr[j];
-
-			if (Pimage[idx] < hyst_th ) {
-				outImage[idx]=255;
-			}
-		}
+    memset(outImage,0,rows*cols);
 
 
-	// build index for out image
+    out_list=outIndex->List;
+    k=0;
+    for (i=0; i<in_cnt;i++)
+        for (j=0;j<9;j++) {
+            idx=in_list[i]+Nbr[j];
 
-	BuildImageIndex(outImage,outIndex,urows,ucols);
+            if (Pimage[idx] < hyst_th ) {
+                outImage[idx]=255;
+            }
+        }
+
+
+    // build index for out image
+
+    BuildImageIndex(outImage,outIndex,urows,ucols);
 
 }
 
@@ -546,61 +543,61 @@ void HystExpandOperatorIndexed(unsigned char * inImage,
 /*********************************************************************/
 
 void HystShrinkOperatorIndexed(unsigned char * inImage,
-							ImageIndex * inIndex,
-							double * Pimage,
-							double hyst_th,
-							unsigned char * outImage,
-							ImageIndex * outIndex,
-							unsigned int urows,
-							unsigned int ucols)
+                            ImageIndex * inIndex,
+                            double * Pimage,
+                            double hyst_th,
+                            unsigned char * outImage,
+                            ImageIndex * outIndex,
+                            unsigned int urows,
+                            unsigned int ucols)
 {
 
-	unsigned int * in_list;
-	unsigned int in_cnt;
-	unsigned int * out_list;
+    unsigned int * in_list;
+    unsigned int in_cnt;
+    unsigned int * out_list;
 
-	int rows,cols;
+    int rows,cols;
 
-	int Nbr[9];
-	unsigned int i,j;
-	unsigned int k,idx;
+    int Nbr[9];
+    unsigned int i,j;
+    unsigned int k,idx;
 
-	rows=(int) urows;
-	cols=(int) ucols;
+    rows=(int) urows;
+    cols=(int) ucols;
 
-	in_cnt=inIndex->cnt;
-	in_list=inIndex->List;
+    in_cnt=inIndex->cnt;
+    in_list=inIndex->List;
 
-	Nbr[0]=-cols-1;
-	Nbr[1]=-cols;
-	Nbr[2]=-cols+1;
-	Nbr[3]=-1;
-	Nbr[4]=0;
-	Nbr[5]=1;
-	Nbr[6]=cols-1;
-	Nbr[7]=cols;
-	Nbr[8]=cols+1;
-
-
-	memset(outImage,0,rows*cols);
-
-	out_list=outIndex->List;
-	k=0;
-	for (i=0; i<in_cnt;i++) {
-		idx=in_list[i];
-		j=0;
-		
-		while ( j<9 && inImage[idx+Nbr[j]]){
-			j++;
-		}
-		
-		if (j>=9 || Pimage[idx] <= hyst_th) {
-			outImage[idx]=255;
-		}
-	}
+    Nbr[0]=-cols-1;
+    Nbr[1]=-cols;
+    Nbr[2]=-cols+1;
+    Nbr[3]=-1;
+    Nbr[4]=0;
+    Nbr[5]=1;
+    Nbr[6]=cols-1;
+    Nbr[7]=cols;
+    Nbr[8]=cols+1;
 
 
-	BuildImageIndex(outImage,outIndex,rows,cols);
+    memset(outImage,0,rows*cols);
+
+    out_list=outIndex->List;
+    k=0;
+    for (i=0; i<in_cnt;i++) {
+        idx=in_list[i];
+        j=0;
+        
+        while ( j<9 && inImage[idx+Nbr[j]]){
+            j++;
+        }
+        
+        if (j>=9 || Pimage[idx] <= hyst_th) {
+            outImage[idx]=255;
+        }
+    }
+
+
+    BuildImageIndex(outImage,outIndex,rows,cols);
 
 
 }
@@ -611,114 +608,114 @@ void HystShrinkOperatorIndexed(unsigned char * inImage,
 /*********************************************************************/
 
 void ExpandOperatorIndexed(unsigned char * inImage,
-							ImageIndex * inIndex,
-							unsigned char * outImage,
-							ImageIndex * outIndex,
-							unsigned int urows,
-							unsigned int ucols)
+                            ImageIndex * inIndex,
+                            unsigned char * outImage,
+                            ImageIndex * outIndex,
+                            unsigned int urows,
+                            unsigned int ucols)
 {
-	unsigned int * in_list;
-	unsigned int in_cnt;
-	unsigned int * out_list;
+    unsigned int * in_list;
+    unsigned int in_cnt;
+    unsigned int * out_list;
 
-	int rows,cols;
+    int rows,cols;
 
-	int Nbr[9];
-	unsigned int i,j;
-	unsigned int k;
-	unsigned int idx;
+    int Nbr[9];
+    unsigned int i,j;
+    unsigned int k;
+    unsigned int idx;
 
-	rows=(int)  urows;
-	cols=(int)  ucols;
+    rows=(int)  urows;
+    cols=(int)  ucols;
 
-	in_cnt=inIndex->cnt;
-	in_list=inIndex->List;
+    in_cnt=inIndex->cnt;
+    in_list=inIndex->List;
 
-	Nbr[0]=-cols-1;
-	Nbr[1]=-cols;
-	Nbr[2]=-cols+1;
-	Nbr[3]=-1;
-	Nbr[4]=0;
-	Nbr[5]=1;
-	Nbr[6]=cols-1;
-	Nbr[7]=cols;
-	Nbr[8]=cols+1;
-
-
-	memset(outImage,0,rows*cols);
+    Nbr[0]=-cols-1;
+    Nbr[1]=-cols;
+    Nbr[2]=-cols+1;
+    Nbr[3]=-1;
+    Nbr[4]=0;
+    Nbr[5]=1;
+    Nbr[6]=cols-1;
+    Nbr[7]=cols;
+    Nbr[8]=cols+1;
 
 
-	out_list=outIndex->List;
-	k=0;
-	for (i=0; i<in_cnt;i++)
-		for (j=0;j<9;j++) {
-			idx=in_list[i]+Nbr[j];
-			outImage[idx]=255;
-		}
+    memset(outImage,0,rows*cols);
 
 
-	// build index for out image
+    out_list=outIndex->List;
+    k=0;
+    for (i=0; i<in_cnt;i++)
+        for (j=0;j<9;j++) {
+            idx=in_list[i]+Nbr[j];
+            outImage[idx]=255;
+        }
 
-	BuildImageIndex(outImage,outIndex,rows,cols);
+
+    // build index for out image
+
+    BuildImageIndex(outImage,outIndex,rows,cols);
 
 }
 
 /*********************************************************************/
 
 void ShrinkOperatorIndexed(unsigned char * inImage,
-							ImageIndex * inIndex,
-							unsigned char * outImage,
-							ImageIndex * outIndex,
-							unsigned int urows,
-							unsigned int ucols)
+                            ImageIndex * inIndex,
+                            unsigned char * outImage,
+                            ImageIndex * outIndex,
+                            unsigned int urows,
+                            unsigned int ucols)
 {
 
-	unsigned int * in_list;
-	unsigned int in_cnt;
-	unsigned int * out_list;
+    unsigned int * in_list;
+    unsigned int in_cnt;
+    unsigned int * out_list;
 
-	int rows,cols;
+    int rows,cols;
 
-	int Nbr[9];
-	unsigned int i,j;
-	unsigned int k,idx;
+    int Nbr[9];
+    unsigned int i,j;
+    unsigned int k,idx;
 
-	rows=(int) urows;
-	cols=(int) ucols;
+    rows=(int) urows;
+    cols=(int) ucols;
 
-	in_cnt=inIndex->cnt;
-	in_list=inIndex->List;
+    in_cnt=inIndex->cnt;
+    in_list=inIndex->List;
 
-	Nbr[0]=-cols-1;
-	Nbr[1]=-cols;
-	Nbr[2]=-cols+1;
-	Nbr[3]=-1;
-	Nbr[4]=0;
-	Nbr[5]=1;
-	Nbr[6]=cols-1;
-	Nbr[7]=cols;
-	Nbr[8]=cols+1;
-
-
-	memset(outImage,0,rows*cols);
-
-	out_list=outIndex->List;
-	k=0;
-	for (i=0; i<in_cnt;i++) {
-		idx=in_list[i];
-		j=0;
-		
-		while ( j<9 && inImage[idx+Nbr[j]]){
-			j++;
-		}
-		
-		if (j>=9) {
-			outImage[idx]=255;
-		}
-	}
+    Nbr[0]=-cols-1;
+    Nbr[1]=-cols;
+    Nbr[2]=-cols+1;
+    Nbr[3]=-1;
+    Nbr[4]=0;
+    Nbr[5]=1;
+    Nbr[6]=cols-1;
+    Nbr[7]=cols;
+    Nbr[8]=cols+1;
 
 
-	BuildImageIndex(outImage,outIndex,rows,cols);
+    memset(outImage,0,rows*cols);
+
+    out_list=outIndex->List;
+    k=0;
+    for (i=0; i<in_cnt;i++) {
+        idx=in_list[i];
+        j=0;
+        
+        while ( j<9 && inImage[idx+Nbr[j]]){
+            j++;
+        }
+        
+        if (j>=9) {
+            outImage[idx]=255;
+        }
+    }
+
+
+    BuildImageIndex(outImage,outIndex,rows,cols);
 
 
 }
@@ -726,55 +723,55 @@ void ShrinkOperatorIndexed(unsigned char * inImage,
 /*********************************************************************/
 
 void NoiseFilter_o(unsigned char * Image,
-			  unsigned char * ResultIm,
-			  int rows,
-			  int cols,
-			  unsigned char th)
+              unsigned char * ResultIm,
+              int rows,
+              int cols,
+              unsigned char th)
 {
-	/* assuming input is 1 for on, 0 for off */
+    /* assuming input is 1 for on, 0 for off */
 
 
-	int r,c;
-	unsigned char *p,*n,*nw,*ne,*e,*w,*s,*sw,*se;
-	unsigned int v;
-	unsigned int TH;
+    int r,c;
+    unsigned char *p,*n,*nw,*ne,*e,*w,*s,*sw,*se;
+    unsigned int v;
+    unsigned int TH;
 
-	unsigned char * ResultPtr;
+    unsigned char * ResultPtr;
 
-	TH=255*th;
+    TH=255*th;
 
-	memset(ResultIm,0,rows*cols);
+    memset(ResultIm,0,rows*cols);
 
-	p=Image+cols+1;
-	ResultPtr=ResultIm+cols+1;
+    p=Image+cols+1;
+    ResultPtr=ResultIm+cols+1;
 
-	for (r=1;r<rows-1;r++){
-		for(c=1;c<cols-1;c++){
-			if (*p){
-				n=p-cols;
-				ne=n+1;
-				nw=n-1;
-				e=p+1;
-				w=p-1;
-				s=p+cols;
-				se=s+1;
-				sw=s-1;
+    for (r=1;r<rows-1;r++){
+        for(c=1;c<cols-1;c++){
+            if (*p){
+                n=p-cols;
+                ne=n+1;
+                nw=n-1;
+                e=p+1;
+                w=p-1;
+                s=p+cols;
+                se=s+1;
+                sw=s-1;
 
-				v=(unsigned int) *nw+*n+*ne+*w+*e+*sw+*s+*se;
+                v=(unsigned int) *nw+*n+*ne+*w+*e+*sw+*s+*se;
 
-				if (v>=TH)
-					*ResultPtr=255;
-				else
-					*ResultPtr=0;
+                if (v>=TH)
+                    *ResultPtr=255;
+                else
+                    *ResultPtr=0;
 
-			}
-			p++;
-			ResultPtr++;
-		}
-		p+=2;
-		ResultPtr+=2;
+            }
+            p++;
+            ResultPtr++;
+        }
+        p+=2;
+        ResultPtr+=2;
 
-	}
+    }
 }
 
 
@@ -785,212 +782,212 @@ void NoiseFilter_o(unsigned char * Image,
 
 
 void NPBGSubtractor::SequenceBGUpdate_Pairs(unsigned char * image,
-						unsigned char * Mask)
+                        unsigned char * Mask)
 {
-	unsigned int i,ic;
-	unsigned char * pSequence 	=BGModel->Sequence;
-	unsigned char * PixelQTop		=BGModel->PixelQTop;
-	unsigned int Top						=BGModel->Top;
-	unsigned int rate;
+    unsigned int i,ic;
+    unsigned char * pSequence     =BGModel->Sequence;
+    unsigned char * PixelQTop        =BGModel->PixelQTop;
+    unsigned int Top                        =BGModel->Top;
+    unsigned int rate;
 
-	int TemporalBufferTop						=(int) BGModel->TemporalBufferTop;
-	unsigned char * pTemporalBuffer	= BGModel->TemporalBuffer;
-	unsigned char * pTemporalMask		= BGModel->TemporalMask;
-	int TemporalBufferLength				= BGModel->TemporalBufferLength;
+    int TemporalBufferTop                        =(int) BGModel->TemporalBufferTop;
+    unsigned char * pTemporalBuffer    = BGModel->TemporalBuffer;
+    unsigned char * pTemporalMask        = BGModel->TemporalMask;
+    int TemporalBufferLength                = BGModel->TemporalBufferLength;
 
-	unsigned int * AccMask		=	BGModel->AccMask;
-	unsigned int ResetMaskTh	= BGModel->ResetMaskTh;
+    unsigned int * AccMask        =    BGModel->AccMask;
+    unsigned int ResetMaskTh    = BGModel->ResetMaskTh;
 
-	unsigned char * pAbsDiffHist = AbsDiffHist.Hist;
-	unsigned char histbins = AbsDiffHist.histbins;
-	int histbins_1=histbins-1;
+    unsigned char * pAbsDiffHist = AbsDiffHist.Hist;
+    unsigned char histbins = AbsDiffHist.histbins;
+    int histbins_1=histbins-1;
 
-	int TimeWindowSize = BGModel->TimeWindowSize;
-	int SampleSize = BGModel->SampleSize;
+    int TimeWindowSize = BGModel->TimeWindowSize;
+    int SampleSize = BGModel->SampleSize;
 
-	int TemporalBufferNext;
+    int TemporalBufferNext;
 
-	unsigned int imagebuffersize=rows*cols*color_channels;
-	unsigned int imagespatialsize=rows*cols;
+    unsigned int imagebuffersize=rows*cols*color_channels;
+    unsigned int imagespatialsize=rows*cols;
 
-	unsigned char mask;
+    unsigned char mask;
 
-	unsigned int histindex;
-	unsigned char diff;
-	unsigned char bin;
+    unsigned int histindex;
+    unsigned char diff;
+    unsigned char bin;
 
-	static int TBCount=0;
+    static int TBCount=0;
 
-	unsigned char * pTBbase1, * pTBbase2;
-	unsigned char * pModelbase1, * pModelbase2;
+    unsigned char * pTBbase1, * pTBbase2;
+    unsigned char * pModelbase1, * pModelbase2;
 
-	rate=TimeWindowSize/SampleSize;
-	rate=(rate > 2) ? rate : 2;
-
-
-	TemporalBufferNext=(TemporalBufferTop+1) 
-						% TemporalBufferLength;
-
-	// pointers to Masks : Top and Next
-	unsigned char * pTMaskTop=pTemporalMask+TemporalBufferTop*imagespatialsize;
-	unsigned char * pTMaskNext=pTemporalMask+TemporalBufferNext*imagespatialsize;
-	
-	// pointers to TB frames: Top and Next
-	unsigned char * pTBTop=pTemporalBuffer+TemporalBufferTop*imagebuffersize;
-	unsigned char * pTBNext=pTemporalBuffer+TemporalBufferNext*imagebuffersize;
-
-	if ( ((TimeIndex) % rate == 0)  && 
-		TBCount >= TemporalBufferLength ) {
+    rate=TimeWindowSize/SampleSize;
+    rate=(rate > 2) ? rate : 2;
 
 
-	for (i=0,ic=0;i<imagespatialsize;i++,ic+=color_channels)
-	{
+    TemporalBufferNext=(TemporalBufferTop+1) 
+                        % TemporalBufferLength;
 
-		mask= * (pTMaskTop+i) || * (pTMaskNext+i);
+    // pointers to Masks : Top and Next
+    unsigned char * pTMaskTop=pTemporalMask+TemporalBufferTop*imagespatialsize;
+    unsigned char * pTMaskNext=pTemporalMask+TemporalBufferNext*imagespatialsize;
+    
+    // pointers to TB frames: Top and Next
+    unsigned char * pTBTop=pTemporalBuffer+TemporalBufferTop*imagebuffersize;
+    unsigned char * pTBNext=pTemporalBuffer+TemporalBufferNext*imagebuffersize;
 
-
-
-		if ( ! mask) {
-
-			// pointer to TB pixels to be added to the model
-			pTBbase1=pTBTop+ic;
-			pTBbase2=pTBNext+ic;
-			
-			// pointers to Model pixels to be replaced
-			pModelbase1=pSequence+PixelQTop[i]*imagebuffersize+ic;
-			pModelbase2=pSequence+((PixelQTop[i]+1)% SampleSize)*imagebuffersize+ic;
-
-			// update Deviation Histogram
-			if (SdEstimateFlag) {
-				if (color_channels==1) {
-					histindex=i*histbins;	
-
-					// add new pair from temporal buffer
-					diff=(unsigned char) abs((int) *pTBbase1 - (int) *pTBbase2);
-					bin=(diff < histbins ? diff : histbins_1);
-					pAbsDiffHist[histindex+bin]++;
+    if ( ((TimeIndex) % rate == 0)  && 
+        TBCount >= TemporalBufferLength ) {
 
 
-					// remove old pair from the model
-					diff=(unsigned char) abs((int) *pModelbase1-(int) *pModelbase2);
-					bin=(diff < histbins ? diff : histbins_1);
-					pAbsDiffHist[histindex+bin]--;
+    for (i=0,ic=0;i<imagespatialsize;i++,ic+=color_channels)
+    {
+
+        mask= * (pTMaskTop+i) || * (pTMaskNext+i);
 
 
 
-				} else {
-					// color
+        if ( ! mask) {
 
-					// add new pair from temporal buffer
-					histindex=ic*histbins;	
-					diff=abs(*pTBbase1 -
-							 *pTBbase2);
-					bin=(diff < histbins ? diff : histbins_1);
-					pAbsDiffHist[histindex+bin]++;
+            // pointer to TB pixels to be added to the model
+            pTBbase1=pTBTop+ic;
+            pTBbase2=pTBNext+ic;
+            
+            // pointers to Model pixels to be replaced
+            pModelbase1=pSequence+PixelQTop[i]*imagebuffersize+ic;
+            pModelbase2=pSequence+((PixelQTop[i]+1)% SampleSize)*imagebuffersize+ic;
 
-					histindex+=histbins;	
-					diff=abs(*(pTBbase1+1) -
-							 *(pTBbase2+1));
-					bin=(diff < histbins ? diff : histbins_1);
-					pAbsDiffHist[histindex+bin]++;
+            // update Deviation Histogram
+            if (SdEstimateFlag) {
+                if (color_channels==1) {
+                    histindex=i*histbins;    
 
-					histindex+=histbins;	
-					diff=abs(*(pTBbase1+2) -
-							 *(pTBbase2+2));
-					bin=(diff < histbins ? diff : histbins_1);
-					pAbsDiffHist[histindex+bin]++;
-
-					// remove old pair from the model
-					histindex=ic*histbins;	
-					
-					diff=abs(*pModelbase1-
-						*pModelbase2);
-					bin=(diff < histbins ? diff : histbins_1);
-					pAbsDiffHist[histindex+bin]--;
-
-					histindex+=histbins;	
-					diff=abs(*(pModelbase1+1)-
-							*(pModelbase2+1));
-					bin=(diff < histbins ? diff : histbins_1);
-					pAbsDiffHist[histindex+bin]--;
-
-					histindex+=histbins;	
-					diff=abs(*(pModelbase1+2)-
-							*(pModelbase2+2));
-					bin=(diff < histbins ? diff : histbins_1);
-					pAbsDiffHist[histindex+bin]--;
+                    // add new pair from temporal buffer
+                    diff=(unsigned char) abs((int) *pTBbase1 - (int) *pTBbase2);
+                    bin=(diff < histbins ? diff : histbins_1);
+                    pAbsDiffHist[histindex+bin]++;
 
 
-				}
-
-			}
-				
-
-			// add new pair into the model
-			memcpy(pModelbase1,pTBbase1,
-				color_channels*sizeof(unsigned char));
-
-			memcpy(pModelbase2,pTBbase2,
-				color_channels*sizeof(unsigned char));
-
-			PixelQTop[i]=(PixelQTop[i]+2) % SampleSize;
-
-			
-
-		}
-		
-	}
-
-	} // end if (sampling event)
-
-	// update temporal buffer
-	// add new frame to Temporal buffer.
-	memcpy(pTBTop,image,imagebuffersize);
-
-	
-	// update AccMask
-	// update new Mask with information in AccMask
-	
-	for (i=0;i<rows*cols;i++) {
-		if (Mask[i])
-			AccMask[i]++;
-		else
-			AccMask[i]=0;
-
-		if (AccMask[i] > ResetMaskTh)
-			Mask[i]=0;
-	}
-	
-	// add new mask
-	memcpy(pTMaskTop,Mask,imagespatialsize);
-
-	// advance Temporal buffer pointer
-	TemporalBufferTop=(TemporalBufferTop+1) % TemporalBufferLength;
-	
-	BGModel->TemporalBufferTop=TemporalBufferTop;
-
-	TBCount++;
-
-	// estimate SDs
+                    // remove old pair from the model
+                    diff=(unsigned char) abs((int) *pModelbase1-(int) *pModelbase2);
+                    bin=(diff < histbins ? diff : histbins_1);
+                    pAbsDiffHist[histindex+bin]--;
 
 
-	if (SdEstimateFlag && UpdateSDRate && ((TimeIndex) % UpdateSDRate == 0)) {
 
-		double MaxSD = KernelTable->maxsegma;
-		double MinSD = KernelTable->minsegma;
-		int KernelBins = KernelTable->segmabins;
+                } else {
+                    // color
 
-		unsigned char * pSDs= BGModel->SDbinsImage;
+                    // add new pair from temporal buffer
+                    histindex=ic*histbins;    
+                    diff=abs(*pTBbase1 -
+                             *pTBbase2);
+                    bin=(diff < histbins ? diff : histbins_1);
+                    pAbsDiffHist[histindex+bin]++;
+
+                    histindex+=histbins;    
+                    diff=abs(*(pTBbase1+1) -
+                             *(pTBbase2+1));
+                    bin=(diff < histbins ? diff : histbins_1);
+                    pAbsDiffHist[histindex+bin]++;
+
+                    histindex+=histbins;    
+                    diff=abs(*(pTBbase1+2) -
+                             *(pTBbase2+2));
+                    bin=(diff < histbins ? diff : histbins_1);
+                    pAbsDiffHist[histindex+bin]++;
+
+                    // remove old pair from the model
+                    histindex=ic*histbins;    
+                    
+                    diff=abs(*pModelbase1-
+                        *pModelbase2);
+                    bin=(diff < histbins ? diff : histbins_1);
+                    pAbsDiffHist[histindex+bin]--;
+
+                    histindex+=histbins;    
+                    diff=abs(*(pModelbase1+1)-
+                            *(pModelbase2+1));
+                    bin=(diff < histbins ? diff : histbins_1);
+                    pAbsDiffHist[histindex+bin]--;
+
+                    histindex+=histbins;    
+                    diff=abs(*(pModelbase1+2)-
+                            *(pModelbase2+2));
+                    bin=(diff < histbins ? diff : histbins_1);
+                    pAbsDiffHist[histindex+bin]--;
 
 
-		FindHistMedians(&(AbsDiffHist));
-		EstimateSDsFromAbsDiffHist(&(AbsDiffHist),pSDs,imagebuffersize,
-			MinSD,MaxSD,KernelBins);
+                }
 
-	}
+            }
+                
 
-	
-	TimeIndex++;
+            // add new pair into the model
+            memcpy(pModelbase1,pTBbase1,
+                color_channels*sizeof(unsigned char));
+
+            memcpy(pModelbase2,pTBbase2,
+                color_channels*sizeof(unsigned char));
+
+            PixelQTop[i]=(PixelQTop[i]+2) % SampleSize;
+
+            
+
+        }
+        
+    }
+
+    } // end if (sampling event)
+
+    // update temporal buffer
+    // add new frame to Temporal buffer.
+    memcpy(pTBTop,image,imagebuffersize);
+
+    
+    // update AccMask
+    // update new Mask with information in AccMask
+    
+    for (i=0;i<rows*cols;i++) {
+        if (Mask[i])
+            AccMask[i]++;
+        else
+            AccMask[i]=0;
+
+        if (AccMask[i] > ResetMaskTh)
+            Mask[i]=0;
+    }
+    
+    // add new mask
+    memcpy(pTMaskTop,Mask,imagespatialsize);
+
+    // advance Temporal buffer pointer
+    TemporalBufferTop=(TemporalBufferTop+1) % TemporalBufferLength;
+    
+    BGModel->TemporalBufferTop=TemporalBufferTop;
+
+    TBCount++;
+
+    // estimate SDs
+
+
+    if (SdEstimateFlag && UpdateSDRate && ((TimeIndex) % UpdateSDRate == 0)) {
+
+        double MaxSD = KernelTable->maxsegma;
+        double MinSD = KernelTable->minsegma;
+        int KernelBins = KernelTable->segmabins;
+
+        unsigned char * pSDs= BGModel->SDbinsImage;
+
+
+        FindHistMedians(&(AbsDiffHist));
+        EstimateSDsFromAbsDiffHist(&(AbsDiffHist),pSDs,imagebuffersize,
+            MinSD,MaxSD,KernelBins);
+
+    }
+
+    
+    TimeIndex++;
 
 }
 /*********************************************************************/
@@ -1016,11 +1013,11 @@ void DisplayPropabilityImageWithThresholding(double * Pimage,
 {
   double p;
 
-	for (unsigned int i=0;i<rows*cols;i++){
-	  p=Pimage[i];
+    for (unsigned int i=0;i<rows*cols;i++){
+      p=Pimage[i];
 
-	  DisplayImage[i]=(p > Threshold) ?  0 : 255;
-	}
+      DisplayImage[i]=(p > Threshold) ?  0 : 255;
+    }
 }
 
 
@@ -1032,16 +1029,16 @@ void NPBGSubtractor::NPBGSubtraction_Subset_Kernel(
  unsigned char * FilteredFGImage)
 {
  unsigned int i,j;
- unsigned char * pSequence 	=BGModel->Sequence;
+ unsigned char * pSequence     =BGModel->Sequence;
  
- unsigned int SampleSize			= BGModel->SampleSize;
+ unsigned int SampleSize            = BGModel->SampleSize;
  
- double * kerneltable	= KernelTable->kerneltable;
- int KernelHalfWidth		= KernelTable->tablehalfwidth;
- double * KernelSum			= KernelTable->kernelsums;
+ double * kerneltable    = KernelTable->kerneltable;
+ int KernelHalfWidth        = KernelTable->tablehalfwidth;
+ double * KernelSum            = KernelTable->kernelsums;
  double KernelMaxSigma = KernelTable->maxsegma;
  double KernelMinSigma = KernelTable->minsegma;
- int KernelBins				= KernelTable->segmabins;
+ int KernelBins                = KernelTable->segmabins;
  unsigned char * SDbins= BGModel->SDbinsImage;
  
  unsigned char * SaturationImage=FilteredFGImage;
@@ -1076,260 +1073,260 @@ void NPBGSubtractor::NPBGSubtraction_Subset_Kernel(
  
  if (color_channels==1) 
  {
- 	// gray scale
+     // gray scale
  
- 	int kernelbase;
- 	//=floor(KernelBins*(sigma1/KernelMaxSigma))*(2*KernelHalfWidth+1);
- 	
- 	for (i=0;i<rows*cols;i++)
+     int kernelbase;
+     //=floor(KernelBins*(sigma1/KernelMaxSigma))*(2*KernelHalfWidth+1);
+     
+     for (i=0;i<rows*cols;i++)
         {
- 		kernelbase=SDbins[i]*(2*KernelHalfWidth+1);
- 		sum=0;
- 		j=0;
+         kernelbase=SDbins[i]*(2*KernelHalfWidth+1);
+         sum=0;
+         j=0;
  
- 		while (j<SampleSize && sum < th){
- 		//for (j=0;j<SampleSize;j++){
- 			g=pSequence[j*imagesize+i];
- 			k= g-  image[i] +KernelHalfWidth;
- 			sum+=kerneltable[kernelbase+k];
- 			j++;
- 		}
- 		p=sum/j;
- 		Pimage1[i]=p;
- 	}
+         while (j<SampleSize && sum < th){
+         //for (j=0;j<SampleSize;j++){
+             g=pSequence[j*imagesize+i];
+             k= g-  image[i] +KernelHalfWidth;
+             sum+=kerneltable[kernelbase+k];
+             j++;
+         }
+         p=sum/j;
+         Pimage1[i]=p;
+     }
  
  }
  else if (UseColorRatiosFlag && SubsetFlag)
  {
- 	// color ratios
+     // color ratios
  
- 	unsigned int ig;
- 	int base;
+     unsigned int ig;
+     int base;
  
- 	int kernelbase1;
- 	int kernelbase2;
- 	int kernelbase3;
+     int kernelbase1;
+     int kernelbase2;
+     int kernelbase3;
  
- 	unsigned int kerneltablewidth=2*KernelHalfWidth+1;
+     unsigned int kerneltablewidth=2*KernelHalfWidth+1;
  
- 	beta=3.0;    // minimum bound on the range.
- 	betau=100.0;
+     beta=3.0;    // minimum bound on the range.
+     betau=100.0;
  
- 	beta_over_alpha = beta / alpha;
- 	betau_over_alpha = betau / alpha;
- 	
+     beta_over_alpha = beta / alpha;
+     betau_over_alpha = betau / alpha;
+     
  
- 	double brightness_lowerbound = 1-alpha;
- 	double brightness_upperbound = 1+alpha;
- 	int x1,x2;
- 	unsigned int SubsampleCount;
+     double brightness_lowerbound = 1-alpha;
+     double brightness_upperbound = 1+alpha;
+     int x1,x2;
+     unsigned int SubsampleCount;
  
- 	for (i=0,ig=0;i<imagesize;i+=3,ig++){
- 
- 
- 		// used extimated kernel width to access the right kernel
- 		//kernelbase1=SDbins[i]*kerneltablewidth;
- 			
- 		//bin=floor(((5-KernelMinSigma)*KernelBins)/(KernelMaxSigma-KernelMinSigma));
- 
- 		//sigma=KernelMinSigma+SDbins[i]*(KernelMaxSigma-KernelMinSigma)/KernelBins;
- 
- 		kernelbase1=SDbins[i]*kerneltablewidth;
- 		//kernelbase1=bin*kerneltablewidth;
- 		kernelbase2=SDbins[i+1]*kerneltablewidth;
- 		kernelbase3=SDbins[i+2]*kerneltablewidth;
- 
- 		sum=0;
- 		j=0;
- 		SubsampleCount=0;
+     for (i=0,ig=0;i<imagesize;i+=3,ig++){
  
  
- 		while (j<SampleSize && sum < th){
- 		//for (j=0;j<SampleSize;j++){
+         // used extimated kernel width to access the right kernel
+         //kernelbase1=SDbins[i]*kerneltablewidth;
+             
+         //bin=floor(((5-KernelMinSigma)*KernelBins)/(KernelMaxSigma-KernelMinSigma));
  
- 			base=j*imagesize+i;
- 			g=pSequence[base];
- 			//x1=image[i]*brightness_lowerbound;
- 			//x2=image[i]*brightness_upperbound;
+         //sigma=KernelMinSigma+SDbins[i]*(KernelMaxSigma-KernelMinSigma)/KernelBins;
  
- 			if (g < beta_over_alpha) {
- 				x1=(int) (g-beta);
- 				x2=(int) (g+beta);
- 			}
- 			else if (g > betau_over_alpha) {
- 				x1=(int) (g-betau);
- 				x2=(int) (g+betau);
- 			}
- 			else {
- 				x1=(int) (g*brightness_lowerbound+0.5);
- 				x2=(int) (g*brightness_upperbound+0.5);
- 			}
+         kernelbase1=SDbins[i]*kerneltablewidth;
+         //kernelbase1=bin*kerneltablewidth;
+         kernelbase2=SDbins[i+1]*kerneltablewidth;
+         kernelbase3=SDbins[i+2]*kerneltablewidth;
  
- 			//x1=(x1 > g-4*sigma ? g-4*sigma : x1);
- 			//x2=(x2 < g+4*sigma ? g+4*sigma : x2);
- 
- 			//if (x1<g && g <x2) {
- 			if(x1<image[i] && image[i] <x2){
- 
- 				//g=pSequence[base];
- 				//k= (g-  image[i]) +KernelHalfWidth;
- 				//kernel1=KernelTable[kernelbase1+k];
- 				
- 
- 				g=pSequence[base+1];
- 				k= (g-  image[i+1]) +KernelHalfWidth;
- 				kernel2=kerneltable[kernelbase2+k];
- 
- 				g=pSequence[base+2];
- 				k= (g-  image[i+2]) +KernelHalfWidth;
- 				kernel3=kerneltable[kernelbase3+k];
- 
- 				sum+=kernel2*kernel3;
- 
- 				SubsampleCount++;
- 			}
- 			j++;
- 		}
+         sum=0;
+         j=0;
+         SubsampleCount=0;
  
  
- 		//p=(SubsampleCount > 0 ? sum/SubsampleCount : 0);
+         while (j<SampleSize && sum < th){
+         //for (j=0;j<SampleSize;j++){
  
- 		p=sum / j;
+             base=j*imagesize+i;
+             g=pSequence[base];
+             //x1=image[i]*brightness_lowerbound;
+             //x2=image[i]*brightness_upperbound;
  
- 		Pimage1[ig]=p;
- 	}	
+             if (g < beta_over_alpha) {
+                 x1=(int) (g-beta);
+                 x2=(int) (g+beta);
+             }
+             else if (g > betau_over_alpha) {
+                 x1=(int) (g-betau);
+                 x2=(int) (g+betau);
+             }
+             else {
+                 x1=(int) (g*brightness_lowerbound+0.5);
+                 x2=(int) (g*brightness_upperbound+0.5);
+             }
+ 
+             //x1=(x1 > g-4*sigma ? g-4*sigma : x1);
+             //x2=(x2 < g+4*sigma ? g+4*sigma : x2);
+ 
+             //if (x1<g && g <x2) {
+             if(x1<image[i] && image[i] <x2){
+ 
+                 //g=pSequence[base];
+                 //k= (g-  image[i]) +KernelHalfWidth;
+                 //kernel1=KernelTable[kernelbase1+k];
+                 
+ 
+                 g=pSequence[base+1];
+                 k= (g-  image[i+1]) +KernelHalfWidth;
+                 kernel2=kerneltable[kernelbase2+k];
+ 
+                 g=pSequence[base+2];
+                 k= (g-  image[i+2]) +KernelHalfWidth;
+                 kernel3=kerneltable[kernelbase3+k];
+ 
+                 sum+=kernel2*kernel3;
+ 
+                 SubsampleCount++;
+             }
+             j++;
+         }
+ 
+ 
+         //p=(SubsampleCount > 0 ? sum/SubsampleCount : 0);
+ 
+         p=sum / j;
+ 
+         Pimage1[ig]=p;
+     }    
  }
  else if (UseColorRatiosFlag && ! SubsetFlag) {
- 	// color ratios
+     // color ratios
  
- 	unsigned int ig;
- 	int base;
- 	int bin;
+     unsigned int ig;
+     int base;
+     int bin;
  
- 	int kernelbase1;
- 	int kernelbase2;
- 	int kernelbase3;
+     int kernelbase1;
+     int kernelbase2;
+     int kernelbase3;
  
- 	unsigned int kerneltablewidth=2*KernelHalfWidth+1;
+     unsigned int kerneltablewidth=2*KernelHalfWidth+1;
  
- 	int gmin,gmax;
- 	double gfactor;
+     int gmin,gmax;
+     double gfactor;
  
- 	gmax=200;
- 	gmin=10;
+     gmax=200;
+     gmin=10;
  
- 	gfactor = (KernelMaxSigma-KernelMinSigma) / (double) (gmax - gmin);
- 	
- 	for (i=0,ig=0;i<imagesize;i+=3,ig++){
+     gfactor = (KernelMaxSigma-KernelMinSigma) / (double) (gmax - gmin);
+     
+     for (i=0,ig=0;i<imagesize;i+=3,ig++){
  
- 		bin=(int) floor(((alpha*16-KernelMinSigma)*KernelBins)/(KernelMaxSigma-KernelMinSigma));
+         bin=(int) floor(((alpha*16-KernelMinSigma)*KernelBins)/(KernelMaxSigma-KernelMinSigma));
  
- 		kernelbase1=bin*kerneltablewidth;
- 		kernelbase2=SDbins[i+1]*kerneltablewidth;
- 		kernelbase3=SDbins[i+2]*kerneltablewidth;
+         kernelbase1=bin*kerneltablewidth;
+         kernelbase2=SDbins[i+1]*kerneltablewidth;
+         kernelbase3=SDbins[i+2]*kerneltablewidth;
  
- 		sum=0;
- 		j=0;
+         sum=0;
+         j=0;
  
- 		while (j<SampleSize && sum < th){
- 		//for (j=0;j<SampleSize;j++){
- 			base=j*imagesize+i;
- 			{					
- 				g=pSequence[base];
- 		
- 				if (g < gmin ) {
- 					bin=0;
- 				} 
- 				else if (g > gmax) {
- 					bin = KernelBins -1 ;
- 				}
- 				else {
- 					bin= (int) ((g-gmin) * gfactor + 0.5);
- 				}
- 	
- 				kernelbase1=bin*kerneltablewidth;
+         while (j<SampleSize && sum < th){
+         //for (j=0;j<SampleSize;j++){
+             base=j*imagesize+i;
+             {                    
+                 g=pSequence[base];
+         
+                 if (g < gmin ) {
+                     bin=0;
+                 } 
+                 else if (g > gmax) {
+                     bin = KernelBins -1 ;
+                 }
+                 else {
+                     bin= (int) ((g-gmin) * gfactor + 0.5);
+                 }
+     
+                 kernelbase1=bin*kerneltablewidth;
  
- 				k= (g-  image[i]) +KernelHalfWidth;
- 				kernel1=kerneltable[kernelbase1+k];
- 				
+                 k= (g-  image[i]) +KernelHalfWidth;
+                 kernel1=kerneltable[kernelbase1+k];
+                 
  
- 				g=pSequence[base+1];
- 				k= (g-  image[i+1]) +KernelHalfWidth;
- 				kernel2=kerneltable[kernelbase2+k];
+                 g=pSequence[base+1];
+                 k= (g-  image[i+1]) +KernelHalfWidth;
+                 kernel2=kerneltable[kernelbase2+k];
  
- 				g=pSequence[base+2];
- 				k= (g-  image[i+2]) +KernelHalfWidth;
- 				kernel3=kerneltable[kernelbase3+k];
+                 g=pSequence[base+2];
+                 k= (g-  image[i+2]) +KernelHalfWidth;
+                 kernel3=kerneltable[kernelbase3+k];
  
- 				sum+=kernel1*kernel2*kernel3;
+                 sum+=kernel1*kernel2*kernel3;
  
- 			}
- 			j++;
- 		}
+             }
+             j++;
+         }
  
  
- 		//p=(SubsampleCount > 0 ? sum/SubsampleCount : 0);
+         //p=(SubsampleCount > 0 ? sum/SubsampleCount : 0);
  
- 		p=sum / j;
+         p=sum / j;
  
- 		Pimage1[ig]=p;
- 	}	
- 	
+         Pimage1[ig]=p;
+     }    
+     
  }
  
  else // RGB color
  {
  
- 		unsigned int ig;
- 		int base;
+         unsigned int ig;
+         int base;
  
- 		int kernelbase1;
- 		int kernelbase2;
- 		int kernelbase3;
- 		unsigned int kerneltablewidth=2*KernelHalfWidth+1;
+         int kernelbase1;
+         int kernelbase2;
+         int kernelbase3;
+         unsigned int kerneltablewidth=2*KernelHalfWidth+1;
  
- 		for (i=0,ig=0;i<imagesize;i+=3,ig++){
+         for (i=0,ig=0;i<imagesize;i+=3,ig++){
  
- 			// used extimated kernel width to access the right kernel
- 			kernelbase1=SDbins[i]*kerneltablewidth;
- 			kernelbase2=SDbins[i+1]*kerneltablewidth;
- 			kernelbase3=SDbins[i+2]*kerneltablewidth;
+             // used extimated kernel width to access the right kernel
+             kernelbase1=SDbins[i]*kerneltablewidth;
+             kernelbase2=SDbins[i+1]*kerneltablewidth;
+             kernelbase3=SDbins[i+2]*kerneltablewidth;
  
- 			sum=0;
- 			j=0;
- 			while (j<SampleSize && sum < th){
- 			//for (j=0;j<SampleSize;j++){
- 				
+             sum=0;
+             j=0;
+             while (j<SampleSize && sum < th){
+             //for (j=0;j<SampleSize;j++){
+                 
  
- 				base=j*imagesize+i;
- 				g=pSequence[base];
- 				k= (g-  image[i]) +KernelHalfWidth;
- 				kernel1=kerneltable[kernelbase1+k];
+                 base=j*imagesize+i;
+                 g=pSequence[base];
+                 k= (g-  image[i]) +KernelHalfWidth;
+                 kernel1=kerneltable[kernelbase1+k];
  
- 				g=pSequence[base+1];
- 				k= (g-  image[i+1]) +KernelHalfWidth;
- 				kernel2=kerneltable[kernelbase2+k];
+                 g=pSequence[base+1];
+                 k= (g-  image[i+1]) +KernelHalfWidth;
+                 kernel2=kerneltable[kernelbase2+k];
  
- 				g=pSequence[base+2];
- 				k= (g-  image[i+2]) +KernelHalfWidth;
- 				kernel3=kerneltable[kernelbase3+k];
+                 g=pSequence[base+2];
+                 k= (g-  image[i+2]) +KernelHalfWidth;
+                 kernel3=kerneltable[kernelbase3+k];
  
- 				sum+=kernel1*kernel2*kernel3;
- 				//sum+=kernel2*kernel3;
- 				j++;
- 			}
+                 sum+=kernel1*kernel2*kernel3;
+                 //sum+=kernel2*kernel3;
+                 j++;
+             }
  
  
- 		p=sum/j;
- 		//p=sum/sum1;
+         p=sum/j;
+         //p=sum/sum1;
  
- 		Pimage1[ig]=p;
+         Pimage1[ig]=p;
  
- 		//DisplayBuffer[0][ig]=(image[i]);
+         //DisplayBuffer[0][ig]=(image[i]);
  
- 		}
+         }
  
- 	}
+     }
  
  DisplayPropabilityImageWithThresholding(Pimage1,FGImage,Threshold,rows,cols);
 
@@ -1341,52 +1338,52 @@ void NPBGSubtractor::NPBGSubtraction_Subset_Kernel(
 
 
 void NPBGSubtractor::NBBGSubtraction(unsigned char * Frame,
-				   unsigned char * FGImage,
-				   unsigned char * FilteredFGImage,
-				   unsigned char ** DisplayBuffers)
+                   unsigned char * FGImage,
+                   unsigned char * FilteredFGImage,
+                   unsigned char ** DisplayBuffers)
 {
 
-	if (UseColorRatiosFlag) {
-		BGR2SnGnRn(Frame,tempFrame,rows,cols);
-	}
-	else
-		memcpy(tempFrame,Frame,rows*cols*color_channels);
+    if (UseColorRatiosFlag) {
+        BGR2SnGnRn(Frame,tempFrame,rows,cols);
+    }
+    else
+        memcpy(tempFrame,Frame,rows*cols*color_channels);
+    
+    
+    NPBGSubtraction_Subset_Kernel(tempFrame,FGImage,FilteredFGImage);    
 
-
-	NPBGSubtraction_Subset_Kernel(tempFrame,FGImage,FilteredFGImage);	
-/*	
-	NoiseFilter_o(FGImage,DisplayBuffers[3],rows,cols,4);
-
-	//memcpy(DisplayBuffers[3],FGImage,rows*cols);
-
-
-	BuildImageIndex(DisplayBuffers[4],imageindex,rows,cols);
-
-	ExpandOperatorIndexed(DisplayBuffers[3],imageindex,DisplayBuffers[4],imageindex,rows,cols);
-	ShrinkOperatorIndexed(DisplayBuffers[4],imageindex,FilteredFGImage,imageindex,rows,cols);
-
-
-	memset(DisplayBuffers[3],0,rows*cols);
-*/	
-	
+    
+    NoiseFilter_o(FGImage,DisplayBuffers[3],rows,cols,4);
+    
+    //memcpy(DisplayBuffers[3],FGImage,rows*cols);
+    
+    BuildImageIndex(DisplayBuffers[4],imageindex,rows,cols);
+    
+    ExpandOperatorIndexed(DisplayBuffers[3],imageindex,DisplayBuffers[4],imageindex,rows,cols);
+    ShrinkOperatorIndexed(DisplayBuffers[4],imageindex,FilteredFGImage,imageindex,rows,cols);
+    
+    
+    memset(DisplayBuffers[3],0,rows*cols);
+    
+    
 }
 
 /*
 void NPBGSubtractor::ExtractObjects(unsigned char * FGImage,
-					int * ccimage,
-					component * CompTable,
-					component * GroupTable,
-					unsigned int * comp_cnt,
-					unsigned int * group_cnt)
+                    int * ccimage,
+                    component * CompTable,
+                    component * GroupTable,
+                    unsigned int * comp_cnt,
+                    unsigned int * group_cnt)
 {
 
-	*comp_cnt=CC(CompTable,ccimage,FGImage,rows,cols,0);
-	ClassifyComponents(CompTable,*comp_cnt,rows,cols); 
+    *comp_cnt=CC(CompTable,ccimage,FGImage,rows,cols,0);
+    ClassifyComponents(CompTable,*comp_cnt,rows,cols); 
 
-	
-	*group_cnt=GroupComponents(CompTable,*comp_cnt,ccimage,GroupTable,rows,cols);
+    
+    *group_cnt=GroupComponents(CompTable,*comp_cnt,ccimage,GroupTable,rows,cols);
 
-	ClassifyGroups(GroupTable,*group_cnt,rows,cols); 
+    ClassifyGroups(GroupTable,*group_cnt,rows,cols); 
 
 }
 
@@ -1395,9 +1392,8 @@ void NPBGSubtractor::ExtractObjects(unsigned char * FGImage,
 void NPBGSubtractor::Update(unsigned char * FGMask)
 {
 
-	if (UpdateBGFlag) {
-			SequenceBGUpdate_Pairs(tempFrame,FGMask);
-	}
-
+    if (UpdateBGFlag) {
+        SequenceBGUpdate_Pairs(tempFrame,FGMask);
+    }
 }
 

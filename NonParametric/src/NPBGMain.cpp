@@ -18,34 +18,70 @@
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
 
-//#include <iomanip> 
-//#include <iostream>
-//#include <fstream>
-//#include <dirent.h>
-//#include <sstream>
-//#include <map>
-//
-//#include "bgs.h"
-//#include "mdgkt_filter.h"
-//#include "background_subtraction.h"
-#include "Performance.h"
-#include "utils.h"
+#include <boost/filesystem.hpp>
+#include <iostream>
+#include <vector>
+#include <fstream>
+
+
+
+//#include "Performance.h"
+//#include "utils.h"
 #include "NPBGSubtractor.h"
 
 using namespace cv;
 using namespace std;
-using namespace bgs;
+using namespace boost::filesystem;
+//using namespace bgs;
 
+
+
+
+void writeConfigFile(string _file = "config/np_init.yml",
+                     int FramesToLearn = 10,
+                     int SequenceLength = 100,
+                     int TimeWindowSize = 100,
+                     char SDEstimationFlag = 1,
+                     char UseColorRatiosFlag = 1,
+                     double Threshold = 10e-8,
+                     double Alpha = 0.3)
+{
+    FileStorage fs("np_init.yml", FileStorage::WRITE);
+
+    fs << "FramesToLearn" << FramesToLearn;
+    fs << "SequenceLength" << SequenceLength;
+    fs << "TimeWindowSize" << TimeWindowSize;
+    fs << "SDEstimationFlag" << SDEstimationFlag;
+    fs << "UseColorRatiosFlag" << UseColorRatiosFlag;
+    fs << "Threshold" << Threshold;
+    fs << "Alpha" << Alpha;
+    fs.release();
+
+}
+
+
+void rename_dir(string name)
+{
+    unsigned long dir_count = 0;
+    directory_iterator end_iter;
+    for ( directory_iterator dir_itr( "." ); dir_itr != end_iter;  ++dir_itr ) {
+        if ( is_directory( *dir_itr ) && dir_itr->path().filename().stem() == name)
+            dir_count++;
+
+    }
+    if (dir_count > 0) {
+        stringstream p;
+        p << name << "." << dir_count;
+        rename(name, p.str());
+        create_directory(name);
+    }
+}
 
 const char* keys =
 {
     "{ i | input   |       | Input video }"
-    "{ g | gtruth  |       | Input ground-truth directory }"
     "{ c | config  |       | Load init config file }"
-    "{ n | frame   | 0     | Shift ground-truth in +/- n frames, e.g -n -3 or -n 3}"
-    "{ p | point   |       | Print out RGB values of point,  e.g -p 250,300 }"
-    "{ m | mask    | true  | Save foreground masks to foreground directory}"
-    "{ v | verbose | false | Print out output messages by console}"
+    "{ m | mask    | true  | Save foreground masks}"
     "{ s | show    | false | Show images of video sequence }"
     "{ h | help    | false | Print help message }"
 };
@@ -54,8 +90,6 @@ const char* keys =
 
 int main( int argc, char** argv )
 {
-
-
     //Parse console parameters
     CommandLineParser cmd(argc, argv, keys);
 
@@ -66,232 +100,203 @@ int main( int argc, char** argv )
         cout << "Process input video comparing with its ground truth.        " << endl;
         cout << "OpenCV Version : "  << CV_VERSION << endl;
         cout << "Example:                                                    " << endl;
-        cout << "./npbgs -i dir_jpeg/ -g ground_truth/ -c config/init.txt -s   " << endl << endl;
+        cout << "./npbgs -i dir_jpeg/ -c config/init.txt -s                  " << endl << endl;
         cmd.printParams();
         cout << "------------------------------------------------------------" << endl <<endl;
         return 0;
     }
 
-    // Read input parameters
+    // Reading input parameters
     const string inputVideoName  = cmd.get<string>("input");
-    const string groundTruthName = cmd.get<string>("gtruth");
     const string initConfigName  = cmd.get<string>("config");
-    const string displayPoint    = cmd.get<string>("point");
-    int shiftFrame         = cmd.get<int>("frame");
-    const bool saveMask          = cmd.get<bool>("mask");
-    bool verbose                 = cmd.get<bool>("verbose");
     const bool displayImages     = cmd.get<bool>("show");
+    const bool saveMask          = cmd.get<bool>("mask");
 
-    //declaration of local variables.
-    Performance perf;
-    stringstream msg,ptmsg;
-    ofstream outfile;
-    int gt_cnt = 0;
     
+    // local variables
+    int delay     = 25;
+    int cols      = 0;
+    int rows      = 0;
+    int matSize   = 0;
+    int nchannels = 3;
+    bool processing_video = false;
+    int im_size = -1;
+    vector<string> im_files;
     
-    if (inputVideoName.empty()) {
-        cout << "Insert video name" << endl;
+    // Verify input name is a video file or sequences of jpg files
+    path _path (inputVideoName.c_str());
+    
+    if (is_directory(_path)) {
+        
+        vector<path> v;
+        copy(directory_iterator(_path), directory_iterator(), back_inserter(v));
+
+        
+        for (vector<path>::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it) {
+            if (it->extension() == ".jpg")
+                im_files.push_back((canonical(*it).string()));
+        }
+
+        sort(im_files.begin(), im_files.end());
+        
+        im_size = im_files.size();
+        if (im_size == -1 || im_size == 0) {
+            cout << "Not valid images directory ... " << endl;
+            return -1;
+        }
+
+        //create video object.
+        Mat Frame = imread(im_files[0]);
+        
+        // Check file has been opened sucessfully
+        if (Frame.data == NULL )
+            return 0;
+        
+        cols  = Frame.cols;
+        rows = Frame.rows;
+        int frameType = Frame.type();
+        nchannels = CV_MAT_CN(frameType);        
+
+    }
+    else if (is_regular_file(_path)) {
+        VideoCapture video(inputVideoName.c_str());
+        if (!video.isOpened()) {
+            cout << inputVideoName << " Not video file" << endl;
+            return -1;
+        }
+        
+        Mat Frame;
+        video >> Frame;
+
+        delay = 1000/video.get(CV_CAP_PROP_FPS);
+        cols = video.get(CV_CAP_PROP_FRAME_WIDTH);
+        rows = video.get(CV_CAP_PROP_FRAME_HEIGHT);
+        int frameType = Frame.type();        
+        nchannels = CV_MAT_CN(frameType);
+        video.release();
+        
+        processing_video = true;
+
+    }
+    else {
+        cout << "Insert either directory or video name" << endl;
         cmd.printParams();
         return -1;
     }
-    
-    //Input name could be either a video or directory of jpeg files  
-    bool processing_video = false;
-    int im_size = -1;
-    map<unsigned int, string> im_files;
+    matSize   = rows * cols;
 
-    if (!DirectoryExists(inputVideoName.c_str())) {
-        processing_video = true;
-    }
-    else {
-        // Read files from input directory
-        list_files(inputVideoName,im_files, ".jpg");
-        im_size = im_files.size();
-            
-        if (im_size == -1 || im_size == 0) {
-            cout << "Not valid ground images directory ... " << endl;
-            return -1;
-        }
-    }    
+    // Read algorithm parameters
+    int FramesToLearn = 10;
+    int SequenceLength = 50;
+    int TimeWindowSize = 100;
+    unsigned char UpdateFlag = 1;
+    unsigned char SDEstimationFlag = 1;
+    unsigned char UseColorRatiosFlag = 1;
+    double Threshold = 10e-8;
+    double Alpha = 0.3;
+    unsigned int InitFGMaskFrame = 216;
+    unsigned int EndFGMaskFrame = 682;
 
-    //Create foreground mask directory
-    if (saveMask) {
-        CreateDirectory("npoutput");
-        CreateDirectory("npoutput/background");
-        CreateDirectory("npoutput/foregorund");
-    }
-    
-
-    //Load initialization parameters
-    NPBGConfig *config = new NPBGConfig;
     if (!initConfigName.empty()) {
-        config = loadInitParametersFromFile(initConfigName);
+        FileStorage fs(initConfigName, FileStorage::READ);
+        FramesToLearn      = (int)fs["FramesToLearn"];
+        SequenceLength     = (int)fs["SequenceLength"];
+        TimeWindowSize     = (int)fs["TimeWindowSize"];
+        UpdateFlag         = (int)fs["UpdateFlag"];
+        SDEstimationFlag   = (int)fs["SDEstimationFlag"];
+        UseColorRatiosFlag = (int)fs["UseColorRatiosFlag"];
+        Threshold          = (double)fs["Threshold"];
+        Alpha              = (double)fs["Alpha"];
+        InitFGMaskFrame    = (int)fs["InitFGMaskFrame"];
+        EndFGMaskFrame    = (int)fs["EndFGMaskFrame"];
+        fs.release();
     }
+    
 
-    //Check ground-truth
-    bool compare = false;
-    map<unsigned int, string>::iterator it;
-    map<unsigned int, string> gt_files;
-    int gt_size = -1;
-    if (!groundTruthName.empty()) {
-        compare=true;
-        list_files(groundTruthName,gt_files);
-        //outfile.open("output.txt");
-        //outfile << bg_model.initParametersAsOneLineString() << endl;
-
-        if (displayImages) {
-            namedWindow("GROUND TRUTH", CV_WINDOW_NORMAL);
-            moveWindow("GROUND TRUTH",400,300);
+    // Create mask directory
+    if (saveMask) {
+        string _fgpath = "np_fgmask";
+        path p (_fgpath);
+        if (exists(p)) {
+            rename_dir(_fgpath);
         }
-        gt_size = gt_files.size();
-        
-        if (gt_size == 0) {
-            cout << "Not valid ground truth directory ... " << endl;
-            return -1;
+        else {
+            create_directory(_fgpath);
         }
-    }
-
-    int delay = 25;
-    VideoCapture video;
-    Mat imframe;
-    
-    if (processing_video) {
-        //create video object.
-        video.open(inputVideoName);
         
-        // Check video has been opened sucessfully
-        if (!video.isOpened())
-            return 0;
-        
-        delay         = 1000/video.get(CV_CAP_PROP_FPS);
-        video >> imframe;
-        //video.set(CV_CAP_PROP_POS_FRAMES,0);
-        shiftFrame += 1;
-        
-    }
-    else {
-        //create video object.
-        imframe = imread(im_files[1]);
-        
-        // Check file has been opened sucessfully
-        if (imframe.data == NULL )
-            return 0;
+        ofstream outfile;
+        stringstream param;
+        param << "np_fgmask/parameters.txt" ;
+        outfile.open(param.str().c_str());
+        outfile 
+        << "#"
+        << " Alpha=" << Alpha 
+        << " Threshold=" << Threshold 
+        << " FramesToLearn=" << FramesToLearn 
+        << " SequenceLength=" << SequenceLength 
+        << " TimeWindowSize=" << TimeWindowSize ; 
+        outfile.close();
         
     }
     
-    int cols  = imframe.cols;
-    int rows  = imframe.rows;
-    int matSize   = rows * cols;
-    int frameType = imframe.type();
-    int nchannels = CV_MAT_CN(frameType);
-
-
-    //Get specific point to be displayed in the image.
-    //Check input point to display value
-    int nl=0,nc=0;
-    Point pt(0,0);
-    bool show_point = false;
-    ofstream ptfile;
-    if (!displayPoint.empty()) {
-        pt = stringToPoint(displayPoint);
-        nc = pt.x > cols  ? cols  : pt.x;
-        nl = pt.y > rows ? rows : pt.y;
-        show_point = true;
-
-        //define outfile to save BGR pixel values
-        stringstream name(""); 
-        name << "pt_" << pt.x << "_" << pt.y << ".txt";
-        ptfile.open(name.str().c_str());
-    }
     
-   
-    // Create display windows 
-    if (displayImages) { 
-        namedWindow("image", CV_WINDOW_NORMAL);
+    // Create display windows
+    if (displayImages) {
+        namedWindow("Image", CV_WINDOW_NORMAL);
         namedWindow("Mask", CV_WINDOW_NORMAL);
-        namedWindow("foreground image", CV_WINDOW_NORMAL);
-        moveWindow("image"           ,20,20);
-        moveWindow("foreground image",20,300);
-        moveWindow("foreground mask" ,400,20);
-    } 
+        moveWindow("Image", 20, 20);
+        moveWindow("Mask" , 20, 300);
+    }
     
-    
-    // Initialize model
-    // SequenceLength: number of samples for each pixel.
-    // TimeWindowSize: Time window for sampling. for example in the call above, the bg will sample 50 points out of 100 frames.
-    // this rate will affect how fast the model adapt.
-    // SDEstimationFlag: True means to estimate suitable kernel bandcols to each pixel, False uses a default value.
-    // lUseColorRatiosFlag: True means use normalized RGB for color (recommended.)
     NPBGSubtractor *BGModel = new NPBGSubtractor;
-    
-    unsigned int _length = config->SequenceLength;
-    unsigned int _wsize  = config->TimeWindowSize;
-    unsigned char stmflag= config->SDEstimationFlag;
-    unsigned char ratioflag = config->UseColorRatiosFlag;
-    
-    BGModel->Intialize(rows, cols, nchannels, 50, 100, 1, 1);
-    //BGModel->Intialize(rows, cols, nchannels, _length, _wsize, stmflag, ratioflag);
-    //BGModel->Intialize(rows, cols, nchannels, config->SequenceLength, config->TimeWindowSize, config->SDEstimationFlag, config->UseColorRatiosFlag);
-
-    //th: 0-1 is the probability threshold for a pixel to be a foregroud. 
-    // typically make it small as 10e-8. the smaller the value the less false positive and more false negative.
-    //alpha: 0-1, for color. typically set to 0.3. this affect shadow suppression.
-    double th = config->Threshold1;
-    double ap = config->Alpha;
-    BGModel->SetThresholds(th,ap);
-    
-    unsigned int bgflag = 1;
-    BGModel->SetUpdateFlag(bgflag);
+    BGModel->Intialize(rows, cols, nchannels, SequenceLength, TimeWindowSize, SDEstimationFlag, UseColorRatiosFlag);
+    BGModel->SetThresholds(Threshold,Alpha);
+    BGModel->SetUpdateFlag(UpdateFlag);
     
     //Shift backward or forward ground truth sequence counter.
     //for compensating pre-processed frames in the filter.
-    int cnt    = 0  + shiftFrame ; 
+    unsigned int cnt    = 0 ; 
 
     Mat Frame;
-    Mat gt_image;
     Mat ftimg;
-    Mat Mask;
-    Mask = Mat::zeros(rows,cols,CV_8UC1);
-    //Mat FGImage;
-    //Mat FGImage(1,matSize, CV_8U, Scalar::all(0));
-    //Mat FGImage(rows,cols, CV_8UC1, Scalar::all(0));
-    //FGImage = cv::Mat::zeros(rows,cols,CV_8UC1);
-    Mat filteredFGImage(1,matSize, CV_8U, Scalar::all(0));
+    Mat Mask(rows,cols,CV_8UC1,Scalar::all(0));
+    Mat FilteredFGImage(rows,cols,CV_8UC1,Scalar::all(0));
+    Mat tmp(rows,cols,CV_8UC1,Scalar::all(0));
 
     // For testing allocating memory
     unsigned char **DisplayBuffers;
+
     DisplayBuffers = new unsigned char*[5];
-    DisplayBuffers[0] = new unsigned char[cols*rows];
-    DisplayBuffers[1] = new unsigned char[cols*rows];
-    DisplayBuffers[2] = new unsigned char[cols*rows];
-    DisplayBuffers[3] = new unsigned char[cols*rows];
-    DisplayBuffers[4] = new unsigned char[cols*rows];
+    DisplayBuffers[0] = new unsigned char[matSize];
+    DisplayBuffers[1] = new unsigned char[matSize];
+    DisplayBuffers[2] = new unsigned char[matSize];
+    DisplayBuffers[3] = new unsigned char[matSize];
+    DisplayBuffers[4] = new unsigned char[matSize];
 
-    unsigned char *FilterFGImage = new unsigned char[cols*rows];
-    unsigned char *FGImage = new unsigned char[cols*rows];
+    
+    //unsigned char *FilterFGImage = new unsigned char[cols*rows];
+    //unsigned char *FGImage = new unsigned char[cols*rows];
 
+    VideoCapture video;
+    if (processing_video) {
+        video.open(inputVideoName);
+        // Check video has been opened sucessfully
+        if (!video.isOpened())
+            return 0;
+    }
+    
     // main loop 
     for(;;)
     {
-        //clean up all Mat structures.
-        //This is done because, performance was improved.
-        //FGImage         = Scalar::all(0);
-        //filteredFGImage = Scalar::all(0);
-        
-        if (processing_video) {
+        if (processing_video)
             video >> Frame;
-        }
         else
-        {
             Frame = imread(im_files[cnt+1]);
-        }
-
-        if (Frame.empty())
-        {    
-            break;
-        }
         
-        if (cnt < config->FramesToLearn) {
+        if (Frame.empty()) break;
+       
+        
+        if (cnt < 10) {
 
             // add frame to the background
             BGModel->AddFrame(Frame.data);
@@ -302,143 +307,58 @@ int main( int argc, char** argv )
         }
         
         // Build the background model with first N frames to learn
-        if(cnt == config->FramesToLearn)
-        {
+        if( cnt == 10 )
             BGModel->Estimation();
-        }
 
 
 
+        Mask = Scalar::all(0);
+        FilteredFGImage = Scalar::all(0);
 
         //subtract the background from each new frame
-        //Frame : new frame
-        //FGImage : to pass out the resulted FG (must be allocated before call) size imagerows x imagecols unsigned char
-        //FilteredFGImage : to pass out a filtered version of the FG. size imagerows x imagecols unsigned char
-        //DisplayBuffers : a list of buffers for processing (Array of pointers to unsigned char buffers, each of size imagerows x imagecols)
-        //((NPBGSubtractor *)BGModel)->NBBGSubtraction(Frame.data, FGImage.data, filteredFGImage.data, DisplayBuffers);
-        //BGModel->NBBGSubtraction(Frame.data, FGImage.data, filteredFGImage.data, DisplayBuffers);
-        ((NPBGSubtractor *)BGModel)->NBBGSubtraction(Frame.data, FGImage, FilterFGImage, DisplayBuffers);
-        //((NPBGSubtractor *)BGModel)->NBBGSubtraction(Frame.data, FGImage.data, FilterFGImage, DisplayBuffers);
+        ((NPBGSubtractor *)BGModel)->NBBGSubtraction(Frame.data, Mask.data, FilteredFGImage.data, DisplayBuffers);
 
         
         //here you pass a mask where pixels with true value will be masked out of the update.
-        //((NPBGSubtractor *)BGModel)->Update(FGImage.data);
-        ((NPBGSubtractor *)BGModel)->Update(FGImage);
+        ((NPBGSubtractor *)BGModel)->Update(Mask.data);
 
-        Mask.data = FGImage;
-        filteredFGImage.data = FilterFGImage;
+        //Mask.data = FGImage;
 
-        /*
-        //save mask to local directory
-        if (saveMask) {
+        if (saveMask && cnt >= InitFGMaskFrame && cnt <= EndFGMaskFrame) {
             stringstream str;
-            str << "npoutput/foreground/NPFG_" <<  cnt << ".jpg";
+            str << "np_fgmask/" <<  cnt << ".jpg";
             
             vector<int> compression_params;
             compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
             compression_params.push_back(100);
-            imwrite(str.str(), FGImage, compression_params);
+            imwrite(str.str(), Mask, compression_params);
         }
-        */
-        
-        /*
-        //looking for ground truth file
-        if ( cnt >=0 && compare && (it = gt_files.find(cnt)) != gt_files.end() ) {
-            
-            // open ground truth frame.
-            gt_image = imread(it->second, CV_LOAD_IMAGE_GRAYSCALE);
-            
-            if( gt_image.data ) {
-                
-                //Compare both images
-                perf.pixelLevelCompare(gt_image, FGImage);
-                
-                // display ground truth
-                if (displayImages)
-                    imshow("GROUND TRUTH", gt_image);
-                
-                //Print out debug messages to either file or std.
-                msg.str("");
-                msg     << cnt << " " << perf.asString() << " " ;
-                if (show_point) 
-                    msg << ptmsg.str();
-                
-                outfile << msg.str() << endl;
-                
-                if (verbose) 
-                    cout    << msg.str() << endl; 
-            }
-            
-            // counter of number of  processed frames
-            gt_cnt++;
-            
-            
 
-        }//end ground-truth compare
-        */
-
-        /*
-        // Save pixel information in a local file
-        if (show_point) {
-            ptmsg.str("");
-            ptmsg  
-            << (int)Frame.at<Vec3f>(nl,nc)[0] << " " 
-            << (int)Frame.at<Vec3f>(nl,nc)[1] << " " 
-            << (int)Frame.at<Vec3f>(nl,nc)[2] ;
-            ptfile << ptmsg.str() << endl;
-        }
-        */
-        
-        //Display sequence frames
         if (displayImages) {
             Frame.convertTo(ftimg, CV_8UC3);
-            if (show_point){
-                circle(ftimg,pt,8,Scalar(0,0,254),-1,8);
-                //circle(FGImage,pt,8,Scalar(155,155,155),-1,8);
-            }
-            
-            imshow("image", ftimg);
+            imshow("Image", ftimg);
             imshow("Mask", Mask);
-            //imshow("foreground image", filteredFGImage);
 
+            char key=0;
+            key = (char)waitKey(delay);
+            if( key == 27 ) 
+                break;
         }
+        
+        if (!displayImages && cnt > EndFGMaskFrame)
+            break;
+            
+        
         
         
         cnt++;
         
-        char key=0;
-        if (displayImages)
-            key = (char)waitKey(delay);
-        if( key == 27 ) { cout << "PRESSED BUTTON "<< endl; break;}
         
-        /*
-        //in case of not display option enabled stop execution 
-        //after last ground-truth file was processed
-        if (!displayImages && compare && gt_cnt >= gt_size)
-            break;
-        */
-
     }
 
-    /*
-    if (!groundTruthName.empty() && compare) {
-        
-        perf.calculateFinalPerformanceOfMetrics();
-        
-        cout    << perf.metricsStatisticsAsString() << endl;
-        outfile << "# TPR FPR SPE MCC  TPR TNR SPE MCC" << endl;
-        outfile << "# " << perf.metricsStatisticsAsString() << endl;
-        outfile.close();
-    }
-
-    if (ptfile.is_open())
-        ptfile.close();
-
-    */    
-    delete config;
     delete BGModel;
-    delete FilterFGImage;
-    delete FGImage;
+    //delete FilterFGImage;
+    //delete FGImage;
 
     delete [] DisplayBuffers[0];   // First delete pointer content
     delete [] DisplayBuffers[1];
