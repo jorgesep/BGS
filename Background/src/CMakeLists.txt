@@ -6,8 +6,7 @@ SET( sagmm_MAJOR_VERSION 0 )
 SET( sagmm_MINOR_VERSION 1 )
 SET( sagmm_PATCH_LEVEL 0 )
 
-SET( CMAKE_C_FLAGS "-Wall -g" )
-#SET( CMAKE_CXX_FLAGS "-Wall -g -03" )
+SET( CMAKE_C_FLAGS "-Wall -g O3" )
 SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
@@ -32,9 +31,9 @@ INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include)
 #delete bin files in make clean
 SET_DIRECTORY_PROPERTIES (
     PROPERTIES
-        ADDITIONAL_MAKE_CLEAN_FILES "${sagmm}_SOURCE_DIR}/*~"
+        ADDITIONAL_MAKE_CLEAN_FILES "${sagmm_SOURCE_DIR}/*~"
         ADDITIONAL_MAKE_CLEAN_FILES "${PROJECT_SOURCE_DIR}/../bin/*"
-        ADDITIONAL_MAKE_CLEAN_FILES "${sagmm}_BINARY_DIR}/*"
+        ADDITIONAL_MAKE_CLEAN_FILES "${sagmm_BINARY_DIR}/*"
 )
 
 # Set DEBUG option
@@ -52,8 +51,9 @@ link_directories(${BGS_BINARY_DIR}/Utils)
 #find_library(Logging log4cplus PATHS /opt/local/lib)
 
 
-#ADD_LIBRARY(Background SHARED  mdgkt_filter background_subtraction ${OpenCV_LIBS})
-#set_property(TARGET Background PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
+ADD_LIBRARY(SAGMMFilter SHARED  mdgkt_filter icdm_model )
+target_link_libraries(SAGMMFilter ${OpenCV_LIBS})
+set_property(TARGET SAGMMFilter PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
 ADD_EXECUTABLE( testVideoMdgkt mdgkt_filter.cpp testVideoMdgkt.cpp )
 TARGET_LINK_LIBRARIES( testVideoMdgkt ${OpenCV_LIBS} )
