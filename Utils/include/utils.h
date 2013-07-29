@@ -1,3 +1,19 @@
+/*******************************************************************************
+ * This file is part of libraries to evaluate performance of Background 
+ * Subtraction algorithms.
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
 #ifndef bgs_utils_h
 #define bgs_utils_h
 
@@ -9,7 +25,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include <opencv2/opencv.hpp>
+//#include <opencv2/opencv.hpp>
 
 using namespace cv;
 using namespace std;
@@ -103,6 +119,10 @@ unsigned int name_to_number(string file);
 void list_files(string directory, map<unsigned int,string>& list, string type = ".PNG");
 void find_dir_by_name(string , map<unsigned int,string>& );
 
+void create_foreground_directory(string& path);
+
+void parse_file(string filename, vector< pair<string, string> >& pair_str);
+    
     
 //Return a a point (x,y) from string 'x,y'
 Point stringToPoint(string);
@@ -113,7 +133,7 @@ void showMultipleImages();
 bool FileExists( const char* );
 bool DirectoryExists( const char* path );
 void CreateDirectory( const char* path);
-
+    
 NPBGConfig* loadInitParametersFromFile(string init="config/np_init.txt");
 }
 #endif

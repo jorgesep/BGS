@@ -19,6 +19,7 @@
 #include <opencv2/opencv.hpp>
 //#include "boost/program_options.hpp" 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <iomanip> 
 
@@ -29,12 +30,12 @@
 #include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
-//#include <getopt.h>
 
 using namespace cv;
 using namespace std;
 using namespace bgs;
 namespace po = boost::program_options;
+using namespace boost::filesystem;
 
 
 void display_usage( void )
@@ -43,6 +44,14 @@ void display_usage( void )
     << "------------------------------------------------------------------------------" << endl
     << "Performance Measure program."                                                   << endl
     << "------------------------------------------------------------------------------" << endl
+    << "                 --------------                                               " << endl
+    << " Masks dir ---->|              |                                              " << endl
+    << "                |              |                                              " << endl
+    << " Truth dir ---->|  Performance |--> Measures.txt                              " << endl
+    << "                |    Measure   |                                              " << endl
+    << " Parameters --->|              |                                              " << endl
+    << "                 --------------                                               " << endl
+    << "                                                                              " << endl
     << endl;
     //exit( EXIT_FAILURE );
 }
@@ -54,13 +63,17 @@ int main( int argc, char** argv )
     map<unsigned int, string> fg_files;
     map<unsigned int, string>::iterator gt_it;
     map<unsigned int, string>::iterator fg_it;
+    vector< pair<string,string> > parameters;
     int gt_size = -1;
     int fg_size = -1;
     bool verbose = false;
     string mask_dir;
     string ground_dir;
-    string param("parameters.txt");
+    string parameter_file("parameters.txt");
+    string value_first_parameter("");
 
+    
+    
     /** Define and parse the program options 
      */ 
     try {
@@ -71,7 +84,7 @@ int main( int argc, char** argv )
         ("verbose,v", "display messages")
         ("ground,g", po::value<string>(), "input ground-truth directory")
         ("mask,m",   po::value<string>(), "input foreground mask directory")
-        ("param,p",   po::value<string>(), "file with message that contains main parameters of algorithm.")
+        ("param,p",   po::value<string>(), "file which contains algorithm configuration parameters.")
         ;
 
         po::variables_map vm;
@@ -110,7 +123,13 @@ int main( int argc, char** argv )
         if (vm.count("mask")) {
             mask_dir = vm["mask"].as<string>();
             
-            param = mask_dir + "/" +  param;
+            
+            parameter_file = mask_dir + "/" +  parameter_file;
+            if (is_regular_file(parameter_file)) {
+                parse_file(parameter_file,parameters);
+                //cout << parameters[1].first << " " << parameters[1].second << endl;
+            }
+            
             // Read files from input directory
             list_files(mask_dir,fg_files, ".jpg");
             fg_size = fg_files.size();
@@ -123,7 +142,7 @@ int main( int argc, char** argv )
         }
         
         if (vm.count("param")) {
-            param = vm["param"].as<string>();
+            parameter_file = vm["param"].as<string>();
         }
 
     }
@@ -148,18 +167,34 @@ int main( int argc, char** argv )
     Mat fgmask;
     string header("# ");
     
+    // Prepare header of outfile
+    if (parameters.size() > 0) {
+        vector< pair<string, string> >::iterator       it  = parameters.begin();
+        vector< pair<string, string> >::const_iterator end = parameters.end();
+       
+        value_first_parameter = it->second + " ";
+        
+        stringstream out;
+        out << "# ";
+
+        for (; it != end; ++it) {
+            out << it->first << "=" << it->second << " ";
+        }
+        header = out.str();
+    }
+    
     //Comparing size of both lists.
     //In case they are not the similar takes lower size
     size = fg_size <= gt_size ? fg_size : gt_size;
     
-    // Takes ground truth as reference for counter.
+    // Takes ground truth as reference counter.
     cnt = gt_files.begin()->first;
     
     //for (gt_it = gt_files.begin(); gt_it != gt_files.end(); gt_it++)
     //    cout << gt_it->first << " " << gt_it->second << endl;
     
     //Opening result file.
-    ifstream infile (param.c_str());
+    ifstream infile (parameter_file.c_str());
     if (infile.is_open()) {
         stringstream lines;
         string line;
@@ -176,7 +211,6 @@ int main( int argc, char** argv )
 
     outfile.open("measure.txt");
     outfile << header << endl;
-    //outfile << "# " << mask_dir << " " <<  ground_dir  << endl; 
 
     for ( int i= cnt; i<size + cnt; i++)
     {
@@ -217,8 +251,10 @@ int main( int argc, char** argv )
     outfile << "# " << measure->metricsStatisticsAsString() << endl;
     outfile.close();
 
+    
     rocfile.open("measure_roc.txt", std::fstream::out | std::fstream::app);
     rocfile 
+    << value_first_parameter
     << measure->rocAsString() << endl;
     rocfile.close();
 

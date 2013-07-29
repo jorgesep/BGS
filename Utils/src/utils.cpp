@@ -16,12 +16,15 @@
  ******************************************************************************/
 #include <opencv2/opencv.hpp>
 #include "utils.h"
-
+#include <boost/filesystem.hpp>
 #include <list>
 #include <regex.h>
+#include <boost/regex.hpp>
 
 using namespace cv;
 using namespace std;
+using namespace boost::filesystem;
+
 
 namespace bgs {
 
@@ -263,6 +266,89 @@ NPBGConfig* loadInitParametersFromFile(string config)
     }
     return cfg;
 }
+
+    
+// Create output foreground directory
+void create_foreground_directory(string& _path)
+{
+    unsigned long dir_count = 0;
+    
+    path p (_path);
+    
+    if ( !exists(p) )
+        create_directory(p);
+    
+    directory_iterator end_iter;
+    for ( directory_iterator dir_itr( p ); dir_itr != end_iter;  ++dir_itr ) {
+        
+        if ( is_directory( *dir_itr ) && dir_itr->path().filename().stem() != "." )
+            //cout << dir_itr->path().filename() << endl;
+            dir_count++;
+    }   
+
+    stringstream new_dir;
+    new_dir << _path << "/" << dir_count ;
+    create_directory(new_dir.str());
+    
+    _path = new_dir.str();
+        
+}
+
+    
+// Parse file, gets pair of parameter values.
+void parse_file(string filename, vector< pair<string, string> >& pair_str)
+{
+    vector< pair<string, string> > mymap;
+    //string line("# a1Q3z:67P7 p2 :68 3456ttyY=5678pq p3:79 223ert=567 ssdf =  gggg");
+
+    // Delete all space between separators and replace them by ':'
+    boost::regex expr("(\\s*)[:=](\\s*)");
+    string fmt(":");
+
+
+    
+    if ( exists(filename) && is_regular_file(filename) ) {
+        
+        ifstream input;
+        input.open(filename.c_str());
+
+        for( string line; getline( input, line ); ) {
+            
+            // replace spaces
+            string line2 = boost::regex_replace(line, expr, fmt);
+            
+            static const boost::regex e("\\w+[\\.|\\+|\\-]?\\w*\\s*[:=]\\s*\\w+[\\.\\+\\-]?\\w+");
+            //static const boost::regex e("\\w+\\s*[:=]\\s*\\w+");
+            string::const_iterator start, end;
+
+            start = line2.begin();
+            end   = line2.end();
+            boost::match_results<std::string::const_iterator> what;
+            boost::match_flag_type flags = boost::match_default;
+            
+            while(boost::regex_search(start, end, what, e, flags))
+            {
+                size_t pos  = what.str().find(':');
+                size_t size = what.str().size(); 
+                //cout << " " << what.str() << endl;
+
+                //string w1 = what.str().substr(0,pos);
+                //string w2 = what.str().substr(pos+1,size);
+                
+                //cout << w1 << " " << w2 << endl;
+                
+                pair_str.push_back(
+                                   make_pair(what.str().substr(0,pos), 
+                                             what.str().substr(pos+1,size)
+                                             ));
+                
+                start = what[0].second;
+                
+            }
+        }        
+    }
+}
+
 
 
 }

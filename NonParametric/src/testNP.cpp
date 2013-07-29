@@ -73,7 +73,7 @@ int main( int argc, char** argv )
     int delay = 1000/video.get(CV_CAP_PROP_FPS);
     int cols = video.get(CV_CAP_PROP_FRAME_WIDTH);
     int rows = video.get(CV_CAP_PROP_FRAME_HEIGHT);
-    int matSize   = rows * cols;
+    //int matSize   = rows * cols;
     int nchannels = 3;
 
     

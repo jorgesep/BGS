@@ -1,10 +1,11 @@
 GaussiansNo : 4.0
 Sigma : 36.0
-SigmaMax : 5.0
+SigmaMax : 3.0
 SigmaMin : 4.0
-cf : 0.001
+#cf : 0.001
+cf : 0.011
 Range : 16
 Gen : 9
 cT : 0.05
 Tau : 0.5
-Alfa : 0.001
+Alfa : 0.000001

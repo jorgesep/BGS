@@ -52,7 +52,8 @@ const char* keys =
     "{ n | frame   | 0     | Shift ground-truth in +/- n frames, e.g -n -3 or -n 3}"
     "{ f | filter  | true  | Apply smooth preprocessing filter, Default true.}"
     "{ p | point   |       | Print out RGB values of point,  e.g -p 250,300 }"
-    "{ m | mask    | false | Save foreground masks to fgmask directory}"
+    "{ l | range   |       | Frame range of the mask to be saved,  e.g -l 216,682 }"
+    "{ m | mask    | true  | Save foreground masks to fgmask directory}"
     "{ v | verbose | false | Print out output messages by console}"
     "{ d | debug   | false | Debug mode, print by console internal gaussian parameters }"
     "{ s | show    | false | Show images of video sequence }"
@@ -89,6 +90,7 @@ int main( int argc, char** argv )
     const string saveName        = cmd.get<string>("write");
     const string initConfigName  = cmd.get<string>("config");
     const string displayPoint    = cmd.get<string>("point");
+    const string rangeFrame      = cmd.get<string>("range");
     const int shiftFrame         = cmd.get<int>("frame");
     const bool displayImages     = cmd.get<bool>("show");
     const bool applyFilter       = cmd.get<bool>("filter");
@@ -117,6 +119,9 @@ int main( int argc, char** argv )
     int im_size = -1;
     mdgkt *filter;
     bool processing_video = false;
+    unsigned int InitFGMaskFrame = 216;
+    unsigned int EndFGMaskFrame  = 682;
+
     
 
     
@@ -151,11 +156,17 @@ int main( int argc, char** argv )
         cout << bg_model.initParametersToString() << endl;
 
     //Create foreground mask directory
+    string foreground_path = "fgmask";
     if (saveMask) {
-        CreateDirectory("fgmask");
-        outfile.open("fgmask/parameters.txt");
+        
+        // Create directoty if not exists and create a numbered internal directory.
+        // fgmask/0, fgmask/1, ...
+        create_foreground_directory(foreground_path);
+        string parameter_file = foreground_path + "/parameters.txt";
+        outfile.open(parameter_file.c_str());
         outfile << bg_model.initParametersAsOneLineString() << endl;
         outfile.close();
+
     }
     
     //Check ground-truth
@@ -223,6 +234,15 @@ int main( int argc, char** argv )
         ptfile.open(name.str().c_str());
     }
     
+    
+    if (!rangeFrame.empty()) {
+        Point p1;
+        p1 = stringToPoint(rangeFrame);
+        InitFGMaskFrame = p1.x;
+        EndFGMaskFrame  = p1.y;
+    }
+    
+    
     //check if debug option is enabled
     //this will disable verbose mode
     if (debugPoint) {
@@ -283,7 +303,7 @@ int main( int argc, char** argv )
     
     //Shift backward or forward ground truth sequence counter.
     //for compensating pre-processed frames in the filter.
-    int cnt    = 0  + shiftFrame + cntTemporalWindow; 
+    unsigned int cnt    = 0  + shiftFrame + cntTemporalWindow; 
 
 
     // main loop 
@@ -325,7 +345,7 @@ int main( int argc, char** argv )
         
         //Global illumination changing factor 'g' between reference image ir and current image ic.
         double globalIlluminationFactor = icdm::Instance()->getIlluminationFactor(img,bgimg);
-        //cout << "GLOBAL: " << globalIlluminationFactor << endl;
+
 
         //Calling background subtraction algorithm.
         bg_model(img, fgmask, update_bg_model ? -1 : 0, globalIlluminationFactor);
@@ -337,9 +357,9 @@ int main( int argc, char** argv )
         img.copyTo(fgimg, fgmask);
         
         //save mask to local directory
-        if (saveMask) {
+        if (saveMask  && cnt >= InitFGMaskFrame && cnt <= EndFGMaskFrame) {
             stringstream str;
-            str << "fgmask/FG_" <<  cnt << ".jpg";
+            str << foreground_path << "/FG_" <<  cnt << ".jpg";
             
             vector<int> compression_params;
             compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
@@ -401,31 +421,26 @@ int main( int argc, char** argv )
             imshow("image", ftimg);
             imshow("foreground mask", fgmask);
             imshow("foreground image", fgimg);
-            //imshow("background image", bgimg);
 
-            //this is just to save frame 350.
-            if (cnt == 350) {
-                imwrite("350_fgmask.jpg",fgmask);
-                imwrite("350_fgimg.jpg",fgimg);
-            }
+            char key=0;
+            key = (char)waitKey(delay);
+            if( key == 27 ) 
+                break;        
+        
         }
 
  
         cnt++;
         
-        char key=0;
-        if (displayImages)
-            key = (char)waitKey(delay);
-        if( key == 27 ) { cout << "PRESSED BUTTON "<< endl; break;}
 
         //in case of not display option enabled stop execution 
         //after last ground-truth file was processed
-        if (!displayImages && compare && gt_cnt >= gt_size)
+        if (!displayImages && cnt > EndFGMaskFrame)
             break;
 
         //save model
-        if (cnt == 500)
-            bg_model.saveModel();
+        //if (cnt == 500)
+        //    bg_model.saveModel();
         
     }
 
