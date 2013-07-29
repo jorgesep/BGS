@@ -26,38 +26,16 @@
 
 
 //#include "Performance.h"
-//#include "utils.h"
+#include "utils.h"
 #include "NPBGSubtractor.h"
+#include "mdgkt_filter.h"
 
 using namespace cv;
 using namespace std;
 using namespace boost::filesystem;
-//using namespace bgs;
+using namespace bgs;
 
 
-
-
-void writeConfigFile(string _file = "config/np_init.yml",
-                     int FramesToLearn = 10,
-                     int SequenceLength = 100,
-                     int TimeWindowSize = 100,
-                     char SDEstimationFlag = 1,
-                     char UseColorRatiosFlag = 1,
-                     double Threshold = 10e-8,
-                     double Alpha = 0.3)
-{
-    FileStorage fs("np_init.yml", FileStorage::WRITE);
-
-    fs << "FramesToLearn" << FramesToLearn;
-    fs << "SequenceLength" << SequenceLength;
-    fs << "TimeWindowSize" << TimeWindowSize;
-    fs << "SDEstimationFlag" << SDEstimationFlag;
-    fs << "UseColorRatiosFlag" << UseColorRatiosFlag;
-    fs << "Threshold" << Threshold;
-    fs << "Alpha" << Alpha;
-    fs.release();
-
-}
 
 
 void rename_dir(string name)
@@ -112,7 +90,7 @@ int main( int argc, char** argv )
     const bool displayImages     = cmd.get<bool>("show");
     const bool saveMask          = cmd.get<bool>("mask");
 
-    
+
     // local variables
     int delay     = 25;
     int cols      = 0;
@@ -214,19 +192,16 @@ int main( int argc, char** argv )
     
 
     // Create mask directory
+    string foreground_path = "np_mask";
     if (saveMask) {
-        string _fgpath = "np_fgmask";
-        path p (_fgpath);
-        if (exists(p)) {
-            rename_dir(_fgpath);
-        }
-        else {
-            create_directory(_fgpath);
-        }
         
+        // Create directoty if not exists and create a numbered internal directory.
+        // np_mask/0, np_mask/1, ...
+        create_foreground_directory(foreground_path);
+                
         ofstream outfile;
         stringstream param;
-        param << "np_fgmask/parameters.txt" ;
+        param << foreground_path << "/parameters.txt" ;
         outfile.open(param.str().c_str());
         outfile 
         << "#"
@@ -298,6 +273,10 @@ int main( int argc, char** argv )
         
         if (cnt < 10) {
 
+            // Preprocessing filter.
+            //Mat img;
+            //mdgkt::Instance()->SpatioTemporalPreprocessing(Frame, img);
+
             // add frame to the background
             BGModel->AddFrame(Frame.data);
             
@@ -324,20 +303,29 @@ int main( int argc, char** argv )
 
         //Mask.data = FGImage;
 
+        // Applying morphological filter
+        // Erode the image
+        Mat Element(2,2,CV_8U,cv::Scalar(1));
+        Mat Eroded; // the destination image
+        //erode(Mask,Eroded,Mat());
+        erode(Mask,Eroded,Element);
+
         if (saveMask && cnt >= InitFGMaskFrame && cnt <= EndFGMaskFrame) {
             stringstream str;
-            str << "np_fgmask/" <<  cnt << ".jpg";
+            str << foreground_path << "/" <<  cnt << ".jpg";
             
             vector<int> compression_params;
             compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
             compression_params.push_back(100);
-            imwrite(str.str(), Mask, compression_params);
+            //imwrite(str.str(), Mask, compression_params);
+            imwrite(str.str(), Eroded, compression_params);
         }
 
         if (displayImages) {
             Frame.convertTo(ftimg, CV_8UC3);
             imshow("Image", ftimg);
-            imshow("Mask", Mask);
+            //imshow("Mask", Mask);
+            imshow("Mask", Eroded);
 
             char key=0;
             key = (char)waitKey(delay);
