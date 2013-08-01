@@ -1,17 +1,3 @@
-//
-//  Illumination-Invariant Change Detection Model
-//
-//  Created by Jorge Sepulveda on 6/28/13.
-//  Copyright (c) 2013 __MyCompanyName__. All rights reserved.
-//
-
-#ifndef _icdm_model_h
-#define _icdm_model_h
-#include <opencv2/opencv.hpp>
-
-
-using namespace std;
-using namespace cv;
 /*******************************************************************************
  * This file is part of libraries to evaluate performance of Background 
  * Subtraction algorithms.
@@ -30,6 +16,20 @@ using namespace cv;
  ******************************************************************************/
 
 
+//
+//  Illumination-Invariant Change Detection Model
+//
+//  Created by Jorge Sepulveda on 6/28/13.
+//  Copyright (c) 2013 __MyCompanyName__. All rights reserved.
+//
+
+#ifndef _icdm_model_h
+#define _icdm_model_h
+#include <opencv2/opencv.hpp>
+
+
+using namespace std;
+using namespace cv;
 
 /**
  * Porting from Matlab
