@@ -353,7 +353,7 @@ void Performance::calculateFinalPerformanceOfMetrics()
     this->meanOfMetrics();
 }
 
-}
+
 
 
 double getPSNR(Mat& src1, Mat& src2, int bb)
@@ -481,4 +481,4 @@ Scalar getMSSIM( const Mat& i1, const Mat& i2)
     return mssim;
 }
 
-
+}
