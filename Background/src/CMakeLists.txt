@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
-project( sagmm )
+project( Background )
 
 # The version number.
-SET( sagmm_MAJOR_VERSION 0 )
-SET( sagmm_MINOR_VERSION 1 )
-SET( sagmm_PATCH_LEVEL 0 )
+SET( Background_MAJOR_VERSION 0 )
+SET( Background_MINOR_VERSION 1 )
+SET( Background_PATCH_LEVEL 0 )
 
 SET( CMAKE_C_FLAGS "-Wall -g O3" )
 SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
@@ -14,6 +14,7 @@ endif()
 
 #FILE ( GLOB SRCS *.cpp *.h )
 FILE ( GLOB SRCS background_subtraction.cpp  mdgkt_filter.cpp icdm_model.cpp bgs.cpp *.h )
+FILE ( GLOB MODULE background_subtraction.cpp  mdgkt_filter.cpp icdm_model.cpp *.h )
 
 
 FILE ( GLOB SCRIPTS ${PROJECT_SOURCE_DIR}/scripts/*.py ${PROJECT_SOURCE_DIR}/scripts/*.sh )
@@ -31,9 +32,9 @@ INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include)
 #delete bin files in make clean
 SET_DIRECTORY_PROPERTIES (
     PROPERTIES
-        ADDITIONAL_MAKE_CLEAN_FILES "${sagmm_SOURCE_DIR}/*~"
+        ADDITIONAL_MAKE_CLEAN_FILES "${Background_SOURCE_DIR}/*~"
         ADDITIONAL_MAKE_CLEAN_FILES "${PROJECT_SOURCE_DIR}/../bin/*"
-        ADDITIONAL_MAKE_CLEAN_FILES "${sagmm_BINARY_DIR}/*"
+        ADDITIONAL_MAKE_CLEAN_FILES "${Background_BINARY_DIR}/*"
 )
 
 # Set DEBUG option
@@ -50,10 +51,17 @@ link_directories(${BGS_BINARY_DIR}/Utils)
 
 #find_library(Logging log4cplus PATHS /opt/local/lib)
 
+ADD_LIBRARY( SAGMM SHARED ${MODULE} )
+target_link_libraries(SAGMM ${OpenCV_LIBS})
+set_property(TARGET SAGMM PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
-ADD_LIBRARY(SAGMMFilter SHARED  mdgkt_filter icdm_model )
-target_link_libraries(SAGMMFilter ${OpenCV_LIBS})
-set_property(TARGET SAGMMFilter PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
+#ADD_LIBRARY(SAGMMFilter SHARED  mdgkt_filter icdm_model )
+#target_link_libraries(SAGMMFilter ${OpenCV_LIBS})
+#set_property(TARGET SAGMMFilter PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
+
+#ADD_LIBRARY(SAGMMBuilder SHARED SAGMMBuilder mdgkt_filter icdm_model )
+#target_link_libraries(SAGMMBuilder  ${OpenCV_LIBS})
+#set_property(TARGET SAGMMBuilder PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
 ADD_EXECUTABLE( testVideoMdgkt mdgkt_filter.cpp testVideoMdgkt.cpp )
 TARGET_LINK_LIBRARIES( testVideoMdgkt ${OpenCV_LIBS} )
@@ -71,8 +79,12 @@ ADD_EXECUTABLE( plot_point bg_points.cpp )
 TARGET_LINK_LIBRARIES( plot_point ${OpenCV_LIBS} )
 set_property(TARGET plot_point PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
-ADD_EXECUTABLE( bgs ${SRCS} )
-TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} Performance Utils)
+#ADD_EXECUTABLE( bgs ${SRCS} )
+#TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} Performance Utils)
+#set_property(TARGET bgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
+ADD_EXECUTABLE( bgs bgs )
+TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} SAGMM Performance Utils)
 set_property(TARGET bgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)
