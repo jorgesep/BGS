@@ -1194,6 +1194,35 @@ void BackgroundSubtractorMOG3::loadInitParametersFromFile(const string initInput
 
 }
 
+void BackgroundSubtractorMOG3::loadInitParametersFromXMLFile()
+{
+
+    string filename = "config/sagmm.xml";
+
+    ifstream file(filename.c_str());
+    if (!file.good()) 
+        return ;
+
+    FileStorage fs(filename, FileStorage::READ);
+
+    nmixtures                 = (int)fs["GaussiansNo"];
+    fVarInit                  = (double)fs["Sigma"];
+    fVarMax                   = (double)fs["SigmaMax"];
+    fVarMax *= fVarInit;
+    fVarMin                   = (double)fs["SigmaMin"];
+    fAlpha                    = (double)fs["Alpha"];
+    fCf                       = (double)fs["Cf"];
+    backgroundRatio = 1.0f - fCf;
+    fCT                       = (double)fs["CT"];
+    varThreshold              = (double)fs["Range"];
+    varThresholdGen           = (double)fs["Gen"];
+    fTau                      = (double)fs["Tau"];
+
+    fs.release();
+
+}
+
+
 string BackgroundSubtractorMOG3::initParametersToString()
 {
     stringstream str;

@@ -24,7 +24,7 @@
 #include <list>
 
 //#include <iostream>
-//#include <fstream>
+#include <fstream>
 //#include <sstream>
 
 
@@ -63,6 +63,7 @@ public:
     virtual void loadBackgroundModelFromFile(const string);
     virtual void saveBackgroundModelToFile(const string);
     virtual void loadInitParametersFromFile(const string);
+    virtual void loadInitParametersFromXMLFile();
     virtual string initParametersToString();
     virtual string initParametersAsOneLineString();
     virtual void getBackground(OutputArray bgImage);

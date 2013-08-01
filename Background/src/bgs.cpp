@@ -148,7 +148,7 @@ int main( int argc, char** argv )
 
     //Load initialization parameters
     if (!initConfigName.empty()) {
-        bg_model.loadInitParametersFromFile(initConfigName);
+        bg_model.loadInitParametersFromXMLFile();
     }
 
     //Print out initialization parameters.
