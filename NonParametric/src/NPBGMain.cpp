@@ -60,6 +60,8 @@ const char* keys =
     "{ i | input   |       | Input video }"
     "{ c | config  |       | Load init config file }"
     "{ m | mask    | true  | Save foreground masks}"
+    "{ p | filter  | true  | Apply morphological filter}"
+    "{ t | pre     | false | Apply temporal pre processing filter}"
     "{ s | show    | false | Show images of video sequence }"
     "{ h | help    | false | Print help message }"
 };
@@ -89,6 +91,8 @@ int main( int argc, char** argv )
     const string initConfigName  = cmd.get<string>("config");
     const bool displayImages     = cmd.get<bool>("show");
     const bool saveMask          = cmd.get<bool>("mask");
+    const bool applyMorphologicalFilter = cmd.get<bool>("filter");
+    const bool preProcessingFilter      = cmd.get<bool>("pre");
 
 
     // local variables
@@ -233,6 +237,7 @@ int main( int argc, char** argv )
     unsigned int cnt    = 0 ; 
 
     Mat Frame;
+    Mat FilteredFrame;
     Mat ftimg;
     Mat Mask(rows,cols,CV_8UC1,Scalar::all(0));
     Mat FilteredFGImage(rows,cols,CV_8UC1,Scalar::all(0));
@@ -260,6 +265,29 @@ int main( int argc, char** argv )
             return 0;
     }
     
+    
+    //spatio-temporal pre-processing filter for smoothing frames.
+    mdgkt *filter;
+    if (preProcessingFilter) {
+        filter = mdgkt::Instance();
+        for (int i=0; i<filter->getTemporalWindow(); i++) {
+            Frame = Scalar::all(0);
+            if (processing_video)
+                video >> Frame;
+            else
+                Frame = imread(im_files[i+1]);
+            // Initialize in zero three channels of img kernel.
+            if (i==0)
+               filter->initializeFirstImage(Frame);
+            //Apply filter and puts result in img.
+            //Note this filter also keeps internal copy of filter result.
+            filter->SpatioTemporalPreprocessing(Frame, FilteredFrame);
+        }
+        
+        cnt += filter->getTemporalWindow();
+    }
+
+
     // main loop 
     for(;;)
     {
@@ -269,16 +297,17 @@ int main( int argc, char** argv )
             Frame = imread(im_files[cnt+1]);
         
         if (Frame.empty()) break;
-       
+      
+        if (preProcessingFilter)
+            filter->SpatioTemporalPreprocessing(Frame, FilteredFrame);
         
         if (cnt < 10) {
 
-            // Preprocessing filter.
-            //Mat img;
-            //mdgkt::Instance()->SpatioTemporalPreprocessing(Frame, img);
-
             // add frame to the background
-            BGModel->AddFrame(Frame.data);
+            if (preProcessingFilter)
+                BGModel->AddFrame(FilteredFrame.data);
+            else
+                BGModel->AddFrame(Frame.data);
             
             cnt +=1;
             
@@ -295,7 +324,10 @@ int main( int argc, char** argv )
         FilteredFGImage = Scalar::all(0);
 
         //subtract the background from each new frame
-        ((NPBGSubtractor *)BGModel)->NBBGSubtraction(Frame.data, Mask.data, FilteredFGImage.data, DisplayBuffers);
+        if (preProcessingFilter)
+            ((NPBGSubtractor *)BGModel)->NBBGSubtraction(FilteredFrame.data, Mask.data, FilteredFGImage.data, DisplayBuffers);
+        else
+            ((NPBGSubtractor *)BGModel)->NBBGSubtraction(Frame.data, Mask.data, FilteredFGImage.data, DisplayBuffers);
 
         
         //here you pass a mask where pixels with true value will be masked out of the update.
@@ -305,10 +337,15 @@ int main( int argc, char** argv )
 
         // Applying morphological filter
         // Erode the image
-        Mat Element(2,2,CV_8U,cv::Scalar(1));
         Mat Eroded; // the destination image
-        //erode(Mask,Eroded,Mat());
-        erode(Mask,Eroded,Element);
+        if (applyMorphologicalFilter) {
+            Mat Element(2,2,CV_8U,cv::Scalar(1));
+            //erode(Mask,Eroded,Mat());
+            erode(Mask,Eroded,Element);
+        }
+        else {
+            Mask.copyTo(Eroded);
+        }
 
         if (saveMask && cnt >= InitFGMaskFrame && cnt <= EndFGMaskFrame) {
             stringstream str;
