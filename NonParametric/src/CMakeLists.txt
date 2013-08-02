@@ -1,9 +1,9 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT( NPBGS )
 # The version number.
-SET( Performance_MAJOR_VERSION 0 )
-SET( Performance_MINOR_VERSION 1 )
-SET( Performance_PATCH_LEVEL 0 )
+SET( NPBGS_MAJOR_VERSION 0 )
+SET( NPBGS_MINOR_VERSION 1 )
+SET( NPBGS_PATCH_LEVEL 0 )
 
 
 #SET( CMAKE_C_FLAGS   "-g -Wall" )
@@ -17,7 +17,6 @@ endif()
 FILE ( GLOB TEST test*.cpp *.h )
 FILE ( GLOB SRCS NPBG*.cpp *.h )
 FILE ( GLOB BUILDER  NPBuilder.cpp *.h )
-#find_package( Boost REQUIRED COMPONENTS program_options )
 
 # openCV library
 set(OpenCV_DIR "/usr/local/share/OpenCV"
@@ -27,18 +26,18 @@ FIND_PACKAGE( OpenCV REQUIRED )
 find_package( Boost REQUIRED COMPONENTS filesystem system )
 include_directories( ${Boost_INCLUDE_DIRS} )
 
+INCLUDE_DIRECTORIES(${Framework_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include)
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Performance/include)
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Background/include)
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/ThirdParty/bg_subt_code)
-INCLUDE_DIRECTORIES(${Framework_SOURCE_DIR})
+
 link_directories(${BGS_BINARY_DIR}/Utils)
 link_directories(${BGS_BINARY_DIR}/Performance)
 link_directories(${BGS_BINARY_DIR}/Background)
 link_directories(${BGS_BINARY_DIR}/lib)
 
 ADD_EXECUTABLE( testNP ${TEST} )
-#TARGET_LINK_LIBRARIES( testNP  ${OpenCV_LIBS} NonParametricModel ${Boost_LIBRARIES} )
 TARGET_LINK_LIBRARIES( testNP  ${OpenCV_LIBS} NonParametricModel )
 set_property(TARGET testNP PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 

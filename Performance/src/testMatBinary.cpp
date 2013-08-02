@@ -138,9 +138,9 @@ int main( int argc, char** argv )
    
     //----------------------------------------------
     Mat bg22   = imread("/Users/jsepulve/Downloads/BGS/Performance/config/bg22.png");
-    Size size = bg22.size();
+    //Size size = bg22.size();
     int type  = bg22.type();
-    int depth = bg22.depth();
+    //int depth = bg22.depth();
     
     int nchannels = CV_MAT_CN(type);
     CV_Assert( nchannels == 3 );

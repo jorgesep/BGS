@@ -106,9 +106,9 @@ int main( int argc, char** argv )
 
     //Point pt1 =  Point(250, 300);
     Point pt1 =  Point(244,680);
-    Point pt2 =  Point(680,244);
-    Point pt3 =  Point(10, 8);
-    Point pt4 =  Point(10, 8);
+    //Point pt2 =  Point(680,244);
+    //Point pt3 =  Point(10, 8);
+    //Point pt4 =  Point(10, 8);
     //image.at<cv::Vec3b>(j,i)[0]= 255;
     //image.at<cv::Vec3b>(j,i)[0]= 255;
 
