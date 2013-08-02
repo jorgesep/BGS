@@ -104,6 +104,9 @@ int main( int argc, char** argv )
 
         namedWindow("Non Parametric", CV_WINDOW_NORMAL);
         moveWindow("Non Parametric", 200, 20);
+
+        namedWindow("SAGMM", CV_WINDOW_NORMAL);
+        moveWindow("SAGMM", 200, 200);
     }
     
 
@@ -128,12 +131,18 @@ int main( int argc, char** argv )
     non_parametric->loadConfigParameters();
     non_parametric->initializeAlgorithm();
    
-    SAGMMBuilder *sagmm = new SAGMMBuilder();
+    Framework *sagmm = new Framework();
+    sagmm->setAlgorithm(new SAGMMBuilder());
+    sagmm->setName("SAGMM");
+    sagmm->loadConfigParameters();
+    sagmm->initializeAlgorithm();
+    
      
     Mat Frame;
     Mat Image;
     Mat Foreground;
     Mat NPMask;
+    Mat SAMask;
    
     int cnt = 0;
 
@@ -143,6 +152,7 @@ int main( int argc, char** argv )
 
         NPMask     = Scalar::all(0);
         Foreground = Scalar::all(0);
+        SAMask     = Scalar::all(0);
 
         input_frame->getFrame(Frame);
         
@@ -150,12 +160,14 @@ int main( int argc, char** argv )
     
         framework->updateAlgorithm(Frame, Foreground);
         non_parametric->updateAlgorithm(Frame, NPMask);
+        sagmm->updateAlgorithm(Frame, SAMask);
         
         if (displayImages) {
             Frame.convertTo(Image, CV_8UC3);
             imshow("Current Frame", Image);
             imshow("MOG2", Foreground);
             imshow("Non Parametric", NPMask);
+            imshow("SAGMM", SAMask);
             
             char key=0;
             key = (char)waitKey(delay);
