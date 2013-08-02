@@ -1,10 +1,11 @@
-Range : 10
-Range : 20
-Range : 30
-Range : 40
-Range : 50
-Range : 60
-Range : 70
-Range : 80
-Range : 90
-Range : 100
+<Range>10</Range>
+<Range>12</Range>
+<Range>14</Range>
+<Range>16</Range>
+<Range>18</Range>
+<Range>20</Range>
+<Range>22</Range>
+<Range>24</Range>
+<Range>26</Range>
+<Range>28</Range>
+<Range>30</Range>

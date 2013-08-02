@@ -166,7 +166,6 @@ bool FileExists( const char* FileName )
 {
 
     path p(FileName);
-    cout << p << endl;
     
     if( exists(p) && is_regular_file(p))
         return true;

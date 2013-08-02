@@ -1,20 +1,33 @@
 #!/bin/bash
 
 # Path to videos
-AVI="WalkTurnBack-Camera_3-Person1.avi"
-GROUNDT="ground-truth"
-VIDEOPATH="/Users/jsepulve/Tesis/Videos"
-VIDEO="$VIDEOPATH/$AVI"
-THRUTH="$VIDEOPATH/$GROUNDT"
+PATH_VIDEOS="/Users/jsepulve/Tesis/Videos"
+FILE="WalkTurnBack-Camera_3-Person1.avi"
+DIR="ground-truth"
+VIDEO="$PATH_VIDEOS/$FILE"
+TRUTH="$PATH_VIDEOS/jpeg/Person1/$DIR"
 # end video definition
 
+#config file
+xmlfile="sagmm.xml"
+config="config/${xmlfile}"
 
-DATE=`date "+%Y-%m-%d_%H:%M:%S"`
-DST="results/`date "+%Y-%m-%d_%H-%M-%S"`"
+# fixed parameter
+_header_tag="opencv_storage"
+_tag_="Cf"
+_value=`cat config/sagmm.xml | grep ${_tag_} |sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\2|p'`
+OUTPUT="results/${_tag_}_${_value}"
 
-if [ ! -d "$DST" ]; then
-    mkdir -p $DST
+if [ ! -d "${OUTPUT}" ]; then
+        mkdir -p ${OUTPUT}
 fi
+
+
+#DATE=`date "+%Y-%m-%d_%H:%M:%S"`
+#RESULTS="results/`date "+%Y-%m-%d_%H-%M-%S"`"
+#if [ ! -d "$RESULTS" ]; then
+#        mkdir -p $RESULTS
+#fi
 
 INPUT=$1
 GT=$2
@@ -29,38 +42,42 @@ if [ "$INPUT" == "" ]; then
 fi
 
 if [ "$GT" == "" ]; then
-    if [ -d $THRUTH ]; then
-        args="-i $INPUT -g $THRUTH -c init.txt"
+    if [ -d $TRUTH ]; then
+        args="-i $INPUT -g $TRUTH"
     else
-        args="-i $INPUT -c init.txt"
+        args="-i $INPUT"
     fi
 else
-    args="-i $INPUT -g $GT -c init.txt"
+    args="-i $INPUT -g $GT"
 fi
 
 cmd="./bin/bgs"
 
 loop1="config/Alpha.txt"
 loop2="config/Range.txt"
-_list_1=`cat $loop1 | awk '{print $3}'`
-_list_2=`cat $loop2 | awk '{print $3}'`
 
-_param_1=`head -1 $loop1 | awk '{print $1}'`
-_param_2=`head -1 $loop2 | awk '{print $1}'`
+_tag_1=`head -1 $loop1 | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\1|p'`
+_tag_2=`head -1 $loop2 | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\1|p'`
+
+_list_1=`cat $loop1 | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\1|p'`
+_list_2=`cat $loop2 | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\1|p'`
 
 # one time loop 1
 _list_1='0.001'
+_list_2='10'
+
+
 
 # Function definition
 process_list() {
     for in2 in ${_list_2}
     do
-        echo "Processing ${_param_1} : ${in1} ${in2}"
-        cat init.txt | grep -v ${_param_2} > init.tmp
-        echo "${_param_2} : ${in2}" >> init.tmp
-        mv init.tmp init.txt
+        echo "Processing ${_tag_}:${_value} ${_tag_1}:${in1} ${_tag_2}:${in2}"
+        cat ${config} | grep -v "/${_header_tag}\|${_tag_2}"        > config.tmp
+        echo -e "<${_tag_2}>${in2}</${_tag_2}>\n</${_header_tag}>" >> config.tmp
+        mv config.tmp ${config}
         $cmd $args
-        mv output.txt $DST/output_${in1}_${in2}.txt
+        mv output.txt ${OUTPUT}/output_${_tag_1}_${in1}_${_tag_2}_${in2}.txt
     done
 }
 #
@@ -68,14 +85,11 @@ process_list() {
 
 for in1 in ${_list_1}
 do
-    cat config/init.txt | grep -v ${_param_1} > init.tmp
-    echo "${_param_1} : ${in1}" >> init.tmp
-    mv init.tmp init.txt
+    cat ${config} | grep -v "/${_header_tag}\|${_tag_1}"        > config.tmp
+    echo -e "<${_tag_1}>${in1}</${_tag_1}>\n</${_header_tag}>" >> config.tmp
+    mv ${config} config.bak
+    mv config.tmp ${config}
     process_list
+    #mv config.bak ${config}
 done
-
-
-
-
-#cat Alpha.txt | while read in; do date; file=`echo $in | awk '{print $3}'`; echo output_$file.txt; cat init.txt | grep -v Alfa > init.tmp; echo $in >> init.tmp; mv init.tmp init.txt; ./bin/bgs -i /Users/jsepulve/Tesis/Videos/WalkTurnBack-Camera_3-Person1.avi -g /Users/jsepulve/Tesis/Code/Matlab/MuHavi/WalkTurnBack/Person1/ground-truth -c init.txt; mv output.txt results3/output_$file.txt; done
 
