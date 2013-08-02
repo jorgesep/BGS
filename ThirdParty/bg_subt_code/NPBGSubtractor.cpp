@@ -61,7 +61,8 @@
 
 #include <assert.h>
 
-#include <math.h>
+#include <cmath>
+#include <cstring>
 
 
 #ifdef _DEBUG
