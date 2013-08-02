@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<GaussiansNo>4</GaussiansNo>
+<Sigma>36.0</Sigma>
+<SigmaMax>3.0</SigmaMax>
+<SigmaMin>4.0</SigmaMin>
+<Cf>0.01</Cf>
+<Range>10.0</Range>
+<Gen>9.0</Gen>
+<CT>0.05</CT>
+<Tau>0.5</Tau>
+<Alpha>0.0002</Alpha>
+<InitFGMaskFrame>216</InitFGMaskFrame>
+<EndFGMaskFrame>682</EndFGMaskFrame>
+<ApplyMorphologicalFilter>0</ApplyMorphologicalFilter>
+</opencv_storage>
