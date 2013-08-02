@@ -1171,13 +1171,13 @@ void BackgroundSubtractorMOG3::loadInitParametersFromFile(const string initInput
                 }
                 else if (line.substr(0,pos) == "SigmaMin" )
                     strval >> fVarMin;
-                  else if (line.substr(0,pos) == "Alfa" )
+                  else if (line.substr(0,pos) == "Alpha" )
                     strval >> fAlpha;
-                else if (line.substr(0,pos) == "cf" ){
+                else if (line.substr(0,pos) == "Cf" ){
                     strval >> fCf;
                     backgroundRatio  = 1.0f - fCf;
                 }
-                else if (line.substr(0,pos) == "cT" )
+                else if (line.substr(0,pos) == "CT" )
                     strval >> fCT;
                 else if (line.substr(0,pos) == "Range" )
                     strval >> varThreshold;
@@ -1198,7 +1198,6 @@ void BackgroundSubtractorMOG3::loadInitParametersFromXMLFile()
 {
 
     string filename = "config/sagmm.xml";
-
     ifstream file(filename.c_str());
     if (!file.good()) 
         return ;
@@ -1209,16 +1208,31 @@ void BackgroundSubtractorMOG3::loadInitParametersFromXMLFile()
     fVarInit                  = (double)fs["Sigma"];
     fVarMax                   = (double)fs["SigmaMax"];
     fVarMax *= fVarInit;
+
     fVarMin                   = (double)fs["SigmaMin"];
+    
+    
     fAlpha                    = (double)fs["Alpha"];
+    
+    
     fCf                       = (double)fs["Cf"];
+    
     backgroundRatio = 1.0f - fCf;
+    
+    
     fCT                       = (double)fs["CT"];
+    
+    
     varThreshold              = (double)fs["Range"];
+    
+    
     varThresholdGen           = (double)fs["Gen"];
+    
+    
     fTau                      = (double)fs["Tau"];
 
     fs.release();
+
 
 }
 

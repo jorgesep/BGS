@@ -28,6 +28,14 @@ using namespace boost::filesystem;
 
 namespace bgs {
 
+    
+string get_current_path()
+{
+        path p = current_path();
+        
+        return canonical(p).string();
+}
+    
 // Remove slash in last position of string.
 string chomp (string dir)
 {
@@ -157,6 +165,15 @@ void showMultipleImages()
 bool FileExists( const char* FileName )
 {
 
+    path p(FileName);
+    cout << p << endl;
+    
+    if( exists(p) && is_regular_file(p))
+        return true;
+    return false;
+    
+    /*
+    
     DIR *dir;
     struct dirent *entity;
     dir = opendir(FileName);
@@ -169,7 +186,8 @@ bool FileExists( const char* FileName )
 
     }
     return true;
-
+    */
+    
     /*
     FILE* fp = NULL;
         

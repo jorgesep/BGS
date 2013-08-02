@@ -8,4 +8,4 @@ Range : 16
 Gen : 9
 cT : 0.05
 Tau : 0.5
-Alfa : 0.000001
+Alpha : 0.000001

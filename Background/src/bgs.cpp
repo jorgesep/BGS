@@ -48,7 +48,6 @@ const char* keys =
     "{ g | gtruth  |       | Input ground-truth directory }"
     "{ r | read    |       | Read background model from  file }"
     "{ w | write   |       | Write background model in a file }"
-    "{ c | config  |       | Load init config file }"
     "{ n | frame   | 0     | Shift ground-truth in +/- n frames, e.g -n -3 or -n 3}"
     "{ f | filter  | true  | Apply smooth preprocessing filter, Default true.}"
     "{ p | point   |       | Print out RGB values of point,  e.g -p 250,300 }"
@@ -88,7 +87,6 @@ int main( int argc, char** argv )
     const string groundTruthName = cmd.get<string>("gtruth");
     const string bgModelName     = cmd.get<string>("read");
     const string saveName        = cmd.get<string>("write");
-    const string initConfigName  = cmd.get<string>("config");
     const string displayPoint    = cmd.get<string>("point");
     const string rangeFrame      = cmd.get<string>("range");
     const int shiftFrame         = cmd.get<int>("frame");
@@ -147,9 +145,14 @@ int main( int argc, char** argv )
     }    
 
     //Load initialization parameters
-    if (!initConfigName.empty()) {
-        bg_model.loadInitParametersFromXMLFile();
+    string config_filename = "config/sagmm.xml";
+    
+    if (!FileExists(config_filename.c_str())) {
+        cout << "Configuration file " << config_filename << " not found! " << endl;
+        return -1;
     }
+
+    bg_model.loadInitParametersFromXMLFile();
 
     //Print out initialization parameters.
     if (verbose)

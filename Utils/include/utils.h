@@ -105,6 +105,8 @@ struct NPBGConfig
         return *this;
     };
 };
+    
+string get_current_path();
 
 // Remove last position slash of input string.
 string chomp (string dir);
