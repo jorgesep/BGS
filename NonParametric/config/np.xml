@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<FramesToLearn>10</FramesToLearn>
+<SequenceLength>50</SequenceLength>
+<TimeWindowSize>100</TimeWindowSize>
+<UpdateFlag>1</UpdateFlag>
+<SDEstimationFlag>1</SDEstimationFlag>
+<UseColorRatiosFlag>1</UseColorRatiosFlag>
+<Threshold>10.0e-08</Threshold>
+<Alpha>0.3</Alpha>
+<InitFGMaskFrame>216</InitFGMaskFrame>
+<EndFGMaskFrame>682</EndFGMaskFrame>
+<ApplyMorphologicalFilter>1</ApplyMorphologicalFilter>
+</opencv_storage>
