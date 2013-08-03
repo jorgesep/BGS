@@ -58,7 +58,7 @@ set_property(TARGET Framework PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR
 
 
 ADD_EXECUTABLE( bgs_framework FrameworkImpl )
-TARGET_LINK_LIBRARIES( bgs_framework ${OpenCV_LIBS} Framework MOGBuilder NPBuilder MOG2Builder SAGMMBuilder )
+TARGET_LINK_LIBRARIES( bgs_framework Framework MOGBuilder NPBuilder MOG2Builder SAGMMBuilder Utils ${OpenCV_LIBS} )
 set_property(TARGET bgs_framework PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 
