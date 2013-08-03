@@ -58,10 +58,7 @@ void rename_dir(string name)
 const char* keys =
 {
     "{ i | input   |       | Input video }"
-    "{ c | config  |       | Load init config file }"
     "{ m | mask    | true  | Save foreground masks}"
-    "{ p | filter  | true  | Apply morphological filter}"
-    "{ t | pre     | false | Apply temporal pre processing filter}"
     "{ s | show    | false | Show images of video sequence }"
     "{ h | help    | false | Print help message }"
 };
@@ -80,7 +77,7 @@ int main( int argc, char** argv )
         cout << "Process input video comparing with its ground truth.        " << endl;
         cout << "OpenCV Version : "  << CV_VERSION << endl;
         cout << "Example:                                                    " << endl;
-        cout << "./npbgs -i dir_jpeg/ -c config/init.txt -s                  " << endl << endl;
+        cout << "./npbgs -i dir_jpeg/  -s                  " << endl << endl;
         cmd.printParams();
         cout << "------------------------------------------------------------" << endl <<endl;
         return 0;
@@ -88,10 +85,8 @@ int main( int argc, char** argv )
 
     // Reading input parameters
     const string inputVideoName  = cmd.get<string>("input");
-    const string initConfigName  = cmd.get<string>("config");
     const bool displayImages     = cmd.get<bool>("show");
     const bool saveMask          = cmd.get<bool>("mask");
-    const bool applyMorphologicalFilter = cmd.get<bool>("filter");
     const bool preProcessingFilter      = cmd.get<bool>("pre");
 
 
@@ -167,32 +162,29 @@ int main( int argc, char** argv )
     }
     matSize   = rows * cols;
 
-    // Read algorithm parameters
-    int FramesToLearn = 10;
-    int SequenceLength = 50;
-    int TimeWindowSize = 100;
-    unsigned char UpdateFlag = 1;
-    unsigned char SDEstimationFlag = 1;
-    unsigned char UseColorRatiosFlag = 1;
-    double Threshold = 10e-8;
-    double Alpha = 0.3;
-    unsigned int InitFGMaskFrame = 216;
-    unsigned int EndFGMaskFrame = 682;
-
-    if (!initConfigName.empty()) {
-        FileStorage fs(initConfigName, FileStorage::READ);
-        FramesToLearn      = (int)fs["FramesToLearn"];
-        SequenceLength     = (int)fs["SequenceLength"];
-        TimeWindowSize     = (int)fs["TimeWindowSize"];
-        UpdateFlag         = (int)fs["UpdateFlag"];
-        SDEstimationFlag   = (int)fs["SDEstimationFlag"];
-        UseColorRatiosFlag = (int)fs["UseColorRatiosFlag"];
-        Threshold          = (double)fs["Threshold"];
-        Alpha              = (double)fs["Alpha"];
-        InitFGMaskFrame    = (int)fs["InitFGMaskFrame"];
-        EndFGMaskFrame    = (int)fs["EndFGMaskFrame"];
-        fs.release();
+    // Read algorithm parameters    
+    //Load initialization parameters
+    string config_filename = "config/np.xml";
+    path config_path(config_filename);
+    if (!is_regular_file(config_path)) {
+        cout << "Configuration file " << config_filename << " not found! " << endl;
+        return -1;
     }
+    
+    
+    FileStorage fs(config_filename, FileStorage::READ);
+    int FramesToLearn                = (int)fs["FramesToLearn"];
+    int SequenceLength               = (int)fs["SequenceLength"];
+    int TimeWindowSize               = (int)fs["TimeWindowSize"];
+    unsigned char UpdateFlag         = (int)fs["UpdateFlag"];
+    unsigned char SDEstimationFlag   = (int)fs["SDEstimationFlag"];
+    unsigned char UseColorRatiosFlag = (int)fs["UseColorRatiosFlag"];
+    double Threshold                 = (double)fs["Threshold"];
+    double Alpha                     = (double)fs["Alpha"];
+    int InitFGMaskFrame              = (int)fs["InitFGMaskFrame"];
+    int EndFGMaskFrame               = (int)fs["EndFGMaskFrame"];
+    int ApplyMorphologicalFilter     = (int)fs["ApplyMorphologicalFilter"];
+    fs.release();
     
 
     // Create mask directory
@@ -232,10 +224,6 @@ int main( int argc, char** argv )
     BGModel->SetThresholds(Threshold,Alpha);
     BGModel->SetUpdateFlag(UpdateFlag);
     
-    //Shift backward or forward ground truth sequence counter.
-    //for compensating pre-processed frames in the filter.
-    unsigned int cnt    = 0 ; 
-
     Mat Frame;
     Mat FilteredFrame;
     Mat ftimg;
@@ -265,28 +253,11 @@ int main( int argc, char** argv )
             return 0;
     }
     
+    //Shift backward or forward ground truth sequence counter.
+    //for compensating pre-processed frames in the filter.
+    unsigned int cnt    = 0 ; 
     
-    //spatio-temporal pre-processing filter for smoothing frames.
-    mdgkt *filter;
-    if (preProcessingFilter) {
-        filter = mdgkt::Instance();
-        for (int i=0; i<filter->getTemporalWindow(); i++) {
-            Frame = Scalar::all(0);
-            if (processing_video)
-                video >> Frame;
-            else
-                Frame = imread(im_files[i+1]);
-            // Initialize in zero three channels of img kernel.
-            if (i==0)
-               filter->initializeFirstImage(Frame);
-            //Apply filter and puts result in img.
-            //Note this filter also keeps internal copy of filter result.
-            filter->SpatioTemporalPreprocessing(Frame, FilteredFrame);
-        }
-        
-        cnt += filter->getTemporalWindow();
-    }
-
+    
 
     // main loop 
     for(;;)
@@ -297,10 +268,7 @@ int main( int argc, char** argv )
             Frame = imread(im_files[cnt+1]);
         
         if (Frame.empty()) break;
-      
-        if (preProcessingFilter)
-            filter->SpatioTemporalPreprocessing(Frame, FilteredFrame);
-        
+              
         if (cnt < 10) {
 
             // add frame to the background
@@ -338,7 +306,7 @@ int main( int argc, char** argv )
         // Applying morphological filter
         // Erode the image
         Mat Eroded; // the destination image
-        if (applyMorphologicalFilter) {
+        if (ApplyMorphologicalFilter) {
             Mat Element(2,2,CV_8U,cv::Scalar(1));
             //erode(Mask,Eroded,Mat());
             erode(Mask,Eroded,Element);
