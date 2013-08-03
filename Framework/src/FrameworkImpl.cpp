@@ -71,7 +71,7 @@ int main( int argc, char** argv )
     CommandLineParser cmd(argc, argv, keys);
 
     // Reading input parameters
-    const string inputVideoName   = cmd.get<string>("input");
+    const string inputName   = cmd.get<string>("input");
     const bool displayImages      = cmd.get<bool>("show");
     const bool saveForegroundMask = cmd.get<bool>("mask");
     
@@ -88,7 +88,7 @@ int main( int argc, char** argv )
     // Verify input name is a video file or directory with image files.
     FrameReader *input_frame;
     try {
-        input_frame = FrameReaderFactory::create_frame_reader(inputVideoName);
+        input_frame = FrameReaderFactory::create_frame_reader(inputName);
     } catch (...) {
         cout << "Invalid file name "<< endl;
         return -1;
@@ -116,20 +116,18 @@ int main( int argc, char** argv )
     int delay = input_frame->getFrameDelay();
     
     // Creates algorithm objects    
-    
-    Framework* framework = new Framework();
-    
-    framework->setAlgorithm(new MOG2Builder());
-    framework->setName("MOG2");
-    framework->loadConfigParameters();
-    framework->initializeAlgorithm();
+    Framework* mog2 = new Framework();
+    mog2->setAlgorithm(new MOG2Builder());
+    mog2->setName("MOG2");
+    mog2->loadConfigParameters();
+    mog2->initializeAlgorithm();
     
 
-    Framework* non_parametric = new Framework();
-    non_parametric->setAlgorithm(new NPBuilder(col,row,nch));
-    non_parametric->setName("NP");
-    non_parametric->loadConfigParameters();
-    non_parametric->initializeAlgorithm();
+    Framework* np = new Framework();
+    np->setAlgorithm(new NPBuilder(col,row,nch));
+    np->setName("NP");
+    np->loadConfigParameters();
+    np->initializeAlgorithm();
    
     Framework *sagmm = new Framework();
     sagmm->setAlgorithm(new SAGMMBuilder());
@@ -158,8 +156,8 @@ int main( int argc, char** argv )
         
         if (Frame.empty()) break;
     
-        framework->updateAlgorithm(Frame, Foreground);
-        non_parametric->updateAlgorithm(Frame, NPMask);
+        mog2->updateAlgorithm(Frame, Foreground);
+        np->updateAlgorithm(Frame, NPMask);
         sagmm->updateAlgorithm(Frame, SAMask);
         
         if (displayImages) {
@@ -180,8 +178,8 @@ int main( int argc, char** argv )
     }
     
     
-    delete framework;
-    delete non_parametric;
+    delete mog2;
+    delete np;
     delete input_frame;
 
 
