@@ -6,7 +6,7 @@ SET( MOG_MAJOR_VERSION 0 )
 SET( MOG_MINOR_VERSION 1 )
 SET( MOG_PATCH_LEVEL 0 )
 
-SET( CMAKE_C_FLAGS "-Wall -g O3" )
+SET( CMAKE_C_FLAGS "-Wall -g -O3" )
 SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
@@ -24,8 +24,6 @@ INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include)
 
 INCLUDE_DIRECTORIES(${Framework_SOURCE_DIR})
 
-#set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
-
 #delete bin files in make clean
 SET_DIRECTORY_PROPERTIES (
     PROPERTIES
@@ -34,9 +32,6 @@ SET_DIRECTORY_PROPERTIES (
         ADDITIONAL_MAKE_CLEAN_FILES "${MOG_BINARY_DIR}/*"
 )
 
-# Set DEBUG option
-OPTION(DEBUG "DEBUG option to print out more info" ON)
-
 # openCV library
 set(OpenCV_DIR "/usr/local/share/OpenCV"
            CACHE PATH "The path where OpenCVConfig.cmake is placed")
@@ -44,11 +39,6 @@ FIND_PACKAGE( OpenCV REQUIRED )
 
 find_package( Boost REQUIRED COMPONENTS filesystem system )
 include_directories( ${Boost_INCLUDE_DIRS} )
-
-
-#link_directories(${BGS_SOURCE_DIR}/Performance)
-#link_directories(${BGS_BINARY_DIR}/Utils) 
-
 
 ADD_LIBRARY( MOGBuilder SHARED ${SRCS} )
 target_link_libraries( MOGBuilder ${OpenCV_LIBS} ${Boost_LIBRARIES} )

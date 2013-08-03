@@ -6,7 +6,7 @@ SET( SAGMM_MAJOR_VERSION 0 )
 SET( SAGMM_MINOR_VERSION 1 )
 SET( SAGMM_PATCH_LEVEL 0 )
 
-SET( CMAKE_C_FLAGS "-Wall -g O3" )
+SET( CMAKE_C_FLAGS "-Wall -g -O3" )
 SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
@@ -20,11 +20,11 @@ INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/../include")
 INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/include")
 INCLUDE_DIRECTORIES("/opt/local/include")
 INCLUDE_DIRECTORIES(${Performance_SOURCE_DIR}/../include)
-INCLUDE_DIRECTORIES(${Background_SOURCE_DIR}/../include)
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include) 
 
 INCLUDE_DIRECTORIES(${Framework_SOURCE_DIR})
 
+INCLUDE_DIRECTORIES(${Background_SOURCE_DIR}/../include)
 #set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
 
 #delete bin files in make clean

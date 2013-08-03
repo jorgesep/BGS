@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT( Performance )
 # The version number.
 SET( Performance_MAJOR_VERSION 0 )
@@ -6,7 +6,7 @@ SET( Performance_MINOR_VERSION 1 )
 SET( Performance_PATCH_LEVEL 0 )
 
 
-SET( CMAKE_C_FLAGS   "-g -Wall O3" )
+SET( CMAKE_C_FLAGS   "-g -Wall -O3" )
 SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
@@ -23,11 +23,10 @@ FILE ( GLOB CONFIG ${PROJECT_SOURCE_DIR}/../config/*.jpg ${PROJECT_SOURCE_DIR}/.
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/../include)
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include)
+
 # This include was added to support boost/program_options.hpp
-#INCLUDE_DIRECTORIES("/opt/local/include")
 find_package( Boost REQUIRED COMPONENTS program_options regex )
 include_directories( ${Boost_INCLUDE_DIRS} )
-#find_library(Logging log4cplus PATHS /opt/local/lib)
 
 link_directories(${BGS_BINARY_DIR}/Utils)
 
@@ -39,7 +38,7 @@ FIND_PACKAGE( OpenCV REQUIRED )
 
 ADD_EXECUTABLE( testMatBinary testMatBinary )
 TARGET_LINK_LIBRARIES( testMatBinary ${OpenCV_LIBS} )
-#set_property(TARGET testMatBinary PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+set_property(TARGET testMatBinary PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_EXECUTABLE( testPerformance testPerformance )
 TARGET_LINK_LIBRARIES( testPerformance Performance ${OpenCV_LIBS} )

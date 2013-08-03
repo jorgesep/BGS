@@ -378,12 +378,12 @@ void operator()(const Range& range) const
 
             float* mean_m     = mean;
             float* bg_m       = bg;
-            float* fg_m       = fg;
+            //float* fg_m       = fg;
             float* bg_cnt     = cm;
 
             //just for debugging
-            if (y0==228 && x==670)
-                int temporary = y0;
+            //if (y0==228 && x==670)
+            //    int temporary = y0;
             
 
             //////
