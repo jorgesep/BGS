@@ -15,7 +15,7 @@ endif()
 FILE ( GLOB TEST test*.cpp *.h )
 FILE ( GLOB SRCS NPBG*.cpp *.h )
 FILE ( GLOB BUILDER  NPBuilder.cpp *.h )
-
+FILE ( GLOB SCRIPTS ${PROJECT_SOURCE_DIR}/scripts/*.py ${PROJECT_SOURCE_DIR}/scripts/*.sh )
 
 INCLUDE_DIRECTORIES(${Framework_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include)
@@ -51,3 +51,4 @@ TARGET_LINK_LIBRARIES( npbgs NonParametricModel  Utils Performance SAGMM ${OpenC
 set_property(TARGET npbgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)
+file(COPY ${SCRIPTS} DESTINATION ${BGS_BINARY_DIR}/bin/)
