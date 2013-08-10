@@ -21,18 +21,19 @@
 using namespace cv;
 class IBGSAlgorithm
 {
-    public:
-        IBGSAlgorithm() {}
-        virtual ~IBGSAlgorithm() {}
-        virtual void SetAlgorithmParameters() = 0;
-        virtual void LoadConfigParameters()   = 0;
-        virtual void SaveConfigParameters()   = 0;
-        virtual void Initialization()         = 0;
-        virtual void GetBackground(OutputArray)          = 0;
-        virtual void GetForeground(OutputArray)          = 0;
-        virtual void Update(InputArray, OutputArray)                 = 0;
-        virtual void LoadModel()              = 0;
-        virtual void SaveModel()              = 0;
+public:
+    IBGSAlgorithm() {}
+    virtual ~IBGSAlgorithm() {}
+    virtual void SetAlgorithmParameters() = 0;
+    virtual void LoadConfigParameters()   = 0;
+    virtual void SaveConfigParameters()   = 0;
+    virtual void Initialization()         = 0;
+    virtual void GetBackground(OutputArray)          = 0;
+    virtual void GetForeground(OutputArray)          = 0;
+    virtual void Update(InputArray, OutputArray)                 = 0;
+    virtual void LoadModel()              = 0;
+    virtual void SaveModel()              = 0;
+    virtual string PrintParameters() = 0;
 };
 
 
