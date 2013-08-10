@@ -71,6 +71,7 @@ int main( int argc, char** argv )
     string ground_dir;
     string parameter_file("parameters.txt");
     string value_first_parameter("");
+    string output_filename("measure");
 
     
     
@@ -84,7 +85,7 @@ int main( int argc, char** argv )
         ("verbose,v", "display messages")
         ("ground,g", po::value<string>(), "input ground-truth directory")
         ("mask,m",   po::value<string>(), "input foreground mask directory")
-        ("param,p",   po::value<string>(), "file which contains algorithm configuration parameters.")
+        ("param,p",   po::value<string>(), "file which contains algorithm configuration parameters. Default looks for in truth dir")
         ;
 
         po::variables_map vm;
@@ -167,7 +168,7 @@ int main( int argc, char** argv )
     Mat fgmask;
     string header("# ");
     
-    // Prepare header of outfile
+    // Prepare first line header of output file
     if (parameters.size() > 0) {
         vector< pair<string, string> >::iterator       it  = parameters.begin();
         vector< pair<string, string> >::const_iterator end = parameters.end();
@@ -177,9 +178,19 @@ int main( int argc, char** argv )
         stringstream out;
         out << "# ";
 
+
+        
         for (; it != end; ++it) {
             out << it->first << "=" << it->second << " ";
+            
+            // takes first character and its value as filename of output result file.
+            stringstream name;
+            name << "_" << it->first.at(0) << "_" << it->second;
+            output_filename += name.str();
+            //name.str("");
+
         }
+
         header = out.str();
     }
     
@@ -209,7 +220,9 @@ int main( int argc, char** argv )
         infile.close();
     }
 
-    outfile.open("measure.txt");
+
+    output_filename += ".txt";
+    outfile.open(output_filename.c_str());
     outfile << header << endl;
 
     for ( int i= cnt; i<size + cnt; i++)
@@ -247,7 +260,8 @@ int main( int argc, char** argv )
 
     //print out final result
     cout    << measure->metricsStatisticsAsString() << endl;
-    outfile << "# TPR FPR SPE MCC  TPR TNR SPE MCC" << endl;
+    //outfile << "# TPR_MEAN FPR_MEAN SPE_MEAN MCC_MEAN  TPR_MEDIAN FPR_MEDIAN SPE_MEDIAN MCC_MEDIAN" << endl;
+    outfile << "# TPR_MEAN FPR_MEAN MCC_MEAN  TPR_MEDIAN FPR_MEDIAN MCC_MEDIAN" << endl;
     outfile << "# " << measure->metricsStatisticsAsString() << endl;
     outfile.close();
 
