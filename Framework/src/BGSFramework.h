@@ -40,6 +40,7 @@ public:
     void getForeground(OutputArray);
     void setName(string _name) { name = _name; };
     string getName() { return name; };
+    string getConfigurationParameters();
 
 private:
     IBGSAlgorithm *_algorithm;
