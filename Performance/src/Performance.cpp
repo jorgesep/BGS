@@ -23,7 +23,11 @@ using namespace std;
 
 namespace bgs {
 
-
+/*
+ * Return as string a summary of TP and TN reference
+ * and TP TN FP FN sensitivity specificity and MCC 
+ * obtained of comparing reference and mask.
+ */
 string Performance::asString() const
 {
     stringstream str;  
@@ -38,6 +42,9 @@ string Performance::asString() const
     return str.str();
 }
 
+/*
+ * Return a string TP and TN of reference
+ */
 string Performance::refToString() const
 {
     stringstream str;
@@ -46,6 +53,10 @@ string Performance::refToString() const
 
 }
 
+/*
+ * Returns total accumulated of
+ * TP TN FP FN SENSITIVITY SPECIFICITY and MCC
+ */
 string Performance::summaryAsString() const
 {
     stringstream str;
@@ -64,8 +75,10 @@ string Performance::summaryAsString() const
 
 }
 
-
-
+/*
+ * Returns mean accumulated of
+ * TP TN FP FN SENSITIVITY SPECIFICITY and MCC
+ */
 string Performance::averageSummaryAsString() const
 {
     stringstream str;
@@ -83,20 +96,24 @@ string Performance::averageSummaryAsString() const
     return str.str();
 
 }
-
+    
+/*
+ * Returns a summary of MEAN and MEDIAN values of total accumulated
+ * TP TN FP FN SENSITIVITY SPECIFICITY and MCC
+ */
 string Performance::metricsStatisticsAsString() const
 {
-    double mean   = 1-(double)stat.MeanR.specificity; 
-    double median = 1-(double)stat.MedianR.specificity;
+    double meanSpecificity   = 1-(double)stat.MeanR.specificity; 
+    double medianSpecificity = 1-(double)stat.MedianR.specificity;
 
     stringstream str;
     str << std::scientific << stat.MeanR.sensitivity    << " " 
-        << std::scientific << mean                      << " "
-        << std::scientific << stat.MeanR.specificity    << " "
+        << std::scientific << meanSpecificity           << " "
+        //<< std::scientific << stat.MeanR.specificity    << " "
         << std::scientific << stat.MeanR.MCC            << "    "
         << std::scientific << stat.MedianR.sensitivity  << " " 
-        << std::scientific << median                    << " "
-        << std::scientific << stat.MedianR.specificity  << " "
+        << std::scientific << medianSpecificity         << " "
+        //<< std::scientific << stat.MedianR.specificity  << " "
         << std::scientific << stat.MedianR.MCC;
     return str.str();
 }
@@ -230,7 +247,7 @@ void Performance::pixelLevelCompare(const Mat& _reference, const Mat& _image)
     }
     
 
-    //calculate sensitivity (TPR) and specificity (1-FPR)
+    //calculates sensitivity (TPR) and specificity (1-FPR)
     CommonMetrics img_metrics = getPerformance(current_frame);
 
     //save an accumulate value of TP,TN...
@@ -356,7 +373,7 @@ void Performance::calculateFinalPerformanceOfMetrics()
 
 
 
-double getPSNR(Mat& src1, Mat& src2, int bb)
+double Performance::getPSNR(Mat& src1, Mat& src2, int bb)
 {
     double duration;
     duration = static_cast<double>(cv::getTickCount());
@@ -427,7 +444,7 @@ double getPSNR(const Mat& I1, const Mat& I2)
 }
 */
 
-Scalar getMSSIM( const Mat& i1, const Mat& i2)
+Scalar Performance::getMSSIM( const Mat& i1, const Mat& i2)
 {
     const double C1 = 6.5025, C2 = 58.5225;
     /***************************** INITS **********************************/
@@ -480,5 +497,81 @@ Scalar getMSSIM( const Mat& i1, const Mat& i2)
     Scalar mssim = mean(ssim_map);   // mssim = average of ssim map
     return mssim;
 }
+    
+double Performance::getDScore(InputArray foreground, InputArray reference)
+{
+    Mat Mask;
+    Mat Truth;
+    
+    int threshold_value = 0;
+    int threshold_type = 3;;
+    int const max_value = 255;
+    int const max_type = 4;
+    int const max_BINARY_value = 255;
+    
 
+    
+    // Check and convert reference image to gray
+    if (foreground.channels() > 1) 
+        cvtColor( foreground.getMat(), Mask, CV_BGR2GRAY );
+    else 
+        Mask = foreground.getMat();
+
+    //Mat Mask_BINARY;
+    //cv::threshold( Mask, Mask_BINARY, threshold_value, max_BINARY_value,THRESH_BINARY );
+    
+
+    
+    // Check and convert reference image to gray
+    if (reference.channels() > 1) 
+        cvtColor( reference.getMat(), Truth, CV_BGR2GRAY );
+    else 
+        Truth = reference.getMat();
+
+    Mat DT;
+    //Calculate distance
+    distanceTransform(Mask, DT, CV_DIST_L1, 3);
+    DT = 2*DT;
+    //Other option 
+    //Mat ScaleMat(foreground.size(), CV_8U, Scalar::all(2));
+    Mat scaled;
+    //multiply(DT, ScaleMat, scaled);
+                 
+    log(DT, scaled);
+    scaled = -1*scaled;
+    Mat alpha(foreground.size(),CV_8U,Scalar::all(5/2));
+    
+    Mat score = scaled - alpha;
+    score.mul(score);
+    Mat dscore;
+    exp(score, dscore);
+    
+    
+    /*
+    Mat And;
+    bitwise_and(Mask, Truth, And);
+
+    
+    getMat(reference);
+    return 0;
+    
+    
+    Mat image = _image.getMat();
+    bool needToInitialize = (nframes == 0 || 
+                             learningRate >= 1 || 
+                             image.size() != frameSize || 
+                             image.type() != frameType) && !alreadyInitialized;
+    
+    if( needToInitialize )
+        initialize(image.size(), image.type());
+    
+    _fgmask.create( image.size(), CV_8U );
+    Mat fgmask = _fgmask.getMat();
+    
+*/
+    
+}
+
+    
+    
 }

@@ -460,13 +460,13 @@ public:
     inline float TPR() {return sensitivity; };
     inline float TNR() {return (1 - specificity);};  
 
-    inline float FM() {return FMeasure;};
+    inline float FScore() {return FMeasure;};
     inline float Sigma() {return Variance; };
     inline float Mu()  { return Mean;};
    
     double getPSNR(Mat& src1, Mat& src2, int bb=0);
     Scalar getMSSIM( const Mat&, const Mat&);
-
+    double getDScore(InputArray, InputArray);
 
 private:
     /**
