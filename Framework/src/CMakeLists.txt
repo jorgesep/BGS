@@ -62,4 +62,6 @@ TARGET_LINK_LIBRARIES( bgs_framework Framework MOGBuilder NPBuilder MOG2Builder 
 set_property(TARGET bgs_framework PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 
+file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)
+
 
