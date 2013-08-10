@@ -47,6 +47,7 @@ public:
     void Update(InputArray, OutputArray);
     void LoadModel() {};
     void SaveModel() {};
+    string PrintParameters();
 
 private:
     void loadDefaultParameters();

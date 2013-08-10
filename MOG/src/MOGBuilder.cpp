@@ -41,6 +41,20 @@ void MOGBuilder::Initialization()
     
 }
 
+string MOGBuilder::PrintParameters()
+{
+    std::stringstream str;
+    str
+    << "# "
+    << "Alpha="           << alpha           << " "
+    << "BackgroundRatio=" << backgroundRatio << " "
+    << "NoiseSigma="      << noiseSigma      << " "
+    << "History="         << history         << " "
+    << "NMixtures="       << nmixtures;
+    return str.str();
+
+}
+
 void MOGBuilder::LoadConfigParameters()
 {
     string filename = "config/mog.xml";

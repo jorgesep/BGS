@@ -57,6 +57,20 @@ void MOG2Builder::Initialization()
     
 }
 
+string MOG2Builder::PrintParameters()
+{
+    std::stringstream str;
+    //# Alpha=0.1 Threshold=0.0001 FramesToLearn=10 SequenceLength=50 TimeWindowSize=100
+    str 
+    << "# "
+    << "Alpha="        << Alpha        << " "
+    << "VarThreshold=" << VarThreshold << " "
+    << "History="      << History;
+    return str.str();
+    
+}
+
+
 void MOG2Builder::LoadConfigParameters()
 {
     string filename = "config/mog2.xml";

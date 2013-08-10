@@ -108,6 +108,20 @@ void NPBuilder::Initialization()
     
 }
 
+string NPBuilder::PrintParameters()
+{
+    std::stringstream str;
+    str
+    << "# "
+    << "Alpha="          << Alpha          << " "
+    << "Threshold="      << Threshold      << " "
+    << "FramesToLearn="  << FramesToLearn  << " " 
+    << "SequenceLength=" << SequenceLength << " "
+    << "TimeWindowSize=" << TimeWindowSize;
+    return str.str();
+
+}
+
 void NPBuilder::LoadConfigParameters()
 {
     string filename = "config/np.xml";

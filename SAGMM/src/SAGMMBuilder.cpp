@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 #include "SAGMMBuilder.h"
+//#include <iostream>
+//#include <vector>
+//#include <fstream>
 
 
 
@@ -86,6 +89,27 @@ void SAGMMBuilder::Initialization()
     factor = icdm::Instance();
     
 }
+
+
+string SAGMMBuilder::PrintParameters()
+{
+    stringstream str;
+    //# Alpha=0.01 cf=0.1 bgRation=0.9 Range=10 Gen=9 GaussiansNo=4 Sigma=36 cT=0.05 Tau=0.5
+    str 
+    << "# "
+    << "Alpha="       << Alpha       << " "
+    << "cf="          << Cf          << " "
+    << "bgRation="    << 1-Cf        << " "
+    << "Range="       << Range       << " "
+    << "Gen="         << Gen         << " "
+    << "GaussiansNo=" << GaussiansNo << " "
+    << "Sigma="       << Sigma       << " "
+    << "cT="          << CT          << " "
+    << "Tau="         << Tau;
+    return str.str();
+}
+
+
 
 void SAGMMBuilder::LoadConfigParameters()
 {
