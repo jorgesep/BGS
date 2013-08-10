@@ -60,5 +60,18 @@ void Framework::getForeground(OutputArray fgframe)
 
 }
 
+string Framework::getConfigurationParameters()
+{
+    string parameters;
+    
+    if (_algorithm != NULL) {
+        parameters = _algorithm->PrintParameters();
+    }
+    
+    return parameters;
+    
+    
+}
+
 
 
