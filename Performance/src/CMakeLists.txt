@@ -5,7 +5,6 @@ SET( Performance_MAJOR_VERSION 0 )
 SET( Performance_MINOR_VERSION 1 )
 SET( Performance_PATCH_LEVEL 0 )
 
-
 SET( CMAKE_C_FLAGS   "-g -Wall -O3" )
 SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -43,6 +42,10 @@ set_property(TARGET testMatBinary PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY
 ADD_EXECUTABLE( testPerformance testPerformance )
 TARGET_LINK_LIBRARIES( testPerformance Performance ${OpenCV_LIBS} )
 set_property(TARGET testPerformance PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
+ADD_EXECUTABLE( testDScore testDScore )
+TARGET_LINK_LIBRARIES( testDScore Performance ${OpenCV_LIBS} )
+set_property(TARGET testDScore PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_EXECUTABLE( pmbgs Measure )
 TARGET_LINK_LIBRARIES( pmbgs Performance ${Boost_PROGRAM_OPTIONS_LIBRARY} Utils )
