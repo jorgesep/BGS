@@ -28,7 +28,7 @@
 //#include "Performance.h"
 #include "utils.h"
 #include "NPBGSubtractor.h"
-#include "mdgkt_filter.h"
+#include "FrameReaderFactory.h"
 
 using namespace cv;
 using namespace std;
@@ -87,19 +87,33 @@ int main( int argc, char** argv )
     const string inputVideoName  = cmd.get<string>("input");
     const bool displayImages     = cmd.get<bool>("show");
     const bool saveMask          = cmd.get<bool>("mask");
-    const bool preProcessingFilter      = cmd.get<bool>("pre");
 
 
     // local variables
-    int delay     = 25;
-    int cols      = 0;
-    int rows      = 0;
-    int matSize   = 0;
-    int nchannels = 3;
     bool processing_video = false;
-    int im_size = -1;
+//int im_size = -1;
     vector<string> im_files;
+    int shiftFrame = 0;
     
+    
+    // Verify input name is a video file or directory with image files.
+    seq::FrameReader *input_frame;
+    try {
+        input_frame = seq::FrameReaderFactory::create_frame_reader(inputVideoName);
+    } catch (...) {
+        cout << "Invalid file name "<< endl;
+        return 0;
+    }
+    
+
+    int cols      = input_frame->getNumberCols(); 
+    int rows      = input_frame->getNumberRows();
+    int nchannels = input_frame->getNChannels();
+    int delay     = input_frame->getFrameDelay();
+    int matSize   = rows * cols;
+
+    
+/*    
     // Verify input name is a video file or sequences of jpg files
     path _path (inputVideoName.c_str());
     
@@ -144,15 +158,25 @@ int main( int argc, char** argv )
         
         Mat Frame;
         video >> Frame;
-
+        
         delay = 1000/video.get(CV_CAP_PROP_FPS);
         cols = video.get(CV_CAP_PROP_FRAME_WIDTH);
         rows = video.get(CV_CAP_PROP_FRAME_HEIGHT);
         int frameType = Frame.type();        
         nchannels = CV_MAT_CN(frameType);
+        
+        
+        
+
+        
+        
+        //reset video to initial position.
+        video.set(CV_CAP_PROP_POS_FRAMES, 0);
+        
         video.release();
         
         processing_video = true;
+        shiftFrame = 1;
 
     }
     else {
@@ -160,7 +184,9 @@ int main( int argc, char** argv )
         cmd.printParams();
         return -1;
     }
-    matSize   = rows * cols;
+ 
+ */
+ 
 
     // Read algorithm parameters    
     //Load initialization parameters
@@ -225,7 +251,6 @@ int main( int argc, char** argv )
     BGModel->SetUpdateFlag(UpdateFlag);
     
     Mat Frame;
-    Mat FilteredFrame;
     Mat ftimg;
     Mat Mask(rows,cols,CV_8UC1,Scalar::all(0));
     Mat FilteredFGImage(rows,cols,CV_8UC1,Scalar::all(0));
@@ -262,28 +287,23 @@ int main( int argc, char** argv )
     // main loop 
     for(;;)
     {
-        if (processing_video)
-            video >> Frame;
-        else
-            Frame = imread(im_files[cnt+1]);
-        
+        Frame = Scalar::all(0);
+        input_frame->getFrame(Frame);
         if (Frame.empty()) break;
-              
-        if (cnt < 10) {
+        
+        cnt = input_frame->getFrameCounter();      
+        
+        if (cnt < FramesToLearn) {
 
             // add frame to the background
-            if (preProcessingFilter)
-                BGModel->AddFrame(FilteredFrame.data);
-            else
-                BGModel->AddFrame(Frame.data);
+            BGModel->AddFrame(Frame.data);
             
-            cnt +=1;
             
             continue;
         }
         
         // Build the background model with first N frames to learn
-        if( cnt == 10 )
+        if( cnt == FramesToLearn )
             BGModel->Estimation();
 
 
@@ -292,10 +312,7 @@ int main( int argc, char** argv )
         FilteredFGImage = Scalar::all(0);
 
         //subtract the background from each new frame
-        if (preProcessingFilter)
-            ((NPBGSubtractor *)BGModel)->NBBGSubtraction(FilteredFrame.data, Mask.data, FilteredFGImage.data, DisplayBuffers);
-        else
-            ((NPBGSubtractor *)BGModel)->NBBGSubtraction(Frame.data, Mask.data, FilteredFGImage.data, DisplayBuffers);
+        ((NPBGSubtractor *)BGModel)->NBBGSubtraction(Frame.data, Mask.data, FilteredFGImage.data, DisplayBuffers);
 
         
         //here you pass a mask where pixels with true value will be masked out of the update.
@@ -315,7 +332,7 @@ int main( int argc, char** argv )
             Mask.copyTo(Eroded);
         }
 
-        if (saveMask && cnt >= InitFGMaskFrame && cnt <= EndFGMaskFrame) {
+        if (saveMask &&  cnt >= InitFGMaskFrame &&  cnt <= EndFGMaskFrame) {
             stringstream str;
             str << foreground_path << "/" <<  cnt << ".jpg";
             
@@ -344,9 +361,6 @@ int main( int argc, char** argv )
         
         
         
-        cnt++;
-        
-        
     }
 
     delete BGModel;
@@ -360,6 +374,7 @@ int main( int argc, char** argv )
     delete [] DisplayBuffers[4];
     delete [] DisplayBuffers;
 
+    delete input_frame;
     return 0;
 }
 
