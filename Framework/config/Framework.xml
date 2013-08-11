@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<MOG2>1</MOG2>
+<NP>1</NP>
+<SAGMM>1</SAGMM>
+<InitFGMaskFrame>216</InitFGMaskFrame>
+<EndFGMaskFrame>682</EndFGMaskFrame>
+<ApplyMorphologicalFilter>0</ApplyMorphologicalFilter>
+</opencv_storage>
