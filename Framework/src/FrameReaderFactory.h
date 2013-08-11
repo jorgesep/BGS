@@ -40,6 +40,7 @@ public:
     virtual int getNChannels() = 0;
     virtual int getNumberCols() = 0;
     virtual int getNumberRows() = 0;
+    virtual int getFrameCounter () = 0;
 }; 
 
 /** This class encapsulate images from directory
@@ -55,10 +56,11 @@ public:
     virtual int getNChannels() { return nchannels; };
     virtual int getNumberCols() { return cols; };
     virtual int getNumberRows() { return rows; };
+    virtual int getFrameCounter() { return frame_counter; };
 private:
     void lookForImageFilesInDirectory(string);
     void getImageProperties();
-    unsigned int frame_counter;
+    int frame_counter;
     
     vector<string> im_files;
     
@@ -71,7 +73,13 @@ private:
 class VideoFile : public FrameReader
 {
 public:
-    VideoFile() {}; 
+    VideoFile()    :  
+    delay(25),
+    cols(0),
+    rows(0),
+    nchannels(0),
+    frame_counter(0) {};
+    
     ~VideoFile();
     VideoFile(string); 
     virtual void getFrame(OutputArray frame);
@@ -79,6 +87,8 @@ public:
     virtual int getNChannels() { return nchannels; };
     virtual int getNumberCols() { return cols; };
     virtual int getNumberRows() { return rows; };
+    virtual int getFrameCounter() { return frame_counter; };
+
 private:
     VideoCapture video;
     void getImageProperties();
@@ -87,6 +97,7 @@ private:
     int rows;
     int nchannels;
     string videoname;
+    int frame_counter;
 
 };
 

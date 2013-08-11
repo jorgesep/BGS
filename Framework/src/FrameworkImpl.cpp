@@ -71,7 +71,7 @@ int main( int argc, char** argv )
     CommandLineParser cmd(argc, argv, keys);
 
     // Reading input parameters
-    const string inputName   = cmd.get<string>("input");
+    const string inputName        = cmd.get<string>("input");
     const bool displayImages      = cmd.get<bool>("show");
     const bool saveForegroundMask = cmd.get<bool>("mask");
     

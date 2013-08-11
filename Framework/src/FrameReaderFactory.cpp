@@ -85,10 +85,9 @@ void ListFiles::getFrame(OutputArray frame)
     //if (im_files.size() > 0 && frame_counter < im_files.size() ) {
     //}
     Image = imread(im_files[frame_counter]);
-    frame_counter++;
     Image.copyTo(frame);
-
-
+    frame_counter++;
+    
 }
 
 void ListFiles::getImageProperties()
@@ -112,10 +111,11 @@ void ListFiles::getImageProperties()
 }
     
 VideoFile::VideoFile(string filename)
-:  delay(25),
-cols(0),
-rows(0),
-nchannels(0)
+    :  delay(25),
+    cols(0),
+    rows(0),
+    nchannels(0),
+    frame_counter(0)
 
 {
     path _path_to_file(filename.c_str());
@@ -139,6 +139,7 @@ void VideoFile::getFrame(OutputArray frame)
     if (video.isOpened()) {
         video >> Image;
         Image.copyTo(frame);
+        frame_counter = video.get(CV_CAP_PROP_POS_FRAMES);
     }
 
 }
@@ -158,6 +159,10 @@ void VideoFile::getImageProperties()
     rows = video_prop.get(CV_CAP_PROP_FRAME_HEIGHT);
     int frameType = Frame.type();
     nchannels = CV_MAT_CN(frameType);
+
+    //reset video to initial position.
+    video.set(CV_CAP_PROP_POS_FRAMES, 0);
+
     video_prop.release();
     
     
