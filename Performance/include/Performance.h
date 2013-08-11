@@ -118,23 +118,28 @@ struct ContingencyMatrix
 
 //typedef struct CommonMetrics {
 struct CommonMetrics {
-    CommonMetrics (): sensitivity(0),specificity(0),MCC(0) {};
-    CommonMetrics(double se, double sp, double pr):
-        sensitivity(se),specificity(sp),MCC(pr) {};
+    CommonMetrics (): sensitivity(0),specificity(0),f1score(0),MCC(0) {};
+    CommonMetrics(double se, double sp, double f1, double mc):
+        sensitivity(se),specificity(sp),f1score(f1),MCC(mc) {};
+    
     //copy constructor
     CommonMetrics (const CommonMetrics & rhs) { *this = rhs; };
+    
     //Inequality operator
     bool operator !=(const CommonMetrics &rhs) const
     {
         return ((sensitivity != rhs.sensitivity)||
                 (specificity != rhs.specificity)||
+                (f1score     != rhs.f1score)    ||
                 (MCC         != rhs.MCC));
     };
+    
     //equality operator
     bool operator ==(const CommonMetrics &rhs) const
     {
         return ((sensitivity == rhs.sensitivity)&&
                 (specificity == rhs.specificity)&&
+                (f1score     == rhs.f1score)    &&
                 (MCC         == rhs.MCC));
     };
     // assigment operator
@@ -144,6 +149,7 @@ struct CommonMetrics {
         {
             sensitivity = rhs.sensitivity; 
             specificity = rhs.specificity; 
+            f1score     = rhs.f1score;
             MCC         = rhs.MCC;
         }
         return *this;
@@ -153,6 +159,7 @@ struct CommonMetrics {
     {
         sensitivity += rhs.sensitivity; 
         specificity += rhs.specificity; 
+        f1score     += rhs.f1score;
         MCC         += rhs.MCC;
         return *this;
     };
@@ -162,9 +169,11 @@ struct CommonMetrics {
        CommonMetrics result(*this);
        return result += rhs;
     }
+    
     // assigment operator
     double sensitivity;
     double specificity;
+    double f1score;
     double MCC;
 };
 
@@ -174,9 +183,9 @@ struct GlobalMetrics {
         perfR(0,0,0,0),
         perfG(0,0,0,0),
         perfB(0,0,0,0),
-        metricR(0,0,0),
-        metricG(0,0,0),
-        metricB(0,0,0),
+        metricR(0,0,0,0),
+        metricG(0,0,0,0),
+        metricB(0,0,0,0),
         count(0) {};
 
     GlobalMetrics( ContingencyMatrix pR, 
@@ -201,8 +210,8 @@ struct GlobalMetrics {
                    perfG(0,0,0,0),   
                    perfB(0,0,0,0),
                    metricR(mR), 
-                   metricG(0,0,0), 
-                   metricB(0,0,0), 
+                   metricG(0,0,0,0), 
+                   metricB(0,0,0,0), 
                    count(cn) {};
 
     GlobalMetrics (const GlobalMetrics & rhs) { *this = rhs; };
@@ -259,12 +268,12 @@ struct GlobalMetrics {
 //typedef struct StatMetrics {
 struct StatMetrics {
     StatMetrics () : 
-        MeanR(0,0,0),
-        MeanG(0,0,0),
-        MeanB(0,0,0),
-        MedianR(0,0,0),
-        MedianG(0,0,0),
-        MedianB(0,0,0) {};
+        MeanR  (0,0,0,0),
+        MeanG  (0,0,0,0),
+        MeanB  (0,0,0,0),
+        MedianR(0,0,0,0),
+        MedianG(0,0,0,0),
+        MedianB(0,0,0,0) {};
 
     StatMetrics(   CommonMetrics     _meanR, 
                    CommonMetrics     _meanG, 
@@ -490,6 +499,8 @@ private:
     unsigned int nchannel;
 
     static const int MAX_NUMBER_CHANNELS = 3;
+    static const float PEAK_PARAMETER;
+    
     ContingencyMatrix reference;
     ContingencyMatrix current_frame;
     GlobalMetrics accumulated;

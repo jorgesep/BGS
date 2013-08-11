@@ -23,6 +23,11 @@ using namespace std;
 
 namespace bgs {
 
+//const float Performance::PEAK_PARAMETER = (float)5/2;
+const float Performance::PEAK_PARAMETER = (float)1;
+    
+    
+    
 /*
  * Return as string a summary of TP and TN reference
  * and TP TN FP FN sensitivity specificity and MCC 
@@ -36,8 +41,9 @@ string Performance::asString() const
         << current_frame.tn    << " " 
         << current_frame.fp    << " " 
         << current_frame.fn    << "    "
-        << std::scientific     << sensitivity << " " 
-        << std::scientific     << specificity << " "
+        << std::scientific     << sensitivity     << " " 
+        << std::scientific     << (1-specificity) << " "
+        << std::scientific     << FMeasure        << " " 
         << std::scientific     << MCC;
     return str.str();
 }
@@ -103,17 +109,17 @@ string Performance::averageSummaryAsString() const
  */
 string Performance::metricsStatisticsAsString() const
 {
-    double meanSpecificity   = 1-(double)stat.MeanR.specificity; 
-    double medianSpecificity = 1-(double)stat.MedianR.specificity;
+    double meanFPR   = 1-(double)stat.MeanR.specificity; 
+    double medianFPR = 1-(double)stat.MedianR.specificity;
 
     stringstream str;
     str << std::scientific << stat.MeanR.sensitivity    << " " 
-        << std::scientific << meanSpecificity           << " "
-        //<< std::scientific << stat.MeanR.specificity    << " "
+        << std::scientific << meanFPR                   << " "
+        << std::scientific << stat.MeanR.f1score        << " "
         << std::scientific << stat.MeanR.MCC            << "    "
         << std::scientific << stat.MedianR.sensitivity  << " " 
-        << std::scientific << medianSpecificity         << " "
-        //<< std::scientific << stat.MedianR.specificity  << " "
+        << std::scientific << medianFPR                 << " "
+        << std::scientific << stat.MedianR.f1score      << " "
         << std::scientific << stat.MedianR.MCC;
     return str.str();
 }
@@ -134,15 +140,17 @@ string Performance::rocAsString() const
 }
 
 
-// Calculate TPR and FPR 
+// Calculate performance metrics based in pixel level compararation
+// Return results in CommonMetric struct.
 Performance::CommonMetrics 
 Performance::getPerformance(const ContingencyMatrix& mt)
 {
     if (mt == ContingencyMatrix(0,0,0,0) ) {
         sensitivity = 0;
         specificity = 0;
+        FMeasure    = 0;
         MCC         = 0;
-        return CommonMetrics(0,0,0);
+        return CommonMetrics(0,0,0,0);
     }
 
     double TP = (double)mt.tp;
@@ -150,7 +158,7 @@ Performance::getPerformance(const ContingencyMatrix& mt)
     double FP = (double)mt.fp;
     double FN = (double)mt.fn;
 
-    sensitivity = TP/(TP + FN);
+    sensitivity = TP/(TP + FN);// it is also Recall
     specificity = TN/(TN + FP);
     precision   = TP/(TP + FP);
 
@@ -161,9 +169,18 @@ Performance::getPerformance(const ContingencyMatrix& mt)
     if (denominator == 0)
         denominator = 1;
     MCC = numerator / denominator;
+    
+    // Calculation of FMeasure
+    numerator = 2 * precision * sensitivity;
+    denominator = precision + sensitivity;
+    if (denominator == 0)
+        FMeasure = 0;
+    else {
+        FMeasure = numerator/denominator;
+    }
 
 
-    return CommonMetrics(sensitivity,specificity,MCC);
+    return CommonMetrics(sensitivity,specificity,FMeasure,MCC);
 }
 
 
@@ -191,6 +208,7 @@ void Performance::pixelLevelCompare(const Mat& _reference, const Mat& _image)
     
     // get Mat header for input image. This is O(1) operation
     Mat _img = _image;
+    
     // Check and convert reference image to gray
     if (_image.channels() > 1) 
         cvtColor( _image, _img, CV_BGR2GRAY );
@@ -219,6 +237,7 @@ void Performance::pixelLevelCompare(const Mat& _reference, const Mat& _image)
     current_frame = ContingencyMatrix();
     ContingencyMatrix *m_ptr = &current_frame;
 
+    // Check out TP TN FP and FN
     for (int j=0; j<nl; j++) {
         //get a pointer of each row
         const uchar* _ref_data= _ref.ptr<uchar>(j);
@@ -250,6 +269,8 @@ void Performance::pixelLevelCompare(const Mat& _reference, const Mat& _image)
     //calculates sensitivity (TPR) and specificity (1-FPR)
     CommonMetrics img_metrics = getPerformance(current_frame);
 
+
+    
     //save an accumulate value of TP,TN...
     GlobalMetrics *ptrGlobal = &accumulated;
     ptrGlobal->perfR   += current_frame;
@@ -262,8 +283,8 @@ void Performance::pixelLevelCompare(const Mat& _reference, const Mat& _image)
                 ContingencyMatrix(0,0,0,0), 
                 ContingencyMatrix(0,0,0,0), 
                 img_metrics, 
-                CommonMetrics(0,0,0), 
-                CommonMetrics(0,0,0), 
+                CommonMetrics(0,0,0,0), 
+                CommonMetrics(0,0,0,0), 
                 ptrGlobal->count));
 
 
@@ -322,13 +343,14 @@ void Performance::meanOfMetrics()
         return;
 
     GlobalMetrics *g_p = &accumulated;
-    unsigned int cnt = g_p->count;
+    unsigned int   cnt = g_p->count;
 
     stat.MeanR = CommonMetrics( g_p->metricR.sensitivity/cnt, 
                                 g_p->metricR.specificity/cnt,
+                                g_p->metricR.f1score/cnt,
                                 g_p->metricR.MCC/cnt);
-    stat.MeanG = CommonMetrics( 0,0,0 );
-    stat.MeanB = CommonMetrics( 0,0,0 );
+    stat.MeanG = CommonMetrics( 0,0,0,0 );
+    stat.MeanB = CommonMetrics( 0,0,0,0 );
 
 }
 
@@ -336,6 +358,7 @@ void Performance::medianOfMetrics()
 {
     vector<double> sen;
     vector<double> spe;
+    vector<double> f1m;
     vector<double> mcc;
     
     unsigned int i = (unsigned int)vectorMetrics.size()/2; 
@@ -346,24 +369,29 @@ void Performance::medianOfMetrics()
     {
         sen.push_back(it->metricR.sensitivity);
         spe.push_back(it->metricR.specificity);
+        f1m.push_back(it->metricR.f1score);
         mcc.push_back(it->metricR.MCC);
     }
 
     sort (sen.begin(), sen.end());
     sort (spe.begin(), spe.end());
+    sort (f1m.begin(), f1m.end());
     sort (mcc.begin(), mcc.end());
 
 
     if (even) {
         stat.MedianR = CommonMetrics( (sen[i]+sen[i-1])/2,
                                       (spe[i]+spe[i-1])/2,
+                                      (f1m[1]+f1m[i-1])/2,
                                       (mcc[i]+mcc[i-1])/2);
     } else {
-        stat.MedianR = CommonMetrics( sen[i],spe[i],mcc[i]);
+        stat.MedianR = CommonMetrics( sen[i],spe[i],f1m[i],mcc[i]);
     }
 
 }
-
+/*
+ * Performance calculation of accumulated metrics
+ */
 void Performance::calculateFinalPerformanceOfMetrics()
 {
     this->medianOfMetrics();
@@ -498,28 +526,35 @@ Scalar Performance::getMSSIM( const Mat& i1, const Mat& i2)
     return mssim;
 }
     
-double Performance::getDScore(InputArray foreground, InputArray reference)
+double Performance::getDScore(InputArray reference, InputArray foreground)
 {
     Mat Mask;
+    Mat Mask_BINARY;
+    Mat Mask_BINARY_INV;
     Mat Truth;
+    Mat Truth_BINARY_INV;
+    Mat Truth_BINARY;
+    Mat MAP_FOREGROUND;
+    Mat MAP_BACKGROUND;
     
-    int threshold_value = 0;
-    int threshold_type = 3;;
-    int const max_value = 255;
-    int const max_type = 4;
-    int const max_BINARY_value = 255;
-    
+    Mat DT;
+    Mat LogDT;
+    Mat ExpDT;
 
     
-    // Check and convert reference image to gray
+    
+    double duration;
+    duration = static_cast<double>(cv::getTickCount());
+
+    
+    // Check and convert foreground mask image to gray
     if (foreground.channels() > 1) 
         cvtColor( foreground.getMat(), Mask, CV_BGR2GRAY );
     else 
         Mask = foreground.getMat();
 
-    //Mat Mask_BINARY;
-    //cv::threshold( Mask, Mask_BINARY, threshold_value, max_BINARY_value,THRESH_BINARY );
-    
+    Mat Mask_INV;
+    bitwise_not(Mask, Mask_INV);
 
     
     // Check and convert reference image to gray
@@ -528,47 +563,96 @@ double Performance::getDScore(InputArray foreground, InputArray reference)
     else 
         Truth = reference.getMat();
 
-    Mat DT;
-    //Calculate distance
-    distanceTransform(Mask, DT, CV_DIST_L1, 3);
-    DT = 2*DT;
-    //Other option 
-    //Mat ScaleMat(foreground.size(), CV_8U, Scalar::all(2));
-    Mat scaled;
-    //multiply(DT, ScaleMat, scaled);
-                 
-    log(DT, scaled);
-    scaled = -1*scaled;
-    Mat alpha(foreground.size(),CV_8U,Scalar::all(5/2));
     
-    Mat score = scaled - alpha;
-    score.mul(score);
-    Mat dscore;
-    exp(score, dscore);
+    cv::threshold(Mask , Mask_BINARY     , 1, 1, THRESH_BINARY);
+    cv::threshold(Mask , Mask_BINARY_INV , 1, 1, THRESH_BINARY_INV);
+    cv::threshold(Truth, Truth_BINARY    , 1, 1, THRESH_BINARY);
+    cv::threshold(Truth, Truth_BINARY_INV, 1, 1, THRESH_BINARY_INV);
+    
+
+    //bitwise_and(Truth_BINARY    , Mask_BINARY    , MAP_FOREGROUND);
+    //bitwise_and(Truth_BINARY_INV, Mask_BINARY_INV, MAP_BACKGROUND);
+
+    bitwise_or(Truth_BINARY_INV, Mask_BINARY    , MAP_FOREGROUND);
+    bitwise_or(Truth_BINARY    , Mask_BINARY_INV, MAP_BACKGROUND);
+
+    //cout << MAP_FOREGROUND << endl;
+    //cout << MAP_BACKGROUND << endl;
     
     
-    /*
-    Mat And;
-    bitwise_and(Mask, Truth, And);
+    
+    distanceTransform(MAP_FOREGROUND, MAP_FOREGROUND, CV_DIST_L1, 3);
+    distanceTransform(MAP_BACKGROUND, MAP_BACKGROUND, CV_DIST_L1, 3);
+    
+    
+    MAP_FOREGROUND *=2;
+    MAP_BACKGROUND *=2;
+
+    //cout << MAP_FOREGROUND << endl;
+    //cout << MAP_BACKGROUND << endl;
 
     
-    getMat(reference);
-    return 0;
+    Mat LOG_MAP_FOREGROUND;
+    Mat LOG_MAP_BACKGROUND;
+
+    //Calculates the natural logarithm of every array element.
+    log(MAP_FOREGROUND, LOG_MAP_FOREGROUND);
+    log(MAP_BACKGROUND, LOG_MAP_BACKGROUND);
+
     
     
-    Mat image = _image.getMat();
-    bool needToInitialize = (nframes == 0 || 
-                             learningRate >= 1 || 
-                             image.size() != frameSize || 
-                             image.type() != frameType) && !alreadyInitialized;
+    Mat alpha(foreground.size(),CV_32F ,Scalar::all(PEAK_PARAMETER));
+    LOG_MAP_FOREGROUND -= alpha;
+    LOG_MAP_BACKGROUND -= alpha;
+
     
-    if( needToInitialize )
-        initialize(image.size(), image.type());
+    Mat LOG_MAP_FOREGROUND_2 = LOG_MAP_FOREGROUND.mul(LOG_MAP_FOREGROUND);
+    Mat LOG_MAP_BACKGROUND_2 = LOG_MAP_BACKGROUND.mul(LOG_MAP_BACKGROUND);
     
-    _fgmask.create( image.size(), CV_8U );
-    Mat fgmask = _fgmask.getMat();
+    LOG_MAP_FOREGROUND_2 *= -1;
+    LOG_MAP_BACKGROUND_2 *= -1;
+
     
-*/
+    Mat EXP_LOG_MAP_FOREGROUND_2;
+    Mat EXP_LOG_MAP_BACKGROUND_2;
+    
+    exp(LOG_MAP_FOREGROUND_2, EXP_LOG_MAP_FOREGROUND_2);
+    exp(LOG_MAP_BACKGROUND_2, EXP_LOG_MAP_BACKGROUND_2);
+
+    
+    
+    // From Paper:
+    // As we want to avoid false negatives, their cost should be higher
+    // than the false positives ones. This is done by scaling by 5.
+    EXP_LOG_MAP_FOREGROUND_2 *= 5;
+    
+    Mat MAP(foreground.size(),CV_32F,Scalar::all(0));
+    bitwise_or(EXP_LOG_MAP_FOREGROUND_2, MAP, MAP,Truth_BINARY);
+    //cout << MAP << endl;
+    bitwise_or(EXP_LOG_MAP_BACKGROUND_2, MAP, MAP,Truth_BINARY_INV);
+    //cout << MAP << endl;
+    
+    
+    //bitwise_or(EXP_LOG_MAP_FOREGROUND_2, EXP_LOG_MAP_BACKGROUND_2, MAP);
+    
+    //int counter = countNonZero(MAP);
+    
+
+    
+    //cout << MAP << endl;
+    
+    Scalar DScore = mean(MAP);
+    
+    //cout << DScore.val[0] << endl;
+
+    //D-score(x) = exp(- (ln (2 * DT(x)) - alpha)^2);
+    
+    duration = static_cast<double>(cv::getTickCount())-duration;
+    duration /= cv::getTickFrequency(); //the elapsed time in ms
+    cout << "Duration: " << duration << endl; 
+
+    
+    return DScore.val[0];
     
 }
 
