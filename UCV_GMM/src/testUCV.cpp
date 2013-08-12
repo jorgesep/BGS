@@ -23,44 +23,98 @@
 #include <vector>
 #include <fstream>
 
-//#include "BGSFramework.h"
-//#include "MOGBuilder.h"
-//#include "MOG2Builder.h"
-//#include "NPBuilder.h"
-//#include "SAGMMBuilder.h"
-//#include "FrameReaderFactory.h"
 //
 //#include "Performance.h"
 #include "utils.h"
-//#include "NPBGSubtractor.h"
-//#include "mdgkt_filter.h"
 
 #include "ucv_types.h"
+#include "ucv_gmm_data.h"
+#include "ucv_gmm_d.h"
+#include "ucv_gmm.h"
 
 
 
 using namespace cv;
 using namespace std;
-using namespace boost::filesystem;
+//using namespace boost::filesystem;
 //using namespace seq;
 //using namespace bgs;
 
 
-/*
+
 void create_g_img(ucv_image_t *a, uint8_t *a_b, uint16_t w, uint16_t h)
 {
-     a->image = a_b;
-      a->type = UCV_GRAY8U;
-       a->width = w;
-        a->height = h;
+    a->image = a_b;
+    a->type = UCV_GRAY8U;
+    a->width = w;
+    a->height = h;
 }
-*/
+
 
 
 int main( int argc, char** argv )
 {
 
-    //uint32_t tmp = UCV_IMAGE_WIDTH(*im) * UCV_IMAGE_HEIGHT(*im) * ng;
+  
+    // Reading input single frame just for testing.
+    Mat input_image = imread("00000001.jpg");
+
+    ucv_image_t *im;
+    
+    // initialize image struct.
+    create_g_img(im, (uint8_t*)input_image.data, input_image.cols, input_image.rows);
+    
+
+    // Initializing gmm gaussian.
+    uint32_t number_gaussians  = 4;
+    uint32_t tmp = UCV_IMAGE_WIDTH(*im) * UCV_IMAGE_HEIGHT(*im) * number_gaussians;
+    ucv_gmm_gaussian_t *data = new ucv_gmm_gaussian_t[tmp];
+
+    
+    
+    // gaussian model
+    ucv_gaussian_model_t b;
+    ucv_gaussian_d_t *data1 = new ucv_gaussian_d_t;
+    
+    b.bgnd   = data1; 
+    b.type   = UCV_GRAY8U;
+    
+    b.width  = UCV_IMAGE_WIDTH(*im);
+    b.height = UCV_IMAGE_HEIGHT(*im);
+    b.n_g    = number_gaussians;
+
+    // Initialize threashold, learning rate, mu and sigma.
+    ucv_gmm_param_t p;
+
+    uint8_t th = 0.999;
+    real_t  lr = 0.002;
+
+    p.th = th;
+    p.lr = lr;
+   
+    p.n_mu    = ucv_gmm_compute_n_mu(lr);
+    p.n_sigma = ucv_gmm_compute_n_sigma(lr);
+       
+    
+    
+    if (ucv_gmm_sample_init(im, &b, &p) < 0) {
+        cout <<  "Impossibile to init bgnd" << endl;
+        return -1;
+    }
+
+    ucv_image_t mask;
+    mask.type = UCV_BWBIN;
+    mask.width = UCV_IMAGE_WIDTH(*im);
+    mask.height = UCV_IMAGE_HEIGHT(*im);
+    tmp = UCV_IMAGE_WIDTH(*im) * UCV_IMAGE_HEIGHT(*im) / 8;
+    uint8_t * mask_b = new uint8_t[tmp];
+    mask.image = mask_b;
+
+    
+    //Main loop.
+    
+    int8_t tmp = ucv_gmm_sample_update(im, &b, &mask);
+
     return 0;
 }
 
