@@ -6,16 +6,14 @@ SET( Framework_MAJOR_VERSION 0 )
 SET( Framework_MINOR_VERSION 1 )
 SET( Framework_PATCH_LEVEL 0 )
 
-SET( CMAKE_C_FLAGS "-Wall -g" )
-SET( CMAKE_CXX_FLAGS "-Wall -g" )
-#SET( CMAKE_C_FLAGS "-Wall -g -O3" )
-#SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
-#if(CMAKE_COMPILER_IS_GNUCXX)
-#    set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
-#endif()
+SET( CMAKE_C_FLAGS "-Wall -g -O3" )
+SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
+endif()
 
 FILE ( GLOB SRCS FrameReaderFactory.cpp BGSFramework*.cpp *.h )
-
+FILE ( GLOB SCRIPTS ${PROJECT_SOURCE_DIR}/scripts/*.py ${PROJECT_SOURCE_DIR}/scripts/*.sh )
 
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/")
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/../include")
@@ -63,5 +61,6 @@ set_property(TARGET bgs_framework PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY
 
 
 file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)
+file(COPY ${SCRIPTS} DESTINATION ${BGS_BINARY_DIR}/bin/)
 
 
