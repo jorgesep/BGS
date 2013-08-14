@@ -289,6 +289,9 @@ NPBGConfig* loadInitParametersFromFile(string config)
 void create_foreground_directory(string& _path)
 {
     unsigned long dir_count = 0;
+    boost::regex e("[0-9]+");
+    //boost::regex_match(s, e);
+    vector<int> files;
     
     path p (_path);
     
@@ -298,13 +301,30 @@ void create_foreground_directory(string& _path)
     directory_iterator end_iter;
     for ( directory_iterator dir_itr( p ); dir_itr != end_iter;  ++dir_itr ) {
         
-        if ( is_directory( *dir_itr ) && dir_itr->path().filename().stem() != "." )
+        if ( is_directory( *dir_itr ) && dir_itr->path().filename().stem() != "." ) {
             //cout << dir_itr->path().filename() << endl;
-            dir_count++;
+            
+            string name = dir_itr->path().filename().string();
+              
+            if ( boost::regex_match(name, e) ) {
+                files.push_back(atoi(name.c_str()));
+                dir_count++;
+            }
+        }
     }   
 
+    int int_name = 0;
+    if (files.size() > 0) {
+        sort(files.begin(), files.end());
+        int_name = files[files.size()-1];
+        int_name += 1;
+    }
+    
+    //cout << int_name << endl;
+        
     stringstream new_dir;
-    new_dir << _path << "/" << dir_count ;
+    //new_dir << _path << "/" << dir_count ;
+    new_dir << _path << "/" << int_name ;
     create_directory(new_dir.str());
     
     _path = new_dir.str();
@@ -331,22 +351,29 @@ void parse_file(string filename, vector< pair<string, string> >& pair_str)
 
         for( string line; getline( input, line ); ) {
             
-            // replace spaces
-            string line2 = boost::regex_replace(line, expr, fmt);
             
-            static const boost::regex e("\\w+[\\.|\\+|\\-]?\\w*\\s*[:=]\\s*\\w+[\\.\\+\\-]?\\w+");
+            // replace spaces and '=' by ':'
+            string line2 = boost::regex_replace(line, expr, fmt);
+ 
+            static const boost::regex e("\\w+[\\.|\\+|\\-]?\\w*\\s*[:=]\\s*\\w+[\\.\\+\\-]?\\w*");
             //static const boost::regex e("\\w+\\s*[:=]\\s*\\w+");
             string::const_iterator start, end;
 
             start = line2.begin();
             end   = line2.end();
+
             boost::match_results<std::string::const_iterator> what;
             boost::match_flag_type flags = boost::match_default;
+
+            //cout << line  << endl;
+            //cout << line2 << endl;
+
             
             while(boost::regex_search(start, end, what, e, flags))
             {
                 size_t pos  = what.str().find(':');
                 size_t size = what.str().size(); 
+                
                 //cout << " " << what.str() << endl;
 
                 //string w1 = what.str().substr(0,pos);
