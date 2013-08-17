@@ -30,6 +30,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
+//#include <cstdlib>
 
 using namespace cv;
 using namespace std;
@@ -37,6 +38,8 @@ using namespace bgs;
 namespace po = boost::program_options;
 using namespace boost::filesystem;
 
+
+static const std::string GROUNDTRUTH_ENV = "GROUNDTRUTH";
 
 void display_usage( void )
 {
@@ -68,11 +71,14 @@ int main( int argc, char** argv )
     int fg_size = -1;
     bool verbose = false;
     string mask_dir;
-    string ground_dir;
+    string ground_truth_dir;
     string parameter_file("parameters.txt");
     string value_first_parameter("");
-    string output_filename("measure");
+    string output_filename("output");
+    bool pixel_performance;
+    bool frame_performance;
 
+    
     
     
     /** Define and parse the program options 
@@ -83,9 +89,11 @@ int main( int argc, char** argv )
         desc.add_options()
         ("help,h", "produce help message")
         ("verbose,v", "display messages")
-        ("ground,g", po::value<string>(), "input ground-truth directory")
-        ("mask,m",   po::value<string>(), "input foreground mask directory")
-        ("param,p",   po::value<string>(), "file with algorithm configuration parameters. Default looks into of truth dir")
+        ("ground,g"            , po::value<string>(), "input ground-truth directory")
+        ("mask,m"              , po::value<string>(), "input foreground mask directory")
+        ("parameter_file,p"    , po::value<string>(), "configuration parameters file. By default looks into ground-truth dir")
+        ("pixel_performance,l" , po::value<bool>(&pixel_performance)->zero_tokens()->default_value(false), "pixel performance.")
+        ("frame_performace,f"  , po::value<bool>(&frame_performance)->zero_tokens()->default_value(false),"frame performance.")
         ;
 
         po::variables_map vm;
@@ -105,28 +113,48 @@ int main( int argc, char** argv )
             return 0;
         }
         
+        if (!pixel_performance && !frame_performance)
+            pixel_performance = true;
+
+        
         if (vm.count("verbose"))
             verbose = true;
         
         if (vm.count("ground")) {
-            ground_dir = vm["ground"].as<string>();
             
-            // Read files from input directory
-            list_files(ground_dir,gt_files);
-            gt_size = gt_files.size();
+            ground_truth_dir = vm["ground"].as<string>();
+   
+        }
+        else {
             
-            if (gt_size == -1 || gt_size == 0) {
-                cout << "Not valid ground-truth images directory ... " << endl;
+            // Verify environment variable.
+            char const* env = getenv( GROUNDTRUTH_ENV.c_str() );
+            if (env != NULL) {
+                ground_truth_dir = string(env);
+            }
+            else {
+                cout << "No ground-truth directory selected." << endl;
                 return -1;
             }
+            
+        }
+            
+        // Read files from input directory
+        list_files(ground_truth_dir,gt_files);
+        gt_size = gt_files.size();
+        
+        if (gt_size == -1 || gt_size == 0) {
+            cout << "Not valid ground-truth images directory ... " << endl;
+            return -1;
         }
         
         if (vm.count("mask")) {
-            mask_dir = vm["mask"].as<string>();
             
+            mask_dir = vm["mask"].as<string>();
             
             parameter_file = mask_dir + "/" +  parameter_file;
             if (is_regular_file(parameter_file)) {
+                // Read parameters.txt and save values in vector parameters.
                 parse_file(parameter_file,parameters);
                 //cout << parameters[1].first << " " << parameters[1].second << endl;
             }
@@ -136,7 +164,7 @@ int main( int argc, char** argv )
             fg_size = fg_files.size();
             
             if (fg_size == -1 || fg_size == 0) {
-                cout << "Not valid foreground mask directory ... " << endl;
+                cout << "Not valid foreground directory ... " << endl;
                 return -1;
             }
 
@@ -145,6 +173,7 @@ int main( int argc, char** argv )
         if (vm.count("param")) {
             parameter_file = vm["param"].as<string>();
         }
+        
 
     }
     catch(exception& e) {
@@ -159,6 +188,14 @@ int main( int argc, char** argv )
     
     // Object to measure performance
     Performance *measure = new Performance();
+    if (!pixel_performance)
+        // By default pixel measures are enabled.
+        measure->setPixelPerformanceMeasures(false);
+    if (frame_performance) {
+        measure->setFramePerformanceMeasures(true);
+    }
+    
+    
     stringstream msg,ptmsg;
     ofstream outfile, ptfile, rocfile;
 
@@ -183,13 +220,14 @@ int main( int argc, char** argv )
         for (; it != end; ++it) {
             out << it->first << "=" << it->second << " ";
             
-            // takes first character and its value as filename of output result file.
+            // takes first character and its value as name of the output result file.
             stringstream name;
             name << "_" << it->first.at(0) << "_" << it->second;
             output_filename += name.str();
 
         }
 
+        //out << "# Name TP_R TN_R    TP_M TN_M FP_M FN_M    TPR FPR FMEASURE MCC    PSNR MSSIM DSCORE ";
         header = out.str();
     }
     
@@ -197,11 +235,9 @@ int main( int argc, char** argv )
     //In case they are not the similar takes lower size
     size = fg_size <= gt_size ? fg_size : gt_size;
     
-    // Takes ground truth as reference counter.
+    // Takes ground-truth as reference counter.
     cnt = gt_files.begin()->first;
     
-    //for (gt_it = gt_files.begin(); gt_it != gt_files.end(); gt_it++)
-    //    cout << gt_it->first << " " << gt_it->second << endl;
     
     //Opening result file.
     ifstream infile (parameter_file.c_str());
@@ -232,15 +268,22 @@ int main( int argc, char** argv )
             fgmask = Scalar::all(0);
             
             // open ground truth frame.
-            gtimg = imread(gt_it->second);
+            gtimg = imread(gt_it->second, CV_LOAD_IMAGE_GRAYSCALE);
             
             // open foreground mask.
-            fgmask= imread(fg_it->second);
+            fgmask= imread(fg_it->second, CV_LOAD_IMAGE_GRAYSCALE);
             
             if( gtimg.data && fgmask.data) {
                 
-                //compare both frames
-                measure->pixelLevelCompare(gtimg, fgmask);
+                //compare both frames to obtain tp, tn, fn and fp values
+                if (pixel_performance)
+                    measure->pixelLevelCompare(gtimg, fgmask);
+                
+                
+                // Get similarity values as PSNR, MSSIM, and DScore
+                if (frame_performance)
+                    measure->frameSimilarity(gtimg, fgmask);
+                
                 
                 //Debug messages.
                 msg.str("");
@@ -261,8 +304,8 @@ int main( int argc, char** argv )
     //print out by console final result
     cout    << measure->metricsStatisticsAsString() << endl;
     
-    //outfile << "# TPR_MEAN FPR_MEAN SPE_MEAN MCC_MEAN  TPR_MEDIAN FPR_MEDIAN SPE_MEDIAN MCC_MEDIAN" << endl;
-    outfile << "# TPR_MEAN FPR_MEAN FMEASURE_MEAN MCC_MEAN  TPR_MEDIAN FPR_MEDIAN FMEASURE_MEDIAN MCC_MEDIAN" << endl;
+    outfile << "# " << measure->getHeaderForFileWithNameOfStatisticParameters() << endl;
+
     outfile << "# " << measure->metricsStatisticsAsString() << endl;
     outfile.close();
 

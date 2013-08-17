@@ -84,25 +84,7 @@ struct ContingencyMatrix
        ContingencyMatrix result(*this);
        return result += rhs;
     }
-/*
-    const ContingencyMatrix operator+(const ContingencyMatrix &lhs,const ContingencyMatrix &rhs) const
-    {
-       ContingencyMatrix result(rhs.tp + lhs.tp,
-                      rhs.tn + lhs.tn,
-                      rhs.fp + lhs.fp,
-                      rhs.fn + lhs.fn);
-       return result;
-    }
 
-    const ContingencyMatrix operator-(const ContingencyMatrix &lhs,const ContingencyMatrix &rhs)
-    {
-       ContingencyMatrix result(rhs.tp - lhs.tp,
-                      rhs.tn - lhs.tn,
-                      rhs.fp - lhs.fp,
-                      rhs.fn - lhs.fn);
-       return result;
-    }
-*/
     // overloaded -= operator
     ContingencyMatrix& operator -=(const ContingencyMatrix &rhs) 
     {
@@ -339,20 +321,87 @@ struct StatMetrics {
 };
 
 
+struct Similarity {
+    Similarity () : PSNR(0), MSSIM(0),DSCORE(0) {};
+    
+    Similarity (double _psnr, double _mssim, double _dscore)
+    : PSNR(_psnr), MSSIM(_mssim),DSCORE(_dscore) {};
+
+    
+    Similarity (const Similarity & rhs) { *this = rhs; };
+    
+    bool operator !=(const Similarity &rhs) const
+    {
+        return (
+                PSNR   != rhs.PSNR ||
+                MSSIM  != rhs.MSSIM ||
+                DSCORE != rhs.DSCORE);
+    };
+    
+    bool operator ==(const Similarity &rhs) const
+    {
+        return (
+                PSNR   == rhs.PSNR   &&
+                MSSIM  == rhs.MSSIM   &&
+                DSCORE == rhs.DSCORE
+                );
+    };
+    
+    
+    Similarity &operator =(const Similarity &rhs)
+    {
+        if (*this != rhs) 
+        {
+            PSNR  = rhs.PSNR;
+            MSSIM  = rhs.MSSIM;
+            DSCORE = rhs.DSCORE;
+        }
+        return *this;
+    };
+    
+    
+    // overloaded += operator
+    Similarity& operator +=(const Similarity &rhs)
+    {
+        PSNR   += rhs.PSNR; 
+        MSSIM  += rhs.MSSIM; 
+        DSCORE += rhs.DSCORE;
+        return *this;
+    };
+    
+    const Similarity operator+(const Similarity &rhs) const
+    {
+        Similarity result(*this);
+        return result += rhs;
+    }
+
+    
+    
+    
+    double PSNR;
+    double MSSIM;
+    double DSCORE;
+
+};
+    
+    
+    
 public:
 
     //default constructor
     Performance () : 
         FMeasure(0),Variance(0),Mean(0),
         sensitivity(0),specificity(0),precision(0),
-        threshold(250),nchannel(1)
+        threshold(250),nchannel(1),
+    pixel_performance(true),frame_performance(false)
     { };
 
     //Parametric constructor
     Performance (float fm, float var, float mu, unsigned char thr, 
             float sn, float sp, float pr, int nch ) :
         FMeasure(fm),Variance(var),Mean(mu),
-        sensitivity(sn),specificity(sp),precision(pr),threshold(thr),nchannel(nch)
+        sensitivity(sn),specificity(sp),precision(pr),threshold(thr),nchannel(nch),
+    pixel_performance(true), frame_performance(false)
     { };
 
     //copy constructor
@@ -443,8 +492,20 @@ public:
     string averageSummaryAsString() const;
     string metricsStatisticsAsString() const;
     string rocAsString() const;
+    string getHeaderForFileWithNameOfStatisticParameters();
     void calculateFinalPerformanceOfMetrics();
 
+    /**
+     * Set measure of pixel level measures performance as
+     * sensitivity, specificity, etc.
+     */
+    void setPixelPerformanceMeasures(bool opt){ pixel_performance = opt; };
+
+    /**
+     * Set measure of frame level measures performance as
+     * PSNR, Similarity, and DScore.
+     */
+    void setFramePerformanceMeasures(bool opt){ frame_performance = opt; }; 
 
     /**
      * Compare both image frames at pixel level
@@ -457,6 +518,11 @@ public:
      */
     void countPixelsReferenceImage(const Mat&);
     void setThreshold(int th) {threshold = th;};
+    /**
+     * Compute all similarity measures fo two frames
+     * PSNR, SIIM, and DScore
+     */
+    void frameSimilarity(InputArray,InputArray);
     //ContingencyMatrix getContingencyMatrix(int idx) {return measure;};
 
     /**
@@ -467,14 +533,15 @@ public:
     inline float getPrecision()   { return precision; };
     inline float recall() {return sensitivity;};
     inline float TPR() {return sensitivity; };
-    inline float TNR() {return (1 - specificity);};  
+    inline float FPR() {return (1 - specificity);};  
 
     inline float FScore() {return FMeasure;};
     inline float Sigma() {return Variance; };
     inline float Mu()  { return Mean;};
    
-    double getPSNR(Mat& src1, Mat& src2, int bb=0);
-    Scalar getMSSIM( const Mat&, const Mat&);
+    //double getPSNR(Mat& src1, Mat& src2, int bb=0);
+    double getPSNR(const Mat& src1, const Mat& src2);
+    double getMSSIM( const Mat&, const Mat&);
     double getDScore(InputArray, InputArray);
 
 private:
@@ -507,6 +574,15 @@ private:
     CommonMetrics common_metrics;
     vector<GlobalMetrics> vectorMetrics;
     StatMetrics stat;
+    
+    Similarity similarity_frame;
+    Similarity similarity_accumulated;
+    vector<Similarity> vectorSimilarity;
+    Similarity similarity_mean;
+    Similarity similarity_median;
+    
+    bool pixel_performance;
+    bool frame_performance;
 };
 
 

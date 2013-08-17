@@ -146,8 +146,8 @@ int main( int argc, char** argv )
     cout << perf.refToString();
     */
 
-    Mat im1 = imread(ref.c_str());
-    Mat im2 = imread(img2.c_str());
+    Mat im1 = imread(ref.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+    Mat im2 = imread(img2.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
     //Mat im3 = imread(img3);
     
     if (!im1.data || !im2.data )

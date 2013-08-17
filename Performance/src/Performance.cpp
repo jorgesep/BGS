@@ -18,13 +18,16 @@
 #include "Performance.h"
 #include <math.h>
 
+#include <iostream>     // std::cout, std::fixed
+#include <iomanip>      // std::setprecision
+
 using namespace cv;
 using namespace std;
 
 namespace bgs {
 
-//const float Performance::PEAK_PARAMETER = (float)5/2;
-const float Performance::PEAK_PARAMETER = (float)1;
+const float Performance::PEAK_PARAMETER = (float)5/2;
+//const float Performance::PEAK_PARAMETER = (float)1;
     
     
     
@@ -35,8 +38,12 @@ const float Performance::PEAK_PARAMETER = (float)1;
  */
 string Performance::asString() const
 {
-    stringstream str;  
-    str << this->refToString() << "    "
+    stringstream str;
+
+    if (pixel_performance) {
+        
+        str 
+        << this->refToString() << "    "
         << current_frame.tp    << " " 
         << current_frame.tn    << " " 
         << current_frame.fp    << " " 
@@ -44,7 +51,18 @@ string Performance::asString() const
         << std::scientific     << sensitivity     << " " 
         << std::scientific     << (1-specificity) << " "
         << std::scientific     << FMeasure        << " " 
-        << std::scientific     << MCC;
+        << std::scientific     << MCC             << "    ";
+        
+    }
+    if (frame_performance) {
+        
+        str 
+        << setiosflags(ios::fixed) << setprecision(2) << similarity_frame.PSNR << " "
+        << setiosflags(ios::fixed) << setprecision(2) << similarity_frame.MSSIM << " "
+        << setiosflags(ios::fixed) << setprecision(2) << similarity_frame.DSCORE;
+        
+    }
+    
     return str.str();
 }
 
@@ -113,14 +131,30 @@ string Performance::metricsStatisticsAsString() const
     double medianFPR = 1-(double)stat.MedianR.specificity;
 
     stringstream str;
-    str << std::scientific << stat.MeanR.sensitivity    << " " 
+    if (pixel_performance) {
+
+        str 
+        << std::scientific << stat.MeanR.sensitivity    << " " 
         << std::scientific << meanFPR                   << " "
         << std::scientific << stat.MeanR.f1score        << " "
         << std::scientific << stat.MeanR.MCC            << "    "
         << std::scientific << stat.MedianR.sensitivity  << " " 
         << std::scientific << medianFPR                 << " "
         << std::scientific << stat.MedianR.f1score      << " "
-        << std::scientific << stat.MedianR.MCC;
+        << std::scientific << stat.MedianR.MCC          << "    ";
+    
+    }
+    if (frame_performance) {
+
+        str 
+        << std::scientific << similarity_mean.PSNR      << " "
+        << std::scientific << similarity_mean.MSSIM     << " "
+        << std::scientific << similarity_mean.DSCORE    << "    "
+        << std::scientific << similarity_median.PSNR    << " "
+        << std::scientific << similarity_median.MSSIM   << " "
+        << std::scientific << similarity_median.DSCORE  ;
+    }
+    
     return str.str();
 }
 
@@ -139,6 +173,21 @@ string Performance::rocAsString() const
     return str.str();
 }
 
+string Performance::
+getHeaderForFileWithNameOfStatisticParameters()
+{
+    stringstream str;
+    
+    if (pixel_performance) {
+        str << "TPR_MEAN FPR_MEAN FMEASURE_MEAN MCC_MEAN  TPR_MEDIAN FPR_MEDIAN FMEASURE_MEDIAN MCC_MEDIAN    ";
+    }
+    if (frame_performance) {
+        str << "PSNR MSSIM DSCORE";
+    }
+    
+    return str.str();
+        
+}
 
 // Calculate performance metrics based in pixel level compararation
 // Return results in CommonMetric struct.
@@ -185,24 +234,25 @@ Performance::getPerformance(const ContingencyMatrix& mt)
 
 
 
+
 void Performance::pixelLevelCompare(const Mat& _reference, const Mat& _image)
 {
     //double duration;
     //duration = static_cast<double>(cv::getTickCount());
-
+    
     if ( _reference.dims > 2 || _image.dims > 2 ) {
         cerr << "Invalid dimensions :  " << _reference.dims << " " << _image.dims << endl;
         return;
     }
-
+    
     if ( _reference.size() != _image.size() ) {
         cerr << "Invalid size :  " << _reference.size() << " " << _image.size() << endl;
         return;
     }
     if ( _reference.type() != _image.type() ) {
         cerr << "Invalid type :  " 
-            << _reference.type() << " " << _reference.depth() << " " << _reference.channels() <<  "  "
-            << _image.type() << " " << _image.depth() << " " << _image.channels() <<  endl;
+        << _reference.type() << " " << _reference.depth() << " " << _reference.channels() <<  "  "
+        << _image.type() << " " << _image.depth() << " " << _image.channels() <<  endl;
         return;
     }
     
@@ -212,12 +262,12 @@ void Performance::pixelLevelCompare(const Mat& _reference, const Mat& _image)
     // Check and convert reference image to gray
     if (_image.channels() > 1) 
         cvtColor( _image, _img, CV_BGR2GRAY );
-
+    
     Mat _ref = _reference;
     if (_reference.channels() > 1) 
         cvtColor( _reference, _ref, CV_BGR2GRAY );
-
-
+    
+    
     //Converted to gray in case of color image and
     //counts TP and TN in pixelsRefImage variable
     this->countPixelsReferenceImage(_ref);
@@ -225,18 +275,18 @@ void Performance::pixelLevelCompare(const Mat& _reference, const Mat& _image)
     // number of lines
     int nl= _ref.rows; 
     int nc= _ref.cols;
-
+    
     if ( _ref.isContinuous() && _img.isContinuous() )
     {
         //then no padded pixels
         nc= nc*nl;
         nl= 1; // it is now a 1D array
     }
-   
+    
     //Initialize to zero all internal values of the struct.
     current_frame = ContingencyMatrix();
     ContingencyMatrix *m_ptr = &current_frame;
-
+    
     // Check out TP TN FP and FN
     for (int j=0; j<nl; j++) {
         //get a pointer of each row
@@ -265,40 +315,44 @@ void Performance::pixelLevelCompare(const Mat& _reference, const Mat& _image)
         }
     }
     
-
+    
     //calculates sensitivity (TPR) and specificity (1-FPR)
     CommonMetrics img_metrics = getPerformance(current_frame);
-
-
+    
+    
     
     //save an accumulate value of TP,TN...
     GlobalMetrics *ptrGlobal = &accumulated;
     ptrGlobal->perfR   += current_frame;
     ptrGlobal->metricR += img_metrics;
     ptrGlobal->count += 1;
-
+    
     // Save each current_frame in a global vector
     vectorMetrics.push_back(
-            GlobalMetrics(current_frame, 
-                ContingencyMatrix(0,0,0,0), 
-                ContingencyMatrix(0,0,0,0), 
-                img_metrics, 
-                CommonMetrics(0,0,0,0), 
-                CommonMetrics(0,0,0,0), 
-                ptrGlobal->count));
-
-
+                            GlobalMetrics(current_frame, 
+                                          ContingencyMatrix(0,0,0,0), 
+                                          ContingencyMatrix(0,0,0,0), 
+                                          img_metrics, 
+                                          CommonMetrics(0,0,0,0), 
+                                          CommonMetrics(0,0,0,0), 
+                                          ptrGlobal->count));
+    
+    
     //duration = static_cast<double>(cv::getTickCount())-duration;
     //duration /= cv::getTickFrequency(); //the elapsed time in ms
+    //cout << "Duration pixelLevelCompare : " << duration << endl; 
 }
 
-
-
+    
 
 
 // Counts up from reference frame number of TP and TN
 void Performance::countPixelsReferenceImage(const Mat& image) 
 {
+    //double duration;
+    //duration = static_cast<double>(cv::getTickCount());
+
+    
     // get Mat header for input image. This is O(1) operation
     Mat img = image;
 
@@ -310,23 +364,56 @@ void Performance::countPixelsReferenceImage(const Mat& image)
     reference = ContingencyMatrix();
     ContingencyMatrix *r_ptr = &reference;
 
+    r_ptr->tp = countNonZero(img);
+    r_ptr->tn = img.rows*img.cols - r_ptr->tp;
+    
+    
+    //duration = static_cast<double>(cv::getTickCount())-duration;
+    //duration /= cv::getTickFrequency(); //the elapsed time in ms
+    //cout << "BENCHMARK DURATION : " << duration << endl;
+
+
+
+}
+
+
+    
+/*    
+// Counts up from reference frame number of TP and TN
+void Performance::countPixelsReferenceImage(const Mat& image) 
+{
+ double duration;
+ duration = static_cast<double>(cv::getTickCount());
+
+    
+    // get Mat header for input image. This is O(1) operation
+    Mat img = image;
+    
+    // Check and convert reference image to gray
+    if (image.channels() > 1) 
+        cvtColor( image, img, CV_BGR2GRAY );
+    
+    
+    reference = ContingencyMatrix();
+    ContingencyMatrix *r_ptr = &reference;
+    
     int nl= img.rows; // number of lines
     int nc= img.cols;
-
+    
     if (img.isContinuous())
     {
         //then no padded pixels
         nc= nc*nl;
         nl= 1; // it is now a 1D array
     }
-
+    
     //this loop is executed only once
     // in case of continuous images
     for (int j=0; j<nl; j++) {
         //get a pointer of each row
         const uchar* data= img.ptr<uchar>(j);
         for (int i=0; i<nc; i++) {
-
+            
             //if (data[i] > threshold)
             if (data[i] > 0)
                 r_ptr->tp++;
@@ -334,24 +421,102 @@ void Performance::countPixelsReferenceImage(const Mat& image)
                 r_ptr->tn++;
         }
     }
+    
+ 
+ duration = static_cast<double>(cv::getTickCount())-duration;
+ duration /= cv::getTickFrequency(); //the elapsed time in ms
+ cout << "BENCHMARK DURATION : " << duration << endl;
 
+    
+    
 }
+*/
+    
+
+    
+void Performance::frameSimilarity(InputArray _truth,InputArray _mask)
+{
+    
+    //double duration;
+    //duration = static_cast<double>(cv::getTickCount());
+    
+    // Verify consistency of both frames
+    if ( _truth.size() != _mask.size() ) {
+        cerr << "Invalid size :  " << _truth.size() << " " << _mask.size() << endl;
+        return;
+    }
+    if ( _truth.type() != _mask.type() ) {
+        cerr << "Invalid type :  " 
+        << _truth.type() << " " << _truth.depth() << " " << _truth.channels() <<  "  "
+        << _mask.type()  << " " << _mask.depth()  << " " << _mask.channels()  <<  endl;
+        return;
+    }
+    
+
+    // Convert both frames to single channel
+    // Check and convert foreground mask image to gray
+    Mat TRUTH;
+    Mat FOREGROUND;
+    if (_truth.channels() > 1) 
+        cvtColor( _truth.getMat(), TRUTH, CV_BGR2GRAY );
+    else 
+        TRUTH = _truth.getMat();
+
+    if (_mask.channels() > 1) 
+        cvtColor( _mask.getMat(), FOREGROUND, CV_BGR2GRAY );
+    else 
+        FOREGROUND = _mask.getMat();
+    
+    //Initialize to zero all internal values of the struct.
+    similarity_frame = Similarity();
+    Similarity *m_ptr = &similarity_frame;
+
+
+    m_ptr->PSNR   = getPSNR(TRUTH, FOREGROUND);
+    m_ptr->MSSIM  = getMSSIM(TRUTH, FOREGROUND);
+    m_ptr->DSCORE = getDScore(TRUTH, FOREGROUND);
+
+    
+    
+    similarity_accumulated += similarity_frame;
+    vectorSimilarity.push_back(similarity_frame);
+
+    
+}
+   
 
 void Performance::meanOfMetrics() 
 {
     if (accumulated.count == 0)
         return;
 
-    GlobalMetrics *g_p = &accumulated;
-    unsigned int   cnt = g_p->count;
+    if ( pixel_performance ) {
+        GlobalMetrics *g_p = &accumulated;
+        unsigned int   cnt = g_p->count;
 
-    stat.MeanR = CommonMetrics( g_p->metricR.sensitivity/cnt, 
-                                g_p->metricR.specificity/cnt,
-                                g_p->metricR.f1score/cnt,
-                                g_p->metricR.MCC/cnt);
-    stat.MeanG = CommonMetrics( 0,0,0,0 );
-    stat.MeanB = CommonMetrics( 0,0,0,0 );
-
+        stat.MeanR = CommonMetrics( g_p->metricR.sensitivity/cnt, 
+                                    g_p->metricR.specificity/cnt,
+                                    g_p->metricR.f1score/cnt,
+                                    g_p->metricR.MCC/cnt);
+        stat.MeanG = CommonMetrics( 0,0,0,0 );
+        stat.MeanB = CommonMetrics( 0,0,0,0 );
+    
+    }
+    
+    
+    // Just for now calculate similarity mean in this way,
+    // in a second revision, I'll put all those values
+    // in a common structure
+    if (frame_performance) {
+ 
+        unsigned int size = vectorSimilarity.size();
+        if (size > 0) {
+            Similarity *p_sim = &similarity_accumulated;
+            similarity_mean = Similarity((double)p_sim->PSNR/(double)size,
+                                         (double)p_sim->MSSIM/(double)size,
+                                         (double)p_sim->DSCORE/(double)size);
+        }
+    }
 }
 
 void Performance::medianOfMetrics() 
@@ -361,34 +526,66 @@ void Performance::medianOfMetrics()
     vector<double> f1m;
     vector<double> mcc;
     
-    unsigned int i = (unsigned int)vectorMetrics.size()/2; 
-    bool even      = vectorMetrics.size() % 2 ? false: true;
+    if ( pixel_performance ) {
+        unsigned int i = (unsigned int)vectorMetrics.size()/2; 
+        bool even      = vectorMetrics.size() % 2 ? false: true;
 
-    for(vector<GlobalMetrics>::iterator it = vectorMetrics.begin(); 
-                                        it != vectorMetrics.end(); ++it) 
-    {
-        sen.push_back(it->metricR.sensitivity);
-        spe.push_back(it->metricR.specificity);
-        f1m.push_back(it->metricR.f1score);
-        mcc.push_back(it->metricR.MCC);
+        for(vector<GlobalMetrics>::iterator it = vectorMetrics.begin(); 
+                                            it != vectorMetrics.end(); ++it) 
+        {
+            sen.push_back(it->metricR.sensitivity);
+            spe.push_back(it->metricR.specificity);
+            f1m.push_back(it->metricR.f1score);
+            mcc.push_back(it->metricR.MCC);
+        }
+
+        sort (sen.begin(), sen.end());
+        sort (spe.begin(), spe.end());
+        sort (f1m.begin(), f1m.end());
+        sort (mcc.begin(), mcc.end());
+
+
+        if (even) {
+            stat.MedianR = CommonMetrics( (sen[i]+sen[i-1])/2,
+                                          (spe[i]+spe[i-1])/2,
+                                          (f1m[1]+f1m[i-1])/2,
+                                          (mcc[i]+mcc[i-1])/2);
+        } else {
+            stat.MedianR = CommonMetrics( sen[i],spe[i],f1m[i],mcc[i]);
+        }
+    
     }
-
-    sort (sen.begin(), sen.end());
-    sort (spe.begin(), spe.end());
-    sort (f1m.begin(), f1m.end());
-    sort (mcc.begin(), mcc.end());
-
-
-    if (even) {
-        stat.MedianR = CommonMetrics( (sen[i]+sen[i-1])/2,
-                                      (spe[i]+spe[i-1])/2,
-                                      (f1m[1]+f1m[i-1])/2,
-                                      (mcc[i]+mcc[i-1])/2);
-    } else {
-        stat.MedianR = CommonMetrics( sen[i],spe[i],f1m[i],mcc[i]);
+    /*
+    // Getting median of similarity
+    unsigned int size = (unsigned int)vectorSimilarity.size()/2; 
+    bool size_even    = vectorSimilarity.size() % 2 ? false: true;
+    
+    vector<double> _psnr;
+    vector<double> _mssim;
+    vector<double> _dscore;
+    
+    for (vector<Similarity>::iterator it = vectorSimilarity.begin(); it != vectorSimilarity.end(); ++it) {
+        _psnr.push_back(it->PSNR);
+        _mssim.push_back(it->MSSIM);
+        _dscore.push_back(it->DSCORE);
     }
+    
+    sort(_psnr.begin()  , _psnr.end());
+    sort(_mssim.begin() , _mssim.end());
+    sort(_dscore.begin(), _dscore.end());
+    
+    if (size_even)
+        similarity_median = Similarity( (_psnr  [size] + _psnr  [size-1])/2,
+                                        (_mssim [size] + _mssim [size-1])/2,
+                                        (_dscore[size] + _dscore[size-1])/2 );
+    else
+        similarity_median = Similarity( _psnr[size], _mssim[size], _dscore[size] );
+    */                                   
+
 
 }
+    
+    
 /*
  * Performance calculation of accumulated metrics
  */
@@ -399,8 +596,33 @@ void Performance::calculateFinalPerformanceOfMetrics()
 }
 
 
+/*
+ * PSNR Measurement taken from Opencv 
+ */
+double Performance::getPSNR(const Mat& I1, const Mat& I2)
+{
+    Mat s1;
+    absdiff(I1, I2, s1);       // |I1 - I2|
+    s1.convertTo(s1, CV_32F);  // cannot make a square on 8 bits
+    s1 = s1.mul(s1);           // |I1 - I2|^2
+    
+    Scalar s = sum(s1);        // sum elements per channel
+    
+    double sse = s.val[0] + s.val[1] + s.val[2]; // sum channels
+    
+    if( sse <= 1e-10) // for small values return zero
+        return 0;
+    else
+    {
+        double mse  = sse / (double)(I1.channels() * I1.total());
+        double psnr = 10.0 * log10((255 * 255) / mse);
+        return psnr;
+    }
+}
 
 
+    
+/*
 double Performance::getPSNR(Mat& src1, Mat& src2, int bb)
 {
     double duration;
@@ -441,8 +663,12 @@ double Performance::getPSNR(Mat& src1, Mat& src2, int bb)
         return psnr;
     }
 }
+*/
+    
+    
 
-
+    
+    
 /*
 double getPSNR(const Mat& I1, const Mat& I2)
 {
@@ -471,8 +697,10 @@ double getPSNR(const Mat& I1, const Mat& I2)
     }
 }
 */
-
-Scalar Performance::getMSSIM( const Mat& i1, const Mat& i2)
+    
+    
+    
+double Performance::getMSSIM( const Mat& i1, const Mat& i2)
 {
     const double C1 = 6.5025, C2 = 58.5225;
     /***************************** INITS **********************************/
@@ -523,9 +751,9 @@ Scalar Performance::getMSSIM( const Mat& i1, const Mat& i2)
     divide(t3, t1, ssim_map);        // ssim_map =  t3./t1;
 
     Scalar mssim = mean(ssim_map);   // mssim = average of ssim map
-    return mssim;
+    return mssim.val[0];
 }
-    
+
 double Performance::getDScore(InputArray reference, InputArray foreground)
 {
     Mat Mask;
@@ -543,8 +771,8 @@ double Performance::getDScore(InputArray reference, InputArray foreground)
 
     
     
-    double duration;
-    duration = static_cast<double>(cv::getTickCount());
+    //double duration;
+    //duration = static_cast<double>(cv::getTickCount());
 
     
     // Check and convert foreground mask image to gray
@@ -568,7 +796,42 @@ double Performance::getDScore(InputArray reference, InputArray foreground)
     cv::threshold(Mask , Mask_BINARY_INV , 1, 1, THRESH_BINARY_INV);
     cv::threshold(Truth, Truth_BINARY    , 1, 1, THRESH_BINARY);
     cv::threshold(Truth, Truth_BINARY_INV, 1, 1, THRESH_BINARY_INV);
+   
+    /************/
+    /*
+    Mat Truth_inv;
+    bitwise_not(Truth, Truth_inv);
+    cout << Truth_inv << endl;
     
+    distanceTransform(Truth_inv, MAP_FOREGROUND, CV_DIST_L1, 3);
+    
+    cout << MAP_FOREGROUND << endl;
+    
+    MAP_FOREGROUND *=2;
+    Mat LOG_MAP_FOREGROUND_1;
+    log(MAP_FOREGROUND, LOG_MAP_FOREGROUND_1);
+    
+    cout << LOG_MAP_FOREGROUND_1 << endl;
+    
+    
+    Mat alpha1(foreground.size(),CV_32F ,Scalar::all(PEAK_PARAMETER));
+    LOG_MAP_FOREGROUND_1 -= alpha1;
+    
+    Mat LOG_MAP_FOREGROUND_3 = LOG_MAP_FOREGROUND_1.mul(LOG_MAP_FOREGROUND_1);
+    
+    LOG_MAP_FOREGROUND_3 *= -1;
+    
+    Mat EXP_LOG_MAP_FOREGROUND_3;
+    
+    exp(LOG_MAP_FOREGROUND_3, EXP_LOG_MAP_FOREGROUND_3);
+    
+    cout << EXP_LOG_MAP_FOREGROUND_3 << endl;
+    
+    Scalar DScore1 = mean(EXP_LOG_MAP_FOREGROUND_3);
+    imwrite("DScore.jpg", EXP_LOG_MAP_FOREGROUND_3);
+    return DScore1.val[0];
+    */
+    /************/
 
     //bitwise_and(Truth_BINARY    , Mask_BINARY    , MAP_FOREGROUND);
     //bitwise_and(Truth_BINARY_INV, Mask_BINARY_INV, MAP_BACKGROUND);
@@ -647,9 +910,9 @@ double Performance::getDScore(InputArray reference, InputArray foreground)
 
     //D-score(x) = exp(- (ln (2 * DT(x)) - alpha)^2);
     
-    duration = static_cast<double>(cv::getTickCount())-duration;
-    duration /= cv::getTickFrequency(); //the elapsed time in ms
-    cout << "Duration: " << duration << endl; 
+    //duration = static_cast<double>(cv::getTickCount())-duration;
+    //duration /= cv::getTickFrequency(); //the elapsed time in ms
+    //cout << "getDScore Duration: " << duration << endl; 
 
     
     return DScore.val[0];
