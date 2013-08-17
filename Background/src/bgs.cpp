@@ -159,7 +159,7 @@ int main( int argc, char** argv )
         cout << bg_model.initParametersToString() << endl;
 
     //Create foreground mask directory
-    string foreground_path = "fgmask";
+    string foreground_path = "sagmm_mask";
     if (saveMask) {
         
         // Create directoty if not exists and create a numbered internal directory.
@@ -362,7 +362,7 @@ int main( int argc, char** argv )
         //save mask to local directory
         if (saveMask  && cnt >= InitFGMaskFrame && cnt <= EndFGMaskFrame) {
             stringstream str;
-            str << foreground_path << "/FG_" <<  cnt << ".jpg";
+            str << foreground_path << "/" <<  cnt << ".jpg";
             
             vector<int> compression_params;
             compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
