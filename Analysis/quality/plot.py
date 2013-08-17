@@ -43,7 +43,7 @@ class analyse_nonparametric :
         fpr    = self.fp_idx
         tpr    = self.tp_idx
 
-        print "INDEX: " + str(index1) + " " + str(index2) + " " + str(fpr) +  " " + str(tpr)
+        #print "INDEX: " + str(index1) + " " + str(index2) + " " + str(fpr) +  " " + str(tpr)
 
         pl.clf()
         pl.subplot(111)
@@ -61,7 +61,7 @@ class analyse_nonparametric :
         # arranged by index1.
         for key in params :
 
-            print "key: " + str(key)
+            #print "key: " + str(key)
             if key == 2e-09 or key == 0.0001:
                 # get subset of data indexed by 'key', key is index1. 
                 _data = [p0 for p0 in self.data if float(p0[index1]) == key]
@@ -190,7 +190,7 @@ class analyse_nonparametric :
         pl.savefig('NP_TPR-FPR2.png')
         
     def plot3(self):
-        '''Alpha'''
+        '''Alpha fixed and threshold variable'''
 
         index     = self.ap_idx
         threshold = self.th_idx
@@ -234,7 +234,24 @@ class analyse_nonparametric :
             #legendT.append('Alpha='+str(key))
             #if r == 30 :
             pl.plot(X,Y,color=self.colorList[str(p+1)],marker='x')                
- 
+#####################################
+            if key == 0.1 :
+                pl.plot(X,Y,color=self.colorList[str(p+1)],marker='x')                
+                label_counter = 0
+                for i in range(len(X)):
+                    if int(fmod(label_counter,5)) == 0:
+                        number = '%.1e'% T[i]
+                        pl.text(X[i],Y[i]+0.02,number,fontsize=8,color='black', horizontalalignment='center',verticalalignment='center')
+                    label_counter += 1
+
+                    #if Y[i] > 0.8 :
+                    #    if A[i] == 0.001 :
+                    #        pl.text(X[i]+0.0000,Y[i]+0.02,T[i],fontsize=11,color='black', horizontalalignment='center',verticalalignment='center')
+                    #    else:
+                    #        pl.text(X[i]+0.00025,Y[i]+0.02,T[i],fontsize=11,color='black', horizontalalignment='center',verticalalignment='center')
+                    #else:
+                    #    pl.text(X[i]+0.00025,Y[i],T[i],fontsize=11,color='black', horizontalalignment='center',verticalalignment='center')
+#####################################
             i+=1
         #
         pl.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), numpoints=1)
