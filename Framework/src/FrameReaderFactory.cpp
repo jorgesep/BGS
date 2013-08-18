@@ -78,18 +78,34 @@ void ListFiles::lookForImageFilesInDirectory(string _directory)
 }
 
 
-void ListFiles::getFrame(OutputArray frame)
+void ListFiles::getFrame(OutputArray frame, int color)
 {
     Mat Image;
 
-    //if (im_files.size() > 0 && frame_counter < im_files.size() ) {
-    //}
     Image = imread(im_files[frame_counter]);
-    Image.copyTo(frame);
+    
+    if (color)
+        Image.copyTo(frame);
+    else
+        cvtColor(Image, frame, CV_BGR2GRAY);
+
     frame_counter++;
     
 }
 
+void ListFiles::getFrame(OutputArray frame)
+{
+    Mat Image;
+    
+    Image = imread(im_files[frame_counter]);
+    Image.copyTo(frame);
+    
+    frame_counter++;
+    
+}
+    
+    
+    
 void ListFiles::getImageProperties()
 {
     if (im_files.size() > 0) {
@@ -133,17 +149,36 @@ VideoFile::~VideoFile()
         video.release();
 }
 
+void VideoFile::getFrame(OutputArray frame, int color)
+{
+    Mat Image;
+    if (video.isOpened()) {
+        video >> Image;
+        if (color)
+            Image.copyTo(frame);
+        else
+            cvtColor(Image, frame, CV_BGR2GRAY);
+
+        frame_counter = video.get(CV_CAP_PROP_POS_FRAMES);
+    }
+
+}
+
 void VideoFile::getFrame(OutputArray frame)
 {
     Mat Image;
     if (video.isOpened()) {
         video >> Image;
         Image.copyTo(frame);
+
+        
         frame_counter = video.get(CV_CAP_PROP_POS_FRAMES);
     }
-
+    
 }
-
+    
+    
+    
 void VideoFile::getImageProperties()
 {
     VideoCapture video_prop(videoname.c_str());

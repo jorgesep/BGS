@@ -36,6 +36,7 @@ class FrameReader
 public:
     virtual ~FrameReader() {}
     virtual void getFrame (OutputArray) = 0;
+    virtual void getFrame (OutputArray, int) = 0;
     virtual int getFrameDelay() = 0;
     virtual int getNChannels() = 0;
     virtual int getNumberCols() = 0;
@@ -52,6 +53,7 @@ public:
     ~ListFiles() {};
     ListFiles(string); 
     virtual void getFrame(OutputArray frame);
+    virtual void getFrame(OutputArray frame, int color = 1);
     virtual int getFrameDelay() { return delay; };
     virtual int getNChannels() { return nchannels; };
     virtual int getNumberCols() { return cols; };
@@ -83,6 +85,7 @@ public:
     ~VideoFile();
     VideoFile(string); 
     virtual void getFrame(OutputArray frame);
+    virtual void getFrame(OutputArray frame, int color = 1);
     virtual int getFrameDelay() { return delay; };
     virtual int getNChannels() { return nchannels; };
     virtual int getNumberCols() { return cols; };
