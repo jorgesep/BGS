@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<History>500</History>
+<InitFGMaskFrame>216</InitFGMaskFrame>
+<EndFGMaskFrame>682</EndFGMaskFrame>
+<ApplyMorphologicalFilter>1</ApplyMorphologicalFilter>
+<Alpha>0.003</Alpha>
+<VarThreshold>100</VarThreshold>
+</opencv_storage>

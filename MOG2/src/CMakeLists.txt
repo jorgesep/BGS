@@ -44,3 +44,5 @@ ADD_LIBRARY( MOG2Builder SHARED ${SRCS} )
 target_link_libraries( MOG2Builder ${OpenCV_LIBS} ${Boost_LIBRARIES} )
 set_property(TARGET MOG2Builder PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
+file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)
+
