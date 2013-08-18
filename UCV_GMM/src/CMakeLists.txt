@@ -40,6 +40,7 @@ set(OpenCV_DIR "/usr/local/share/OpenCV"
 FIND_PACKAGE( OpenCV REQUIRED )
 
 find_library(ucv_gmm uCV PATHS ../../ThirdParty/uCV/lib )
+find_library(ucv_gmm_methods uCVMethods PATHS ../../ThirdParty/uCV/lib )
 
 find_package( Boost REQUIRED COMPONENTS filesystem system )
 include_directories( ${Boost_INCLUDE_DIRS} )
@@ -49,6 +50,6 @@ include_directories( ${Boost_INCLUDE_DIRS} )
 #set_property(TARGET UCVGMMBuilder PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
 ADD_EXECUTABLE( testUCV ${SRCS} )
-target_link_libraries( testUCV ${OpenCV_LIBS} ${Boost_LIBRARIES} ${ucv_gmm} )
+target_link_libraries( testUCV ${OpenCV_LIBS} ${Boost_LIBRARIES} ${ucv_gmm_methods} ${ucv_gmm} Framework Utils )
 set_property(TARGET testUCV PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 

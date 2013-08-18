@@ -32,13 +32,21 @@
 #include "ucv_gmm_d.h"
 #include "ucv_gmm.h"
 
+#include "gmm_line.h"
+#include "gmm_sample.h"
+#include "gmm_double_ucv.h"
+
+
+#include "utils.h"
+#include "FrameReaderFactory.h"
+
 
 
 using namespace cv;
 using namespace std;
-//using namespace boost::filesystem;
+using namespace boost::filesystem;
 //using namespace seq;
-//using namespace bgs;
+using namespace bgs;
 
 
 
@@ -50,70 +58,224 @@ void create_g_img(ucv_image_t *a, uint8_t *a_b, uint16_t w, uint16_t h)
     a->height = h;
 }
 
+void create_ucv_img(ucv_image_t *a, uint8_t *a_b, uint16_t w, uint16_t h)
+{
+        a->image = a_b;
+        a->type = UCV_GRAY8U;
+        a->width = w;
+        a->height = h;
+}
+
+
+
+
+
+const char* keys =
+{
+    "{ i | input   |       | Input video }"
+    "{ m | mask    | true  | Save foreground masks}"
+    "{ s | show    | false | Show images of video sequence }"
+    "{ h | help    | false | Print help message }"
+};
+
+
 
 
 int main( int argc, char** argv )
 {
+    //Parse console parameters
+    CommandLineParser cmd(argc, argv, keys);
 
-  
-    // Reading input single frame just for testing.
-    Mat input_image = imread("00000001.jpg");
+    if (cmd.get<bool>("help"))
+    {
+        cout << "uCV Model for background subtraction Program." << endl;
+        cout << "------------------------------------------------------------" << endl;
+        cout << "Generates foreground masks.                                 " << endl;
+        cout << "OpenCV Version : "  << CV_VERSION << endl;
+        cout << "Example:                                                    " << endl;
+        cout << "./test_ucv -i dir_jpeg/  -s                  " << endl << endl;
+        cmd.printParams();
+        cout << "------------------------------------------------------------" << endl <<endl;
+        return 0;
+    }
 
-    ucv_image_t *im;
-    
-    // initialize image struct.
-    create_g_img(im, (uint8_t*)input_image.data, input_image.cols, input_image.rows);
-    
+    // Reading console input parameters
+    const string Name             = cmd.get<string>("input");
+    const bool displayImages      = cmd.get<bool>("show");
+    const bool saveForegroundMask = cmd.get<bool>("mask");
 
-    // Initializing gmm gaussian.
-    uint32_t number_gaussians  = 4;
-    uint32_t tmp = UCV_IMAGE_WIDTH(*im) * UCV_IMAGE_HEIGHT(*im) * number_gaussians;
-    ucv_gmm_gaussian_t *data = new ucv_gmm_gaussian_t[tmp];
 
-    
-    
-    // gaussian model
-    ucv_gaussian_model_t b;
-    ucv_gaussian_d_t *data1 = new ucv_gaussian_d_t;
-    
-    b.bgnd   = data1; 
-    b.type   = UCV_GRAY8U;
-    
-    b.width  = UCV_IMAGE_WIDTH(*im);
-    b.height = UCV_IMAGE_HEIGHT(*im);
-    b.n_g    = number_gaussians;
 
-    // Initialize threashold, learning rate, mu and sigma.
-    ucv_gmm_param_t p;
 
-    uint8_t th = 0.999;
-    real_t  lr = 0.002;
+    // Instance objet to verify input name is either a video or image directory.
+cout << "Reading  " << Name << endl;
+    seq::FrameReader *input_frame;
+    try {
+        input_frame = seq::FrameReaderFactory::create_frame_reader(Name);
+    } catch (...) {
+        cout << "Invalid file name "<< endl;
+        return 0;
+    }
 
-    p.th = th;
-    p.lr = lr;
-   
-    p.n_mu    = ucv_gmm_compute_n_mu(lr);
-    p.n_sigma = ucv_gmm_compute_n_sigma(lr);
-       
-    
-    
-    if (ucv_gmm_sample_init(im, &b, &p) < 0) {
-        cout <<  "Impossibile to init bgnd" << endl;
+    // Load xml file with parameters of algorithm needed to initialize the program.
+    string config_filename = "config/ucv.xml";
+    path config_path(config_filename);
+    if (!is_regular_file(config_path)) {
+        cout << "Configuration file " << config_filename << " not found! " << endl;
         return -1;
     }
 
-    ucv_image_t mask;
-    mask.type = UCV_BWBIN;
-    mask.width = UCV_IMAGE_WIDTH(*im);
-    mask.height = UCV_IMAGE_HEIGHT(*im);
-    tmp = UCV_IMAGE_WIDTH(*im) * UCV_IMAGE_HEIGHT(*im) / 8;
-    uint8_t * mask_b = new uint8_t[tmp];
-    mask.image = mask_b;
+    // Reading parameters of algorithm from xml file.
+    FileStorage fs(config_filename, FileStorage::READ);
+    double Alpha                     = (double)fs["Alpha"];
+    double Threshold                 = (double)fs["Threshold"];
+    int NumberGaussians              = (int)fs["NumberGaussians"];
+    int InitFGMaskFrame              = (int)fs["InitFGMaskFrame"];
+    int EndFGMaskFrame               = (int)fs["EndFGMaskFrame"];
+    int ApplyMorphologicalFilter     = (int)fs["ApplyMorphologicalFilter"];
+    fs.release();
 
-    
-    //Main loop.
-    
-    int8_t tmp = ucv_gmm_sample_update(im, &b, &mask);
+
+    // Create foreground mask directory
+    string foreground_path = "ucv_mask";
+    if (saveForegroundMask) {
+
+        // Create directoty if not exists and create a numbered internal directory.
+        // np_mask/0, np_mask/1, ...
+        create_foreground_directory(foreground_path);
+
+        ofstream outfile;
+        stringstream param;
+        param << foreground_path << "/parameters.txt" ;
+        outfile.open(param.str().c_str());
+        outfile << "# Alpha=" << Alpha << " Threshold=" << Threshold ;
+        outfile.close();
+
+    }
+
+
+    // Creation of display windows
+    if (displayImages) {
+        namedWindow("Image", CV_WINDOW_NORMAL);
+        namedWindow("Foreground", CV_WINDOW_NORMAL);
+        moveWindow("Image", 20, 20);
+        moveWindow("Foreground" , 20, 300);
+    }
+
+
+    // Image properties.
+    int cols      = input_frame->getNumberCols();
+    int rows      = input_frame->getNumberRows();
+    //int nchannels = input_frame->getNChannels();
+    int delay     = input_frame->getFrameDelay();
+    int len       = rows * cols;
+
+
+
+
+    /* Start configuration of the algorithm */
+    ucv_image_t curr;
+    uint8_t* curr_b = new uint8_t[len];
+    //uint8_t* mask_l = new uint8_t[len];
+    //uint8_t* mask_s = new uint8_t[len];
+    //uint8_t* mask_d = new uint8_t[len];
+
+    // Read first frame to configure algorithm
+    //Mat Frame(rows,cols,CV_8U);
+    Mat Frame;
+    //cout << "rows: " << Frame.rows << endl;
+    //cout << "cols: " << Frame.cols << endl;
+    Mat Frame_gray(rows,cols,CV_8U);
+    Mat Mask(rows,cols,CV_8U);
+
+    input_frame->getFrame(Frame);
+    Mat gray_image = Frame;
+    if (Frame.channels() > 1)
+        cvtColor( Frame, gray_image, CV_BGR2GRAY );
+
+
+    unsigned char *curr_c = new unsigned char[len];
+    memcpy(curr_c, (uint8_t*)gray_image.data, len);
+    create_ucv_img(&curr, curr_b, cols, rows);
+
+    //gmm_line *g_l = new gmm_line(&curr, Threshold, Alpha, (uint8_t)NumberGaussians);
+    gmm_sample     *g_s = new gmm_sample(&curr, Threshold, Alpha, (uint8_t)NumberGaussians);
+
+
+    // Initialize counter of number of frames read.
+    unsigned int cnt = input_frame->getFrameCounter();
+
+
+
+    // main loop
+    for(;;)
+    {
+
+        // Read input frame
+        Mask  = Scalar::all(0);
+        Frame = Scalar::all(0);
+        input_frame->getFrame(Frame);
+        if (Frame.empty()) break;
+
+
+        // Check and convert reference image to gray
+        Frame_gray = Frame;
+        if (Frame.channels() > 1)
+            cvtColor( Frame, Frame_gray, CV_BGR2GRAY );
+
+
+        cnt = input_frame->getFrameCounter();
+
+        // Process the image
+        memcpy(UCV_IMAGE_DATA(curr), (unsigned char*)Frame_gray.data, len);
+        g_s->process(&curr, (uint8_t*)Mask.data);
+
+
+        // Applying morphological filter (Erode) in case option was enabled.
+        Mat filtered_mask; // the destination image
+        if (ApplyMorphologicalFilter) {
+            Mat Element(2,2,CV_8U,cv::Scalar(1));
+            erode(Mask,filtered_mask,Element);
+        }
+        else {
+            Mask.copyTo(filtered_mask);
+        }
+
+        // Save foreground mask image for posterior analysis.
+        if (saveForegroundMask &&  cnt >= (unsigned int)InitFGMaskFrame &&  cnt <= (unsigned int)EndFGMaskFrame) {
+            stringstream str;
+            str << foreground_path << "/" <<  cnt << ".jpg";
+
+            vector<int> compression_params;
+            compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+            compression_params.push_back(100);
+            //imwrite(str.str(), Mask, compression_params);
+            imwrite(str.str(), filtered_mask, compression_params);
+        }
+
+        // Display foreground mask and image
+        if (displayImages) {
+            imshow("Image"     , Frame_gray);
+            imshow("Foreground", filtered_mask);
+
+            char key=0;
+            key = (char)waitKey(delay);
+            if( key == 27 )
+                break;
+        }
+
+        // option display not enabled stop loop after check last gt image.
+        if (!displayImages && cnt > (unsigned int)EndFGMaskFrame)
+            break;
+
+
+
+
+
+
+    }
+
+    delete input_frame;
 
     return 0;
 }
