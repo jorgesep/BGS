@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<NumberGaussians>3</NumberGaussians>
+<InitFGMaskFrame>216</InitFGMaskFrame>
+<EndFGMaskFrame>682</EndFGMaskFrame>
+<ApplyMorphologicalFilter>0</ApplyMorphologicalFilter>
+<Alpha>0.0007</Alpha>
+<Threshold>6</Threshold>
+</opencv_storage>
