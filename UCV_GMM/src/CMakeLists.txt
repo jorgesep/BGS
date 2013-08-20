@@ -13,6 +13,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 FILE ( GLOB SRCS *.cpp *.h )
+FILE ( GLOB SCRIPTS ${PROJECT_SOURCE_DIR}/scripts/*.py ${PROJECT_SOURCE_DIR}/scripts/*.sh )
 
 add_definitions(-D__EDAQ__)
 
