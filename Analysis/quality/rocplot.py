@@ -26,6 +26,7 @@ class plotroc :
                 '9' : 'b',\
                 '10': (0.20,0.20,0.20)}
 
+        self.str_colors = {'reset':'\033[0m', 'blue':'\033[34m', 'red':'\033[32m'}
         self.parameters_name = ''
         self.indexes = indexes
         self.parameter_range = internal_range
@@ -82,7 +83,7 @@ class plotroc :
         if title != None:
             self.title = title
 
-    def _plot_one_line(self,col_0,col_,filename, val=None):
+    def _plot_one_line(self,col_0,col_1,filename, val=None):
         # Assign parameters
         index_0 = self.parameters[col_0]
         index_1 = self.parameters[col_1]
@@ -93,15 +94,23 @@ class plotroc :
 
         # Determine line to be plot
         value = self.parameter_value
-        if val == None:
-            return
+        if val != None:
+            value = val
+
+        # if not value, takes middle
+        if value == None:
+            middle_value = { p0[index_0]:p0[index_0] for p0 in self.data }
+            temp_values     = [float(val) for val in middle_value.keys()]
+            temp_values.sort()
+            middle_value=temp_values
+            value = float( middle_value[int(len(middle_value)*0.5)] )
 
         # get values of parametric line.
         [X,Y,T,A] = self._get_X_Y(col_0, col_1 ,value)
         if X == []: 
             return
 
-        print "Plot single line of '%s' %s" % (col_0, float(value))
+        print "Plot single line of '%s' %s%s%s" % (col_0, self.str_colors['red'], float(value), self.str_colors['reset'])
 
         # Create plot
         pl.clf()
@@ -125,7 +134,29 @@ class plotroc :
         legendT.append(label)
 
         pl.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
- 
+#===============
+        Z = [ 0, int(len(T)/2), len(T)-1 ]
+        for i in Z:        
+            pl.text(X[i]+0.0000,Y[i]+0.02,T[i],fontsize=11,color='black', horizontalalignment='center',verticalalignment='center')
+#
+#        Z=X
+#        Z.sort()
+#        for i in range(len(Z)):
+#            if Y[i] > 0.8 :
+#                if A[i] == 0.001 :
+#                    pl.text(X[i]+0.0000,Y[i]+0.02,T[i],fontsize=11,color='black', horizontalalignment='center',verticalalignment='center')
+#                else:
+#                    pl.text(X[i]+0.00025,Y[i]+0.02,T[i],fontsize=11,color='black', horizontalalignment='center',verticalalignment='center')
+#            else:
+#                pl.text(X[i]+0.00025,Y[i],T[i],fontsize=11,color='black', horizontalalignment='center',verticalalignment='center')
+#
+#
+#
+#
+#
+#
+#
+#===============
         pl.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), fontsize=6,numpoints=1)
         pl.title(self.title)
         pl.xlabel('False Positive Rate')
@@ -187,7 +218,7 @@ class plotroc :
         if lines == [] :
             return
 
-        print "Plot range of '%s' %s" % (col_0, " ".join([str(i) for i in lines]))
+        print "Plot range of '%s'%s%s%s" % (col_0,self.str_colors['blue'], " ".join([str(i) for i in lines]), self.str_colors['reset'])
 
         # Create plot
         pl.clf()
@@ -785,6 +816,10 @@ if __name__ == '__main__':
                        type = "string",
                        default = None,
                        help = "Plot selected range, e.g -r '0.01-0.03'")
+    parser.add_option ("-v", "--value",dest = "value",
+                       type = "string",
+                       default = None,
+                       help = "Plot single value, e.g -r '0.03'")
     (options, args) = parser.parse_args ()
 
     if options.file == None :
@@ -805,7 +840,7 @@ if __name__ == '__main__':
     #s.plot3()
     #s.plot4()
                        
-    n = plotroc(options.colums,options.range)
+    n = plotroc(options.colums,options.range,options.value)
     #n.load('np_final_measures.txt')
     n.load(options.file)
     #n.area_under_curve()
