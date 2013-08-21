@@ -157,7 +157,7 @@ class plotroc :
 #
 #
 #===============
-        pl.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), fontsize=6,numpoints=1)
+        pl.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56),prop={'size':6},numpoints=1)
         pl.title(self.title)
         pl.xlabel('False Positive Rate')
         pl.ylabel('True Positive Rate')
@@ -250,7 +250,7 @@ class plotroc :
             pl.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
             i+=1
  
-        pl.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), fontsize=6,numpoints=1)
+        pl.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56),prop={'size':6},numpoints=1)
         pl.title(self.title)
         pl.xlabel('False Positive Rate')
         pl.ylabel('True Positive Rate')
@@ -287,8 +287,8 @@ class plotroc :
 
         # Counter for line colors
         i=0
-        self.legendP=[]
-        self.legendT=[]
+        legendP=[]
+        legendT=[]
 
         # get one line per time, arranged by index1.
         for key in lines :
@@ -320,13 +320,13 @@ class plotroc :
 
 
             # Save object plot in legendP
-            self.legendP.append(pl.plot(X,Y,color=self.colorList[str(p+1)])[0])
+            legendP.append(pl.plot(X,Y,color=self.colorList[str(p+1)])[0])
 
             # preparation of legend box in plot.
             legend = self.parameters.keys()[self.parameters.values().index(index1)]
             label = '%s=%s %.3f' % (str(legend),str(key),auc)
             #self.legendT.append(str(legend) + '=' + str(key) + ' ' + str(auc))
-            self.legendT.append(label)
+            legendT.append(label)
 
             pl.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
  
@@ -344,7 +344,7 @@ class plotroc :
             i+=1
             #return
         #
-        pl.legend(self.legendP,self.legendT, bbox_to_anchor=(0.99,0.56), fontsize=6,numpoints=1)
+        pl.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), prop={'size':6},numpoints=1)
         pl.title(self.title)
         pl.xlabel('False Positive Rate')
         pl.ylabel('True Positive Rate')
@@ -794,6 +794,29 @@ class sepu :
         
     
 
+        
+class plotucv(plotroc) :
+
+    def __init__(self, indexes=None, internal_range=None, one_value=None):
+        #super(plotroc,self).__init__(indexes, internal_range, one_value)
+        plotroc.__init__(self, indexes, internal_range, one_value)
+
+    def plot1(self):
+        self._set_title('MuHAVI-MAS ROC Curve')
+        self._generic_plot(self.name_0, self.name_1, 'TPR_FPR1.png')
+ 
+    def plot2(self):
+        self._set_title('MuHAVI-MAS ROC Curve')
+        self._generic_plot(self.name_1, self.name_0, 'TPR_FPR2.png')
+
+    def plot3(self):
+        self._set_title('MuHAVI-MAS ROC Curve\nRange plot')
+        self._plot_range(self.name_0, self.name_1 , 'TPR_FPR3.png')
+
+    def plot4(self):
+        self._set_title('MuHAVI-MAS ROC Curve\nSingle plot')
+        self._plot_one_line(self.name_0, self.name_1 , 'TPR_FPR4.png', self.parameter_value)
+
 
 
 
@@ -840,19 +863,25 @@ if __name__ == '__main__':
     #s.plot3()
     #s.plot4()
                        
-    n = plotroc(options.colums,options.range,options.value)
-    #n.load('np_final_measures.txt')
-    n.load(options.file)
-    #n.area_under_curve()
-    #n.plot1()
-    #n.plot2()
-    #n.plot3()
-    #n.plot4()
-    #n.plot5()
-    #
+    #n = plotroc(options.colums,options.range,options.value)
+    ##n.load('np_final_measures.txt')
+    #n.load(options.file)
+    ##n.area_under_curve()
+    ##n.plot1()
+    ##n.plot2()
+    ##n.plot3()
+    ##n.plot4()
+    ##n.plot5()
+    ##
     n.plot6()
     n.plot7()
     n.plot8()
     n.plot9()
 
 
+    #n = plotucv(options.colums,options.range,options.value)
+    #n.load(options.file)
+    #n.plot1()
+    #n.plot2()
+    #n.plot3()
+    #n.plot4()
