@@ -20,7 +20,7 @@
 const int           MOG2Builder::DefaultHistory                    = 500;
 const float         MOG2Builder::DefaultVarThreshold               = 16;
 const bool          MOG2Builder::DefaultShadowDetection            = true;
-const double        MOG2Builder::DefaultAlpha                      = 0.03;
+const double        MOG2Builder::DefaultLearningRate                      = 0.03;
 const unsigned int  MOG2Builder::DefaultInitFGMaskFrame            = 216;
 const unsigned int  MOG2Builder::DefaultEndFGMaskFrame             = 682;
 const unsigned char MOG2Builder::DefaultApplyMorphologicalFilter   = 1;
@@ -43,7 +43,7 @@ MOG2Builder::MOG2Builder()
     History                  = DefaultHistory  ;                
     VarThreshold             = DefaultVarThreshold;             
     ShadowDetection          = DefaultShadowDetection;          
-    Alpha                    = DefaultAlpha;                    
+    LearningRate                    = DefaultLearningRate;                    
     InitFGMaskFrame          = DefaultInitFGMaskFrame;          
     EndFGMaskFrame           = DefaultEndFGMaskFrame  ;         
     ApplyMorphologicalFilter = DefaultApplyMorphologicalFilter ;
@@ -60,11 +60,11 @@ void MOG2Builder::Initialization()
 string MOG2Builder::PrintParameters()
 {
     std::stringstream str;
-    //# Alpha=0.1 Threshold=0.0001 FramesToLearn=10 SequenceLength=50 TimeWindowSize=100
+    //# LearningRate=0.1 Threshold=0.0001 FramesToLearn=10 SequenceLength=50 TimeWindowSize=100
     str 
     << "# "
-    << "Alpha="        << Alpha        << " "
-    << "VarThreshold=" << VarThreshold << " "
+    << "LearningRate="        << LearningRate        << " "
+    << "Threshold=" << VarThreshold << " "
     << "History="      << History;
     return str.str();
     
@@ -80,8 +80,8 @@ void MOG2Builder::LoadConfigParameters()
         FileStorage fs(filename, FileStorage::READ);
 
         History                  =   (int)fs["History"];                  
-        VarThreshold             =   (float)fs["VarThreshold"];             
-        Alpha                    =   (double)fs["Alpha"];                    
+        VarThreshold             =   (float)fs["Threshold"];             
+        LearningRate                    =   (double)fs["LearningRate"];                    
         InitFGMaskFrame          =   (int)fs["InitFGMaskFrame"];         
         EndFGMaskFrame           =   (int)fs["EndFGMaskFrame"];           
         ApplyMorphologicalFilter =   (int)fs["ApplyMorphologicalFilter"]; 
@@ -95,8 +95,8 @@ void MOG2Builder::LoadConfigParameters()
         
         FileStorage fs(filename, FileStorage::WRITE);
         fs << "History"                  << (int)History;
-        fs << "VarThreshold"             << (float)VarThreshold;
-        fs << "Alpha"                    << (double)Alpha;
+        fs << "Threshold"             << (float)VarThreshold;
+        fs << "LearningRate"             << (double)LearningRate;
         fs << "InitFGMaskFrame"          << (int)InitFGMaskFrame;
         fs << "EndFGMaskFrame"           << (int)EndFGMaskFrame;
         fs << "ApplyMorphologicalFilter" << (int)ApplyMorphologicalFilter;
@@ -122,7 +122,7 @@ void MOG2Builder::Update(InputArray frame, OutputArray mask)
     Mat Image = frame.getMat();
     Mat Foreground(Image.size(),CV_8U,Scalar::all(0));
     if (model != NULL) {
-        double _alpha = Alpha;
+        double _alpha = LearningRate;
         model->operator()(Image,Foreground,_alpha);
         
         

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Path to videos
-PATH_VIDEOS="/Users/jsepulve/Tesis/Videos"
+PATH_VIDEOS="/data/MuHAVI/WalkTurnBack/Person1/Camera_3"
 FILE="WalkTurnBack-Camera_3-Person1.avi"
 DIR="ground-truth"
 VIDEO="$PATH_VIDEOS/$FILE"
@@ -28,9 +28,8 @@ fi
 
 cmd="./bin/bgs_framework"
 
-loop1="config/MOG2_Alpha.txt"
-#loop2="config/Threshold.txt"
-loop2="config/VarThreshold.txt"
+loop1="config/MOG2_LearningRate.txt"
+loop2="config/MOG2_Threshold.txt"
 
 _tag_1=`head -1 $loop1 | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\1|p'`
 _tag_2=`head -1 $loop2 | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\1|p'`

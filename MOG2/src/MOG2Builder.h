@@ -50,7 +50,7 @@ private:
     int History;
     float VarThreshold;
     bool ShadowDetection;
-    double Alpha;
+    double LearningRate;
     unsigned int  InitFGMaskFrame;
     unsigned int  EndFGMaskFrame;
     unsigned char ApplyMorphologicalFilter;
@@ -58,7 +58,7 @@ private:
     static const int DefaultHistory;
     static const float DefaultVarThreshold;
     static const bool DefaultShadowDetection;
-    static const double DefaultAlpha;
+    static const double DefaultLearningRate;
     static const unsigned int  DefaultInitFGMaskFrame;
     static const unsigned int  DefaultEndFGMaskFrame;
     static const unsigned char DefaultApplyMorphologicalFilter;
