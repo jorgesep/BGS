@@ -74,6 +74,7 @@ const char* keys =
 {
     "{ i | input   |       | Input video }"
     "{ m | mask    | true  | Save foreground masks}"
+    "{ f | function| 1     | Type of method: 1:linear 2:staircase 3:gmm normal}"
     "{ s | show    | false | Show images of video sequence }"
     "{ h | help    | false | Print help message }"
 };
@@ -103,6 +104,7 @@ int main( int argc, char** argv )
     const string Name             = cmd.get<string>("input");
     const bool displayImages      = cmd.get<bool>("show");
     const bool saveForegroundMask = cmd.get<bool>("mask");
+    const int  typeFunction       = cmd.get<int>("function");
 
 
 
@@ -174,15 +176,10 @@ int main( int argc, char** argv )
     /* Start configuration of the algorithm */
     ucv_image_t curr;
     uint8_t* curr_b = new uint8_t[len];
-    //uint8_t* mask_l = new uint8_t[len];
-    //uint8_t* mask_s = new uint8_t[len];
-    //uint8_t* mask_d = new uint8_t[len];
 
     // Read first frame to configure algorithm
     //Mat Frame(rows,cols,CV_8U);
     Mat Frame;
-    //cout << "rows: " << Frame.rows << endl;
-    //cout << "cols: " << Frame.cols << endl;
     Mat Frame_gray(rows,cols,CV_8U);
     Mat Mask(rows,cols,CV_8U);
 
@@ -195,11 +192,21 @@ int main( int argc, char** argv )
     unsigned char *curr_c = new unsigned char[len];
     memcpy(curr_c, (uint8_t*)gray_image.data, len);
     create_ucv_img(&curr, curr_b, cols, rows);
+    gmm_line   *g_l; 
+    gmm_sample *g_s;
+    gmm_double_ucv *g_d;
 
-    //gmm_line *g_l = new gmm_line(&curr, Threshold, LearningRate, (uint8_t)NumberGaussians);
-    gmm_sample     *g_s = new gmm_sample(&curr, Threshold, LearningRate, (uint8_t)NumberGaussians);
-
-
+    if      (typeFunction == 1)
+        g_l = new gmm_line      (&curr, Threshold, LearningRate, (uint8_t)NumberGaussians);
+    else if      (typeFunction == 2)
+        g_s = new gmm_sample    (&curr, Threshold, LearningRate, (uint8_t)NumberGaussians);
+    else if (typeFunction == 3)
+        g_d = new gmm_double_ucv(&curr, Threshold, LearningRate, (uint8_t)NumberGaussians);
+    else {
+        cout << "Invalid function " << endl;
+        return 1;
+    }
+     
     // Initialize counter of number of frames read.
     unsigned int cnt = input_frame->getFrameCounter();
 
@@ -215,19 +222,22 @@ int main( int argc, char** argv )
         input_frame->getFrame(Frame);
         if (Frame.empty()) break;
 
-
         // Check and convert reference image to gray
         Frame_gray = Frame;
         if (Frame.channels() > 1)
             cvtColor( Frame, Frame_gray, CV_BGR2GRAY );
 
-
         cnt = input_frame->getFrameCounter();
 
         // Process the image
         memcpy(UCV_IMAGE_DATA(curr), (unsigned char*)Frame_gray.data, len);
-        g_s->process(&curr, (uint8_t*)Mask.data);
-
+        if (typeFunction == 1)
+            g_l->process(&curr, (uint8_t*)Mask.data);
+        else if (typeFunction == 2)
+            g_s->process(&curr, (uint8_t*)Mask.data);
+        else
+            g_d->process(&curr, (uint8_t*)Mask.data);
+ 
 
         // Applying morphological filter (Erode) in case option was enabled.
         Mat filtered_mask; // the destination image

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Path to videos
-PATH_VIDEOS="/shared_folder/Person1/Camera_3"
+PATH_VIDEOS="/data/MuHAVI/WalkTurnBack/Person1/Camera_3"
 FILE="WalkTurnBack-Camera_3-Person1.avi"
 DIR="ground-truth"
 VIDEO="$PATH_VIDEOS"
@@ -28,7 +28,7 @@ fi
 
 cmd="./bin/testUCV"
 
-loop1="config/UCV_Alpha.txt"
+loop1="config/UCV_LearningRate.txt"
 loop2="config/UCV_Threshold.txt"
 
 _tag_1=`head -1 $loop1 | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\1|p'`

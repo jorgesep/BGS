@@ -1,0 +1,10 @@
+<Threshold>2</Threshold>
+<Threshold>4</Threshold>
+<Threshold>6</Threshold>
+<Threshold>8</Threshold>
+<Threshold>10</Threshold>
+<Threshold>12</Threshold>
+<Threshold>14</Threshold>
+<Threshold>16</Threshold>
+<Threshold>18</Threshold>
+<Threshold>20</Threshold>
