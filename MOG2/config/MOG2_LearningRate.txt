@@ -1,0 +1,5 @@
+<LearningRate>0.001</LearningRate>
+<LearningRate>0.002</LearningRate>
+<LearningRate>0.003</LearningRate>
+<LearningRate>0.004</LearningRate>
+<LearningRate>0.005</LearningRate>
