@@ -4,6 +4,6 @@
 <InitFGMaskFrame>216</InitFGMaskFrame>
 <EndFGMaskFrame>682</EndFGMaskFrame>
 <ApplyMorphologicalFilter>0</ApplyMorphologicalFilter>
-<Alpha>0.0007</Alpha>
-<Threshold>6</Threshold>
+<LearningRate>0.09</LearningRate>
+<Threshold>20</Threshold>
 </opencv_storage>

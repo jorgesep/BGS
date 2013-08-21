@@ -108,7 +108,6 @@ int main( int argc, char** argv )
 
 
     // Instance objet to verify input name is either a video or image directory.
-cout << "Reading  " << Name << endl;
     seq::FrameReader *input_frame;
     try {
         input_frame = seq::FrameReaderFactory::create_frame_reader(Name);
@@ -127,14 +126,13 @@ cout << "Reading  " << Name << endl;
 
     // Reading parameters of algorithm from xml file.
     FileStorage fs(config_filename, FileStorage::READ);
-    double Alpha                     = (double)fs["Alpha"];
+    double LearningRate                     = (double)fs["LearningRate"];
     double Threshold                 = (double)fs["Threshold"];
     int NumberGaussians              = (int)fs["NumberGaussians"];
     int InitFGMaskFrame              = (int)fs["InitFGMaskFrame"];
     int EndFGMaskFrame               = (int)fs["EndFGMaskFrame"];
     int ApplyMorphologicalFilter     = (int)fs["ApplyMorphologicalFilter"];
     fs.release();
-
 
     // Create foreground mask directory
     string foreground_path = "ucv_mask";
@@ -148,7 +146,7 @@ cout << "Reading  " << Name << endl;
         stringstream param;
         param << foreground_path << "/parameters.txt" ;
         outfile.open(param.str().c_str());
-        outfile << "# Alpha=" << Alpha << " Threshold=" << Threshold ;
+        outfile << "# LearningRate=" << LearningRate << " Threshold=" << Threshold ;
         outfile.close();
 
     }
@@ -198,8 +196,8 @@ cout << "Reading  " << Name << endl;
     memcpy(curr_c, (uint8_t*)gray_image.data, len);
     create_ucv_img(&curr, curr_b, cols, rows);
 
-    //gmm_line *g_l = new gmm_line(&curr, Threshold, Alpha, (uint8_t)NumberGaussians);
-    gmm_sample     *g_s = new gmm_sample(&curr, Threshold, Alpha, (uint8_t)NumberGaussians);
+    //gmm_line *g_l = new gmm_line(&curr, Threshold, LearningRate, (uint8_t)NumberGaussians);
+    gmm_sample     *g_s = new gmm_sample(&curr, Threshold, LearningRate, (uint8_t)NumberGaussians);
 
 
     // Initialize counter of number of frames read.
@@ -267,9 +265,6 @@ cout << "Reading  " << Name << endl;
         // option display not enabled stop loop after check last gt image.
         if (!displayImages && cnt > (unsigned int)EndFGMaskFrame)
             break;
-
-
-
 
 
 
