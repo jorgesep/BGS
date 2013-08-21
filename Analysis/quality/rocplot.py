@@ -26,11 +26,15 @@ class plotroc :
                 '9' : 'b',\
                 '10': (0.20,0.20,0.20)}
 
+        self.fontsizes = [4, 6, 8, 10, 16, 24, 32]
+
+
         self.str_colors = {'reset':'\033[0m', 'blue':'\033[34m', 'red':'\033[32m'}
         self.parameters_name = ''
         self.indexes = indexes
         self.parameter_range = internal_range
         self.parameter_value = one_value
+        self.text = ''
 
     def print_parameter_values(self):
         print self.parameters_name
@@ -83,6 +87,218 @@ class plotroc :
         if title != None:
             self.title = title
 
+    def _set_text(self,text=None):
+        if text != None:
+            self.text = text
+
+    def _get_middle_value(self):
+        # takes middle
+        middle_value = { p0[self.p0_idx]:p0[self.p0_idx] for p0 in self.data }
+        temp_values     = [float(val) for val in middle_value.keys()]
+        temp_values.sort()
+        middle_value=temp_values
+        value = float( middle_value[int(len(middle_value)*0.5)] )
+        return value
+
+    def _get_X_Y(self,col_0, col_1 ,key_val, tpr_0=None, fpr_0=None):
+        '''col_1: is name of the parametric curve
+           col_2: is variable which goes in the curve
+           key_val: One value in col_1 
+        '''
+
+        # Assigns parameters
+        index_0 = self.parameters[col_0]
+        index_1 = self.parameters[col_1]
+
+        # True positive rate and False positive rate
+        if tpr_0 == None and fpr_0 == None:
+            tpr    = self.tp_idx
+            fpr    = self.fp_idx
+        else :
+            tpr = tpr_0
+            fpr = fpr_0
+
+
+        # get subset of key data, key is the number of parametric curve.
+        _data = [p0 for p0 in self.data if float(p0[index_0]) == key_val]
+
+        # get dictionary of same data taking 'index2' as key
+        _thre = {float(p0[index_1]):p0 for p0 in _data}
+
+        values = _thre.keys()
+        values.sort()
+
+        # create a parameters list in ordered ascendent by index2 (col2)
+        X = [float(_thre[val][fpr])    for val in values]
+        Y = [float(_thre[val][tpr])    for val in values]
+        A = [float(_thre[val][index_0]) for val in values]
+        T = [float(_thre[val][index_1]) for val in values]
+
+        auc = fabs(np.trapz(Y, X))
+
+        return [X,Y,T,A]
+         
+            
+
+
+    def _plot_mean_and_median(self,filename, val=None):
+        # Assign parameters
+        col_0 = self.name_0
+        col_1 = self.name_1
+        index_0 = self.parameters[col_0]
+        index_1 = self.parameters[col_1]
+
+        # True positive rate and False positive rate
+        tpa    = self.tp_idx
+        fpa    = self.fp_idx
+        tpm    = self.tpm_idx
+        fpm    = self.fpm_idx
+
+        # Determine line to be plot, if not value takes middle
+        value = self.parameter_value
+        if value == None and val == None:
+            value = self._get_middle_value()
+        else:
+            value = val
+
+
+        # get mean values of parametric line.
+        [X,Y,T,A]     = self._get_X_Y(col_0, col_1 ,value)
+        if X == []: return
+
+        # get median values of parametric line.
+        [Xm,Ym,Tm,Am] = self._get_X_Y(col_0, col_1 ,value, tpm, fpm)
+        if X == []: return
+
+        # Create plot
+        pl.clf()
+        fig, (ax1, ax2) = pl.subplots(nrows=2, ncols=1)
+
+        # Counter for line colors
+        i=0
+        legendP=[]
+        legendT=[]
+
+        # Color counter
+        p=int(fmod(i,len(self.colorList)))
+
+        # preparation of legend box in plot, e.g. 'LearningRate=0.001'
+        label = '%s=%s' % ( str(self.parameters.keys()[self.parameters.values().index(index_0)]), str(value) )
+        legendT.append(label)
+
+        # Save object plot in legendP
+        legendP.append(ax1.plot(X,Y,color=self.colorList[str(p+1)])[0])
+
+        ax1.text(0.99, 0.05, self.text ,horizontalalignment='right', verticalalignment='center',  transform=ax1.transAxes, fontsize=self.fontsizes[2] )
+
+        ax1.set_ylabel('True Positive Rate',  fontsize=self.fontsizes[2] )
+        ax1.set_title( 'Mean ' + self.title , fontsize=self.fontsizes[3] )
+        ax1.grid()
+
+        ax1.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
+        ax1.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), prop={'size':6} , numpoints=1)
+        ax1.tick_params(axis='both', which='major', labelsize=10)
+
+        # Second plot
+        legendP = []
+        legendT = []
+        p=int(fmod(i+1,len(self.colorList)))
+
+        # preparation of legend box in plot.
+        label = '%s=%s' % ( str(self.parameters.keys()[self.parameters.values().index(index_0)]), str(value) )
+        legendT.append(label)
+
+        ax2.text(0.99, 0.05, self.text ,horizontalalignment='right', verticalalignment='center',  transform=ax2.transAxes, fontsize=self.fontsizes[2] )
+        ax2.set_ylabel('True Positive Rate',    fontsize=self.fontsizes[2] )
+        ax2.set_xlabel('False Positive Rate',   fontsize=self.fontsizes[2] )
+        ax2.set_title( 'Median ' + self.title , fontsize=self.fontsizes[3] )
+        ax2.grid()
+
+        legendP.append(ax2.plot(Xm,Ym,color=self.colorList[str(p+1)])[0])
+        ax2.plot(Xm,Ym,color=self.colorList[str(p+1)],marker='x')
+        ax2.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), prop={'size':6} , numpoints=1)
+
+        #
+        ax2.tick_params(axis='both', which='major', labelsize=10)
+        pl.tight_layout()
+        pl.savefig(filename)
+
+
+
+    def _plot_mean_and_median_same_graph(self,filename, val=None):
+        # Assign parameters
+        col_0 = self.name_0
+        col_1 = self.name_1
+        index_0 = self.parameters[col_0]
+        index_1 = self.parameters[col_1]
+
+        # True positive rate and False positive rate
+        tpa    = self.tp_idx
+        fpa    = self.fp_idx
+        tpm    = self.tpm_idx
+        fpm    = self.fpm_idx
+
+        # Determine line to be plot, if not value takes middle
+        value = self.parameter_value
+        if value == None and val == None:
+            value = self._get_middle_value()
+        else:
+            value = val
+
+        # get mean values of parametric line.
+        [X,Y,T,A] = self._get_X_Y(col_0, col_1 ,value)
+        if X == []: 
+            return
+
+        # Create plot
+        pl.clf()
+        fig, ax1 = pl.subplots(nrows=1, ncols=1)
+
+        # Counter for line colors
+        i=0
+        legendP=[]
+        legendT=[]
+
+        # Color counter
+        p=int(fmod(i,len(self.colorList)))
+
+        # preparation of legend box in plot.
+        legend = self.parameters.keys()[self.parameters.values().index(index_0)]
+        label = '%s %s=%s' % ('Mean', str(legend),str(value))
+        legendT.append(label)
+
+        # Save object plot in legendP
+        #pl.subplot(111)
+        legendP.append(ax1.plot(X,Y,color=self.colorList[str(p+1)])[0])
+        ax1.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
+
+        # get mean values of parametric line.
+        [X,Y,T,A] = self._get_X_Y(col_0, col_1 ,value, tpm, fpm)
+        if X == []: 
+            return
+        p=int(fmod(i+1,len(self.colorList)))
+        # preparation of legend box in plot.
+        legend = self.parameters.keys()[self.parameters.values().index(index_0)]
+        label = '%s %s=%s' % ('Median', str(legend),str(value))
+        legendT.append(label)
+
+        # Save object plot in legendP
+        legendP.append(pl.plot(X,Y,color=self.colorList[str(p+1)])[0])
+        ax1.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
+
+        ax1.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), fontsize=6,numpoints=1)
+        
+        ax1.tick_params(axis='both', which='major', labelsize=10)
+        ax1.text(0.99, 0.05, self.text ,horizontalalignment='right', verticalalignment='center',  transform=ax1.transAxes, fontsize=self.fontsizes[2] )
+        ax1.set_xlabel('False Positive Rate',  fontsize=self.fontsizes[2] )
+        ax1.set_ylabel('True Positive Rate' , fontsize=self.fontsizes[2] )
+        ax1.set_title(self.title, fontsize=self.fontsizes[3] )
+        ax1.grid()
+        #
+        pl.savefig(filename)
+
+
+
     def _plot_one_line(self,col_0,col_1,filename, val=None):
         # Assign parameters
         index_0 = self.parameters[col_0]
@@ -107,14 +323,13 @@ class plotroc :
 
         # get values of parametric line.
         [X,Y,T,A] = self._get_X_Y(col_0, col_1 ,value)
-        if X == []: 
-            return
+        if X == []: return
 
         print "Plot single line of '%s' %s%s%s" % (col_0, self.str_colors['red'], float(value), self.str_colors['reset'])
 
         # Create plot
         pl.clf()
-        pl.subplot(111)
+        fig, ax = pl.subplots(nrows=1, ncols=1)
 
         # Counter for line colors
         i=0
@@ -126,18 +341,18 @@ class plotroc :
 
 
         # Save object plot in legendP
-        legendP.append(pl.plot(X,Y,color=self.colorList[str(p+1)])[0])
+        legendP.append(ax.plot(X,Y,color=self.colorList[str(p+1)])[0])
 
         # preparation of legend box in plot.
         legend = self.parameters.keys()[self.parameters.values().index(index_0)]
         label = '%s=%s' % (str(legend),str(value))
         legendT.append(label)
 
-        pl.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
+        ax.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
 #===============
         Z = [ 0, int(len(T)/2), len(T)-1 ]
         for i in Z:        
-            pl.text(X[i]+0.0000,Y[i]+0.02,T[i],fontsize=11,color='black', horizontalalignment='center',verticalalignment='center')
+            ax.text(X[i]+0.0000,Y[i]+0.002,T[i],fontsize=8,color='black', horizontalalignment='center',verticalalignment='center')
 #
 #        Z=X
 #        Z.sort()
@@ -157,11 +372,13 @@ class plotroc :
 #
 #
 #===============
-        pl.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56),prop={'size':6},numpoints=1)
-        pl.title(self.title)
-        pl.xlabel('False Positive Rate')
-        pl.ylabel('True Positive Rate')
-        pl.grid()
+        ax.text(0.99, 0.02, self.text ,horizontalalignment='right', verticalalignment='center',  transform=ax.transAxes, fontsize=self.fontsizes[2] )
+        ax.set_xlabel('False Positive Rate',  fontsize=self.fontsizes[2] )
+        ax.set_ylabel('True Positive Rate',  fontsize=self.fontsizes[2] )
+        ax.tick_params(axis='both', which='major', labelsize=self.fontsizes[2] )
+        ax.set_title(self.title, fontsize=self.fontsizes[3] )
+        ax.grid()
+        ax.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), fontsize=6,numpoints=1)
         #
         pl.savefig(filename)
 
@@ -222,7 +439,7 @@ class plotroc :
 
         # Create plot
         pl.clf()
-        pl.subplot(111)
+        fig, ax = pl.subplots(nrows=1, ncols=1)
 
         # Counter for line colors
         i=0
@@ -240,22 +457,24 @@ class plotroc :
 
 
             # Save object plot in legendP
-            legendP.append(pl.plot(X,Y,color=self.colorList[str(p+1)])[0])
+            legendP.append(ax.plot(X,Y,color=self.colorList[str(p+1)])[0])
 
             # preparation of legend box in plot.
             legend = self.parameters.keys()[self.parameters.values().index(index_0)]
             label = '%s=%s' % (str(legend),str(key))
             legendT.append(label)
 
-            pl.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
+            ax.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
             i+=1
  
-        pl.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56),prop={'size':6},numpoints=1)
-        pl.title(self.title)
-        pl.xlabel('False Positive Rate')
-        pl.ylabel('True Positive Rate')
-        pl.grid()
         #
+        ax.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), fontsize=8,numpoints=1)
+        ax.tick_params(axis='both', which='major', labelsize=8)
+        ax.text(0.99, 0.05, self.text ,horizontalalignment='right', verticalalignment='center',  transform=ax.transAxes, fontsize=self.fontsizes[2] )
+        ax.set_xlabel('False Positive Rate', fontsize=self.fontsizes[2] )
+        ax.set_ylabel('True Positive Rate', fontsize=self.fontsizes[2] )
+        ax.set_title(self.title, fontsize=self.fontsizes[3] )
+        ax.grid()
         pl.savefig(filename)
 
     def _generic_plot(self,col1,col2,filename):
@@ -274,7 +493,7 @@ class plotroc :
 
         # Create plot
         pl.clf()
-        pl.subplot(111)
+        fig, ax = pl.subplots(nrows=1, ncols=1)
 
         # get all values for fixed parameter 
         lines = {p0[index1]:p0[index1] for p0 in self.data}
@@ -287,8 +506,8 @@ class plotroc :
 
         # Counter for line colors
         i=0
-        legendP=[]
-        legendT=[]
+        self.legendP=[]
+        self.legendT=[]
 
         # get one line per time, arranged by index1.
         for key in lines :
@@ -320,15 +539,15 @@ class plotroc :
 
 
             # Save object plot in legendP
-            legendP.append(pl.plot(X,Y,color=self.colorList[str(p+1)])[0])
+            self.legendP.append(ax.plot(X,Y,color=self.colorList[str(p+1)])[0])
 
             # preparation of legend box in plot.
             legend = self.parameters.keys()[self.parameters.values().index(index1)]
             label = '%s=%s %.3f' % (str(legend),str(key),auc)
             #self.legendT.append(str(legend) + '=' + str(key) + ' ' + str(auc))
-            legendT.append(label)
+            self.legendT.append(label)
 
-            pl.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
+            ax.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
  
             #print legend + ': ' + str(auc) 
 
@@ -344,50 +563,15 @@ class plotroc :
             i+=1
             #return
         #
-        pl.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), prop={'size':6},numpoints=1)
-        pl.title(self.title)
-        pl.xlabel('False Positive Rate')
-        pl.ylabel('True Positive Rate')
-        pl.grid()
-        #
+        ax.legend(self.legendP,self.legendT, bbox_to_anchor=(0.99,0.56), fontsize=8,numpoints=1)
+        ax.tick_params(axis='both', which='major', labelsize=8)
+        ax.text(0.99, 0.05, self.text ,horizontalalignment='right', verticalalignment='center',  transform=ax.transAxes, fontsize=self.fontsizes[2] )
+        ax.set_xlabel('False Positive Rate', fontsize=self.fontsizes[2] )
+        ax.set_ylabel('True Positive Rate', fontsize=self.fontsizes[2] )
+        ax.set_title(self.title, fontsize=self.fontsizes[3] )
+        ax.grid()
         pl.savefig(filename)
 #########################
-
-    def _get_X_Y(self,col_0, col_1 ,key_val):
-        '''col_1: is name of the parametric curve
-           col_2: is variable which goes in the curve
-           key_val: One value in col_1 
-        '''
-
-        # Assigns parameters
-        index_0 = self.parameters[col_0]
-        index_1 = self.parameters[col_1]
-
-        # True positive rate and False positive rate
-        tpr    = self.tp_idx
-        fpr    = self.fp_idx
-
-
-        # get subset of key data, key is the number of parametric curve.
-        _data = [p0 for p0 in self.data if float(p0[index_0]) == key_val]
-
-        # get dictionary of same data taking 'index2' as key
-        _thre = {float(p0[index_1]):p0 for p0 in _data}
-
-        values = _thre.keys()
-        values.sort()
-
-        # create a parameters list in ordered ascendent by index2 (col2)
-        X = [float(_thre[val][fpr])    for val in values]
-        Y = [float(_thre[val][tpr])    for val in values]
-        A = [float(_thre[val][index_0]) for val in values]
-        T = [float(_thre[val][index_1]) for val in values]
-
-        auc = fabs(np.trapz(Y, X))
-
-        return [X,Y,T,A]
-         
-            
 
 
 
@@ -794,29 +978,6 @@ class sepu :
         
     
 
-        
-class plotucv(plotroc) :
-
-    def __init__(self, indexes=None, internal_range=None, one_value=None):
-        #super(plotroc,self).__init__(indexes, internal_range, one_value)
-        plotroc.__init__(self, indexes, internal_range, one_value)
-
-    def plot1(self):
-        self._set_title('MuHAVI-MAS ROC Curve')
-        self._generic_plot(self.name_0, self.name_1, 'TPR_FPR1.png')
- 
-    def plot2(self):
-        self._set_title('MuHAVI-MAS ROC Curve')
-        self._generic_plot(self.name_1, self.name_0, 'TPR_FPR2.png')
-
-    def plot3(self):
-        self._set_title('MuHAVI-MAS ROC Curve\nRange plot')
-        self._plot_range(self.name_0, self.name_1 , 'TPR_FPR3.png')
-
-    def plot4(self):
-        self._set_title('MuHAVI-MAS ROC Curve\nSingle plot')
-        self._plot_one_line(self.name_0, self.name_1 , 'TPR_FPR4.png', self.parameter_value)
-
 
 
 
@@ -863,25 +1024,19 @@ if __name__ == '__main__':
     #s.plot3()
     #s.plot4()
                        
-    #n = plotroc(options.colums,options.range,options.value)
-    ##n.load('np_final_measures.txt')
-    #n.load(options.file)
-    ##n.area_under_curve()
-    ##n.plot1()
-    ##n.plot2()
-    ##n.plot3()
-    ##n.plot4()
-    ##n.plot5()
-    ##
+    n = plotroc(options.colums,options.range,options.value)
+    #n.load('np_final_measures.txt')
+    n.load(options.file)
+    #n.area_under_curve()
+    #n.plot1()
+    #n.plot2()
+    #n.plot3()
+    #n.plot4()
+    #n.plot5()
+    #
     n.plot6()
     n.plot7()
     n.plot8()
     n.plot9()
 
 
-    #n = plotucv(options.colums,options.range,options.value)
-    #n.load(options.file)
-    #n.plot1()
-    #n.plot2()
-    #n.plot3()
-    #n.plot4()
