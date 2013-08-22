@@ -14,7 +14,6 @@ from scipy.integrate import trapz
 class plotroc :
 
     def __init__(self, indexes=None, internal_range=None, one_value=None):
-        print 'Plot ROC generator'
         self.colorList={'1':(0.98,0.01,0.74),\
                 '2' : (1.0,0.60,0.00),\
                 '3' : 'r',\
@@ -120,7 +119,7 @@ class plotroc :
 
 
         # get subset of key data, key is the number of parametric curve.
-        _data = [p0 for p0 in self.data if float(p0[index_0]) == key_val]
+        _data = [p0 for p0 in self.data if float(p0[index_0]) == float(key_val)]
 
         # get dictionary of same data taking 'index2' as key
         _thre = {float(p0[index_1]):p0 for p0 in _data}
@@ -220,7 +219,8 @@ class plotroc :
 
         #
         ax2.tick_params(axis='both', which='major', labelsize=10)
-        pl.tight_layout()
+        #pl.tight_layout()
+        fig.set_tight_layout(True)
         pl.savefig(filename)
 
 
@@ -286,7 +286,7 @@ class plotroc :
         legendP.append(pl.plot(X,Y,color=self.colorList[str(p+1)])[0])
         ax1.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
 
-        ax1.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), fontsize=6,numpoints=1)
+        ax1.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56),  prop={'size':8},numpoints=1)
         
         ax1.tick_params(axis='both', which='major', labelsize=10)
         ax1.text(0.99, 0.05, self.text ,horizontalalignment='right', verticalalignment='center',  transform=ax1.transAxes, fontsize=self.fontsizes[2] )
@@ -307,6 +307,7 @@ class plotroc :
         # True positive rate and False positive rate
         tpr    = self.tp_idx
         fpr    = self.fp_idx
+
 
         # Determine line to be plot
         value = self.parameter_value
@@ -378,7 +379,7 @@ class plotroc :
         ax.tick_params(axis='both', which='major', labelsize=self.fontsizes[2] )
         ax.set_title(self.title, fontsize=self.fontsizes[3] )
         ax.grid()
-        ax.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), fontsize=6,numpoints=1)
+        ax.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56),  prop={'size':8},numpoints=1)
         #
         pl.savefig(filename)
 
@@ -468,7 +469,7 @@ class plotroc :
             i+=1
  
         #
-        ax.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), fontsize=8,numpoints=1)
+        ax.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), prop={'size':8},numpoints=1)
         ax.tick_params(axis='both', which='major', labelsize=8)
         ax.text(0.99, 0.05, self.text ,horizontalalignment='right', verticalalignment='center',  transform=ax.transAxes, fontsize=self.fontsizes[2] )
         ax.set_xlabel('False Positive Rate', fontsize=self.fontsizes[2] )
@@ -563,7 +564,7 @@ class plotroc :
             i+=1
             #return
         #
-        ax.legend(self.legendP,self.legendT, bbox_to_anchor=(0.99,0.56), fontsize=8,numpoints=1)
+        ax.legend(self.legendP,self.legendT, bbox_to_anchor=(0.99,0.56), prop={'size':8},numpoints=1)
         ax.tick_params(axis='both', which='major', labelsize=8)
         ax.text(0.99, 0.05, self.text ,horizontalalignment='right', verticalalignment='center',  transform=ax.transAxes, fontsize=self.fontsizes[2] )
         ax.set_xlabel('False Positive Rate', fontsize=self.fontsizes[2] )
