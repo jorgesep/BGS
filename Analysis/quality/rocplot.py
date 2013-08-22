@@ -34,6 +34,8 @@ class plotroc :
         self.parameter_range = internal_range
         self.parameter_value = one_value
         self.text = ''
+        self.range_values = []
+        self.range_0 = ()
 
     def print_parameter_values(self):
         print self.parameters_name
@@ -81,6 +83,11 @@ class plotroc :
         self.p0_idx  = self.parameters[self.name_0]
         self.p1_idx  = self.parameters[self.name_1]
 
+        self._get_range()
+        print "Plot range of '%s' %s%s%s" % (self.name_0,self.str_colors['blue'], " ".join([str(i) for i in self.range_values]), self.str_colors['reset'])
+        print "Plot single line of '%s' %s%s%s" % (self.name_0, self.str_colors['red'], float(self.parameter_value), self.str_colors['reset'])
+
+
     def _set_title(self,title=None):
         self.title = 'MuHAVI-MAS ROC Curve'
         if title != None:
@@ -89,6 +96,64 @@ class plotroc :
     def _set_text(self,text=None):
         if text != None:
             self.text = text
+
+
+    def _get_range(self, internal_range=None):
+
+        # Assign parameters
+        index_0 = self.parameters[self.name_0]
+        index_1 = self.parameters[self.name_1]
+
+       
+        # Determine range
+        # Determine range from self.data
+        if internal_range == None and self.parameter_range == None:
+
+            temp_line_range = { p0[index_0]:p0[index_0] for p0 in self.data }
+            temp_values     = [float(val) for val in temp_line_range.keys()]
+            temp_values.sort()
+            temp_line_range=temp_values
+            # 0.25 < range < 0.75
+            self.range_0 = (float(temp_line_range[int(len(temp_line_range)*0.3)]),float(temp_line_range[int(len(temp_line_range)*0.7)]))
+
+        else:
+            lookup_range = self.parameter_range
+            if internal_range != None:
+                lookup_range = internal_range
+ 
+            # verify if the input is a range
+            if lookup_range.find('-') > 0:
+                sep = re.search('[0-9]+\.?[0-9]*(.)[0-9]+\.?[0-9]*',lookup_range).groups()[0]
+                self.range_0 = ( float( lookup_range.split(sep)[0] ), float( lookup_range.split(sep)[1] ) )
+            
+            else :
+                values = [ float(i) for i in lookup_range.split() ]
+                values.sort()
+                self.range_values = values
+
+        # According previous result determine a range of values
+        if len(self.range_0) == 2:
+            # Get range of col_0
+            r_0 = self.range_0[0]
+            r_1 = self.range_0[1]
+    
+            # switch over 
+            if r_1 < r_0 :
+                r_3 = r_0
+                r_0 = r_1
+                r_1 = r_3
+
+            # get all values for fixed parameter 
+            lines = {p0[index_0]:p0[index_0] for p0 in self.data if float(p0[index_0])>=r_0 and float(p0[index_0]) <=r_1}
+            values = [ float(val) for val in lines.keys() ]
+            values.sort()
+            self.range_values = values
+
+        # Set one just one value to be plot
+        if self.parameter_value == None:
+            self.parameter_value = float( self.range_values[int(len(self.range_values)*0.5)] )
+
+
 
     def _get_middle_value(self):
         # takes middle
@@ -326,7 +391,6 @@ class plotroc :
         [X,Y,T,A] = self._get_X_Y(col_0, col_1 ,value)
         if X == []: return
 
-        print "Plot single line of '%s' %s%s%s" % (col_0, self.str_colors['red'], float(value), self.str_colors['reset'])
 
         # Create plot
         pl.clf()
@@ -397,46 +461,48 @@ class plotroc :
         fpr    = self.fp_idx
 
         # Determine range
-        lookup_range = self.parameter_range
-        if prange != None:
-            lookup_range = prange
+        #lookup_range = self.parameter_range
+        #if prange != None:
+        #    lookup_range = prange
 
-        if lookup_range != None:    
-            sep = re.search('[0-9]+\.?[0-9]*(.)[0-9]+\.?[0-9]*',lookup_range).groups()[0]
-            
-            self.range_0 = ( float( lookup_range.split(sep)[0] ), float( lookup_range.split(sep)[1] ) )
-        else : 
-            temp_line_range = { p0[index_0]:p0[index_0] for p0 in self.data }
-
-
-            temp_values     = [float(val) for val in temp_line_range.keys()]
-            temp_values.sort()
-            temp_line_range=temp_values
-            # 0.25 < range < 0.75
-            self.range_0 = (float(temp_line_range[int(len(temp_line_range)*0.3)]),float(temp_line_range[int(len(temp_line_range)*0.7)]))
-
-        # Get range of col_0
-        r_0 = self.range_0[0]
-        r_1 = self.range_0[1]
-
-        # switch over 
-        if r_1 < r_0 :
-            r_3 = r_0
-            r_0 = r_1
-            r_1 = r_3
+        #if lookup_range != None:    
+        #    sep = re.search('[0-9]+\.?[0-9]*(.)[0-9]+\.?[0-9]*',lookup_range).groups()[0]
+        #    
+        #    self.range_0 = ( float( lookup_range.split(sep)[0] ), float( lookup_range.split(sep)[1] ) )
+        #else : 
+        #    temp_line_range = { p0[index_0]:p0[index_0] for p0 in self.data }
 
 
-        # get all values for fixed parameter 
-        lines = {p0[index_0]:p0[index_0] for p0 in self.data if float(p0[index_0])>=r_0 and float(p0[index_0]) <=r_1}
-        values = [float(val) for val in lines.keys()]
-        values.sort()
-        lines=values
+        #    temp_values     = [float(val) for val in temp_line_range.keys()]
+        #    temp_values.sort()
+        #    temp_line_range=temp_values
+        #    # 0.25 < range < 0.75
+        #    self.range_0 = (float(temp_line_range[int(len(temp_line_range)*0.3)]),float(temp_line_range[int(len(temp_line_range)*0.7)]))
 
+        ## Get range of col_0
+        #r_0 = self.range_0[0]
+        #r_1 = self.range_0[1]
+
+        ## switch over 
+        #if r_1 < r_0 :
+        #    r_3 = r_0
+        #    r_0 = r_1
+        #    r_1 = r_3
+
+
+        ## get all values for fixed parameter 
+        #lines = {p0[index_0]:p0[index_0] for p0 in self.data if float(p0[index_0])>=r_0 and float(p0[index_0]) <=r_1}
+        #values = [float(val) for val in lines.keys()]
+        #values.sort()
+        #lines=values
+
+        self._get_range(prange)
+        lines = self.range_values
 
         if lines == [] :
             return
 
-        print "Plot range of '%s'%s%s%s" % (col_0,self.str_colors['blue'], " ".join([str(i) for i in lines]), self.str_colors['reset'])
+        #print "Plot range of '%s'%s%s%s" % (col_0,self.str_colors['blue'], " ".join([str(i) for i in lines]), self.str_colors['reset'])
 
         # Create plot
         pl.clf()
