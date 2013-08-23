@@ -3,7 +3,7 @@
 <History>500</History>
 <InitFGMaskFrame>216</InitFGMaskFrame>
 <EndFGMaskFrame>682</EndFGMaskFrame>
-<ApplyMorphologicalFilter>1</ApplyMorphologicalFilter>
+<ApplyMorphologicalFilter>0</ApplyMorphologicalFilter>
 <LearningRate>0.003</LearningRate>
 <Threshold>100</Threshold>
 </opencv_storage>
