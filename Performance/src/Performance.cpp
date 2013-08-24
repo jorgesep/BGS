@@ -472,18 +472,81 @@ void Performance::frameSimilarity(InputArray _truth,InputArray _mask)
     Similarity *m_ptr = &similarity_frame;
 
 
+    Mat MAP;
     m_ptr->PSNR   = getPSNR(TRUTH, FOREGROUND);
     m_ptr->MSSIM  = getMSSIM(TRUTH, FOREGROUND);
-    m_ptr->DSCORE = getDScore(TRUTH, FOREGROUND);
+    m_ptr->DSCORE = getDScore(FOREGROUND, TRUTH, MAP);
 
     
     
     similarity_accumulated += similarity_frame;
     vectorSimilarity.push_back(similarity_frame);
 
+
     
 }
-   
+  
+    
+void Performance::frameSimilarity(InputArray _mask, InputArray _truth, InputArray map)
+{
+    
+    //double duration;
+    //duration = static_cast<double>(cv::getTickCount());
+
+    // Verify if mapt struct was previously filled
+    // In case an empty map compute general map. 
+    Mat EMAP = map.getMat();    
+
+    
+    
+    // Verify consistency of both frames
+    if ( _truth.size() != _mask.size() ) {
+        cerr << "Invalid size :  " << _truth.size() << " " << _mask.size() << endl;
+        return;
+    }
+    if ( _truth.type() != _mask.type() ) {
+        cerr << "Invalid type :  " 
+        << _truth.type() << " " << _truth.depth() << " " << _truth.channels() <<  "  "
+        << _mask.type()  << " " << _mask.depth()  << " " << _mask.channels()  <<  endl;
+        return;
+    }
+    
+    
+    // Convert both frames to single channel
+    // Check and convert foreground mask image to gray
+    Mat TRUTH;
+    Mat FOREGROUND;
+    if (_truth.channels() > 1) 
+        cvtColor( _truth.getMat(), TRUTH, CV_BGR2GRAY );
+    else 
+        TRUTH = _truth.getMat();
+    
+    if (_mask.channels() > 1) 
+        cvtColor( _mask.getMat(), FOREGROUND, CV_BGR2GRAY );
+    else 
+        FOREGROUND = _mask.getMat();
+    
+    //Initialize to zero all internal values of the struct.
+    similarity_frame = Similarity();
+    Similarity *m_ptr = &similarity_frame;
+    
+    
+    
+    m_ptr->PSNR   = getPSNR(TRUTH, FOREGROUND);
+    m_ptr->MSSIM  = getMSSIM(TRUTH, FOREGROUND);
+    m_ptr->DSCORE = getDScore(FOREGROUND, TRUTH, EMAP);
+    
+    
+    
+    similarity_accumulated += similarity_frame;
+    vectorSimilarity.push_back(similarity_frame);
+    
+    
+    
+}
+    
+    
+    
 
 void Performance::meanOfMetrics() 
 {
@@ -754,7 +817,13 @@ double Performance::getMSSIM( const Mat& i1, const Mat& i2)
     return mssim.val[0];
 }
 
-double Performance::getDScore(InputArray reference, InputArray foreground)
+
+
+    
+/**
+ * Foreground map is already computed
+ */
+double Performance::getDScore(InputArray foreground, InputArray groundtruth, InputArray map)
 {
     Mat Mask;
     Mat Mask_BINARY;
@@ -762,14 +831,8 @@ double Performance::getDScore(InputArray reference, InputArray foreground)
     Mat Truth;
     Mat Truth_BINARY_INV;
     Mat Truth_BINARY;
-    Mat MAP_FOREGROUND;
-    Mat MAP_BACKGROUND;
-    
-    Mat DT;
-    Mat LogDT;
-    Mat ExpDT;
+    Mat EMAP;
 
-    
     
     //double duration;
     //duration = static_cast<double>(cv::getTickCount());
@@ -780,145 +843,118 @@ double Performance::getDScore(InputArray reference, InputArray foreground)
         cvtColor( foreground.getMat(), Mask, CV_BGR2GRAY );
     else 
         Mask = foreground.getMat();
-
-    Mat Mask_INV;
-    bitwise_not(Mask, Mask_INV);
-
     
-    // Check and convert reference image to gray
-    if (reference.channels() > 1) 
-        cvtColor( reference.getMat(), Truth, CV_BGR2GRAY );
+    
+    if (groundtruth.channels() > 1) 
+        cvtColor( groundtruth.getMat(), Truth, CV_BGR2GRAY );
     else 
-        Truth = reference.getMat();
-
+        Truth = groundtruth.getMat();
     
-    cv::threshold(Mask , Mask_BINARY     , 1, 1, THRESH_BINARY);
-    cv::threshold(Mask , Mask_BINARY_INV , 1, 1, THRESH_BINARY_INV);
+    
+    if (map.empty())
+        computeGeneralDSCoreMap(Truth, EMAP);
+    else {
+        EMAP = map.getMat();
+    }
+    
+    
+    Mask.convertTo(Mask, CV_32F);
+    Truth.convertTo(Truth, CV_32F);
+
+
+    // binary ground truth 
     cv::threshold(Truth, Truth_BINARY    , 1, 1, THRESH_BINARY);
     cv::threshold(Truth, Truth_BINARY_INV, 1, 1, THRESH_BINARY_INV);
-   
-    /************/
-    /*
-    Mat Truth_inv;
-    bitwise_not(Truth, Truth_inv);
-    cout << Truth_inv << endl;
-    
-    distanceTransform(Truth_inv, MAP_FOREGROUND, CV_DIST_L1, 3);
-    
-    cout << MAP_FOREGROUND << endl;
-    
-    MAP_FOREGROUND *=2;
-    Mat LOG_MAP_FOREGROUND_1;
-    log(MAP_FOREGROUND, LOG_MAP_FOREGROUND_1);
-    
-    cout << LOG_MAP_FOREGROUND_1 << endl;
-    
-    
-    Mat alpha1(foreground.size(),CV_32F ,Scalar::all(PEAK_PARAMETER));
-    LOG_MAP_FOREGROUND_1 -= alpha1;
-    
-    Mat LOG_MAP_FOREGROUND_3 = LOG_MAP_FOREGROUND_1.mul(LOG_MAP_FOREGROUND_1);
-    
-    LOG_MAP_FOREGROUND_3 *= -1;
-    
-    Mat EXP_LOG_MAP_FOREGROUND_3;
-    
-    exp(LOG_MAP_FOREGROUND_3, EXP_LOG_MAP_FOREGROUND_3);
-    
-    cout << EXP_LOG_MAP_FOREGROUND_3 << endl;
-    
-    Scalar DScore1 = mean(EXP_LOG_MAP_FOREGROUND_3);
-    imwrite("DScore.jpg", EXP_LOG_MAP_FOREGROUND_3);
-    return DScore1.val[0];
-    */
-    /************/
+    cv::threshold(Mask, Mask_BINARY    , 1, 1, THRESH_BINARY);
+    cv::threshold(Mask, Mask_BINARY_INV, 1, 1, THRESH_BINARY_INV);
 
-    //bitwise_and(Truth_BINARY    , Mask_BINARY    , MAP_FOREGROUND);
-    //bitwise_and(Truth_BINARY_INV, Mask_BINARY_INV, MAP_BACKGROUND);
-
-    bitwise_or(Truth_BINARY_INV, Mask_BINARY    , MAP_FOREGROUND);
-    bitwise_or(Truth_BINARY    , Mask_BINARY_INV, MAP_BACKGROUND);
-
-    //cout << MAP_FOREGROUND << endl;
-    //cout << MAP_BACKGROUND << endl;
+    Mat FOREGROUND;
+    Mat BACKGROUND;
+    
+    bitwise_and(Truth_BINARY, Mask_BINARY_INV, FOREGROUND);
+    bitwise_and(Truth_BINARY_INV, Mask_BINARY, BACKGROUND);
     
     
     
-    distanceTransform(MAP_FOREGROUND, MAP_FOREGROUND, CV_DIST_L1, 3);
-    distanceTransform(MAP_BACKGROUND, MAP_BACKGROUND, CV_DIST_L1, 3);
-    
-    
-    MAP_FOREGROUND *=2;
-    MAP_BACKGROUND *=2;
-
-    //cout << MAP_FOREGROUND << endl;
-    //cout << MAP_BACKGROUND << endl;
-
-    
-    Mat LOG_MAP_FOREGROUND;
-    Mat LOG_MAP_BACKGROUND;
-
-    //Calculates the natural logarithm of every array element.
-    log(MAP_FOREGROUND, LOG_MAP_FOREGROUND);
-    log(MAP_BACKGROUND, LOG_MAP_BACKGROUND);
-
-    
-    
-    Mat alpha(foreground.size(),CV_32F ,Scalar::all(PEAK_PARAMETER));
-    LOG_MAP_FOREGROUND -= alpha;
-    LOG_MAP_BACKGROUND -= alpha;
-
-    
-    Mat LOG_MAP_FOREGROUND_2 = LOG_MAP_FOREGROUND.mul(LOG_MAP_FOREGROUND);
-    Mat LOG_MAP_BACKGROUND_2 = LOG_MAP_BACKGROUND.mul(LOG_MAP_BACKGROUND);
-    
-    LOG_MAP_FOREGROUND_2 *= -1;
-    LOG_MAP_BACKGROUND_2 *= -1;
-
-    
-    Mat EXP_LOG_MAP_FOREGROUND_2;
-    Mat EXP_LOG_MAP_BACKGROUND_2;
-    
-    exp(LOG_MAP_FOREGROUND_2, EXP_LOG_MAP_FOREGROUND_2);
-    exp(LOG_MAP_BACKGROUND_2, EXP_LOG_MAP_BACKGROUND_2);
-
-    
-    
-    // From Paper:
-    // As we want to avoid false negatives, their cost should be higher
-    // than the false positives ones. This is done by scaling by 5.
-    EXP_LOG_MAP_FOREGROUND_2 *= 5;
-    
-    Mat MAP(foreground.size(),CV_32F,Scalar::all(0));
-    bitwise_or(EXP_LOG_MAP_FOREGROUND_2, MAP, MAP,Truth_BINARY);
-    //cout << MAP << endl;
-    bitwise_or(EXP_LOG_MAP_BACKGROUND_2, MAP, MAP,Truth_BINARY_INV);
-    //cout << MAP << endl;
-    
-    
-    //bitwise_or(EXP_LOG_MAP_FOREGROUND_2, EXP_LOG_MAP_BACKGROUND_2, MAP);
-    
-    //int counter = countNonZero(MAP);
+    Mat FRAME_MAP;
+    bitwise_or(FOREGROUND, BACKGROUND, FRAME_MAP);
     
 
     
-    //cout << MAP << endl;
+    FRAME_MAP = FRAME_MAP.mul(EMAP);
     
-    Scalar DScore = mean(MAP);
-    
-    //cout << DScore.val[0] << endl;
 
-    //D-score(x) = exp(- (ln (2 * DT(x)) - alpha)^2);
+    
+    Scalar DScore = mean(FRAME_MAP);
+    
+    
+    //normalize(FRAME_MAP, FRAME_MAP, 0, 255, cv::NORM_MINMAX);
+    //imwrite("frame_map.png", FRAME_MAP);
+    
     
     //duration = static_cast<double>(cv::getTickCount())-duration;
     //duration /= cv::getTickFrequency(); //the elapsed time in ms
-    //cout << "getDScore Duration: " << duration << endl; 
+    //cout << "getDScore Duration: " << duration << " " << DScore.val[0] << endl; 
 
+    
     
     return DScore.val[0];
     
-}
+}    
+    
+    
+    
+    
+void Performance::computeGeneralDSCoreMap(InputArray img, OutputArray map)
+{
+    // Check and convert foreground mask image to gray
+    Mat MASK;
+    if (img.channels() > 1) 
+        cvtColor( img.getMat(), MASK, CV_BGR2GRAY );
+    else 
+        MASK = img.getMat();
 
+    Mat MASK_BINARY;
+    Mat MASK_BINARY_INV;
+    
+    // Convert image to binary
+    cv::threshold(MASK, MASK_BINARY    , 1, 1, THRESH_BINARY);
+    cv::threshold(MASK, MASK_BINARY_INV, 1, 1, THRESH_BINARY_INV);
+    
+    Mat MAP_FOREGROUND;
+    Mat MAP_BACKGROUND;
+        
+    // Get distance of foreground and background.
+    distanceTransform(MASK_BINARY    , MAP_FOREGROUND, CV_DIST_L1, 3);
+    distanceTransform(MASK_BINARY_INV, MAP_BACKGROUND, CV_DIST_L1, 3);
+    
+    MAP_FOREGROUND *=5;
+
+    Mat EMAP = MAP_FOREGROUND + MAP_BACKGROUND;
+    EMAP *=2; 
+    
+    Mat LOG_EMAP;
+    log(EMAP, LOG_EMAP);
+    LOG_EMAP -= PEAK_PARAMETER;
+    Mat LOG_EMAP_2 = LOG_EMAP.mul(LOG_EMAP);
+    LOG_EMAP_2 *= -1;
+    Mat EXP_LOG_EMAP_2;
+    //    
+    exp(LOG_EMAP_2, EXP_LOG_EMAP_2);
+    
+    EXP_LOG_EMAP_2.copyTo(map);
+
+        
+        
+}
+    
+    
+ 
+    
+    
+    
+
+    
     
     
 }

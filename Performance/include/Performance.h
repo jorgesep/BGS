@@ -522,7 +522,8 @@ public:
      * Compute all similarity measures fo two frames
      * PSNR, SIIM, and DScore
      */
-    void frameSimilarity(InputArray,InputArray);
+    void frameSimilarity(InputArray, InputArray);
+    void frameSimilarity(InputArray, InputArray, InputArray);
     //ContingencyMatrix getContingencyMatrix(int idx) {return measure;};
 
     /**
@@ -542,7 +543,9 @@ public:
     //double getPSNR(Mat& src1, Mat& src2, int bb=0);
     double getPSNR(const Mat& src1, const Mat& src2);
     double getMSSIM( const Mat&, const Mat&);
-    double getDScore(InputArray, InputArray);
+    double getDScore(InputArray, InputArray, InputArray);
+    void computeGeneralDSCoreMap(InputArray, OutputArray);
+    //void setDScoreMapFiles(string);
 
 private:
     /**

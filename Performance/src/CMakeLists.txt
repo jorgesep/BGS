@@ -24,7 +24,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/../include)
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include)
 
 # This include was added to support boost/program_options.hpp
-find_package( Boost REQUIRED COMPONENTS program_options regex )
+find_package( Boost REQUIRED COMPONENTS program_options regex filesystem system )
 include_directories( ${Boost_INCLUDE_DIRS} )
 
 link_directories(${BGS_BINARY_DIR}/Utils)
@@ -46,6 +46,11 @@ set_property(TARGET testPerformance PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINA
 ADD_EXECUTABLE( testDScore testDScore )
 TARGET_LINK_LIBRARIES( testDScore Performance ${OpenCV_LIBS} )
 set_property(TARGET testDScore PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
+ADD_EXECUTABLE( createMapDScore CreateDScoreMap )
+TARGET_LINK_LIBRARIES( createMapDScore Performance ${OpenCV_LIBS} ${Boost_PROGRAM_OPTIONS_LIBRARY} Utils )
+set_property(TARGET createMapDScore PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
 
 ADD_EXECUTABLE( pmbgs Measure )
 TARGET_LINK_LIBRARIES( pmbgs Performance ${Boost_PROGRAM_OPTIONS_LIBRARY} Utils )

@@ -40,6 +40,7 @@ using namespace boost::filesystem;
 
 
 static const std::string GROUNDTRUTH_ENV = "GROUNDTRUTH";
+static const std::string GROUNDMAP_ENV   = "GROUNDMAP";
 
 void display_usage( void )
 {
@@ -64,14 +65,18 @@ int main( int argc, char** argv )
     //declaration of local variables.
     map<unsigned int, string> gt_files;
     map<unsigned int, string> fg_files;
+    map<unsigned int, string> map_files;
     map<unsigned int, string>::iterator gt_it;
     map<unsigned int, string>::iterator fg_it;
+    map<unsigned int, string>::iterator map_it;
     vector< pair<string,string> > parameters;
     int gt_size = -1;
     int fg_size = -1;
+    int map_size= -1;
     bool verbose = false;
     string mask_dir;
     string ground_truth_dir;
+    string ground_map_dir;
     string parameter_file("parameters.txt");
     string value_first_parameter("");
     string output_filename("output");
@@ -91,6 +96,7 @@ int main( int argc, char** argv )
         ("verbose,v", "display messages")
         ("ground,g"            , po::value<string>(), "input ground-truth directory")
         ("mask,m"              , po::value<string>(), "input foreground mask directory")
+        ("map,d"              , po::value<string>(), "input ground-truth map directory to compute dscore")
         ("parameter_file,p"    , po::value<string>(), "configuration parameters file. By default looks into ground-truth dir")
         ("pixel_performance,l" , po::value<bool>(&pixel_performance)->zero_tokens()->default_value(false), "pixel performance.")
         ("frame_performace,f"  , po::value<bool>(&frame_performance)->zero_tokens()->default_value(false),"frame performance.")
@@ -173,6 +179,29 @@ int main( int argc, char** argv )
         if (vm.count("param")) {
             parameter_file = vm["param"].as<string>();
         }
+        
+        // Read input directory for ground truth map xml files, they are optional just for increase performance.
+        if (vm.count("map")) {
+            
+            ground_map_dir = vm["map"].as<string>();
+            
+        }
+        else {
+            
+            // Verify environment variable.
+            char const* map_env = getenv( GROUNDMAP_ENV.c_str() );
+            if (map_env != NULL) {
+                ground_map_dir = string(map_env);
+            }  
+        }
+        
+        if (!ground_map_dir.empty()) {
+            // Read files from input directory
+            list_files(ground_map_dir,map_files, ".xml");
+            map_size = map_files.size();
+
+        }
+
         
 
     }
@@ -281,8 +310,20 @@ int main( int argc, char** argv )
                 
                 
                 // Get similarity values as PSNR, MSSIM, and DScore
-                if (frame_performance)
-                    measure->frameSimilarity(gtimg, fgmask);
+                if (frame_performance) {
+                    
+                    Mat map;
+                    //read from xml file and return mat
+                    if ( (map_it = map_files.find(i)) != map_files.end()) {
+                        FileStorage fs(map_it->second, FileStorage::READ);
+                        fs["MAP"] >> map;
+                        fs.release();
+                        
+                        //cout << "Reading: " << i << " file: " << map_it->first << " : " << map_it->second << endl;
+                    }
+                    measure->frameSimilarity(fgmask, gtimg, map);
+                
+                }
                 
                 
                 //Debug messages.

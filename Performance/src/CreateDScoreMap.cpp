@@ -27,7 +27,9 @@
 
 #include <iomanip> 
 
-
+#include <boost/filesystem.hpp>
+#include <vector>
+#include <fstream>
 #include <iostream>
 #include <fstream>
 #include <getopt.h>
@@ -36,19 +38,22 @@
 #include <getopt.h>
 
 #include "Performance.h"
+//#include "FrameReaderFactory.h"
+#include "utils.h"
+
 
 using namespace cv;
 using namespace std;
 using namespace bgs;
-
+using namespace boost::filesystem;
 
 void display_usage( void )
 {
     cout
     << "------------------------------------------------------------------------------" << endl
-    << "This test program compares two file images."                                    << endl
+    << "Create special maps to measure DScore."                                    << endl
     << "Usage:"                                                                         << endl
-    << "./testDScore -r reference.jpg -i input.jpg" << endl
+    << "./dscoreMap -i reference.jpg " << endl
     << "--------------------------------------------------------------------------"     << endl
     << endl;
     exit( EXIT_FAILURE );
@@ -57,15 +62,16 @@ void display_usage( void )
 int main( int argc, char** argv )
 {
     string reference;
-    string input_image;
+    string input_dir;
+    string ground_truth_dir;
     static int verbose_flag;
     int option_index = 0;
     int c;
+   
     
     static struct option long_options[] = {
         {"verbose", no_argument,       &verbose_flag, 1},
         {"brief",   no_argument,       &verbose_flag, 0},
-        {"ref",  required_argument, 0, 'r'},
         {"img",  required_argument, 0, 'i'},
         {0, 0, 0, 0}
     };
@@ -75,11 +81,8 @@ int main( int argc, char** argv )
         if (c == -1)
             break;
         switch (c) {
-        case 'r':
-            reference = optarg;
-            break;
         case 'i':
-            input_image = optarg;
+            ground_truth_dir = optarg;
             break;
         case 'h':
         case '?':
@@ -91,71 +94,91 @@ int main( int argc, char** argv )
         
     }
 
-    string ref, img2, img3, img;
-    if (!reference.empty() && !input_image.empty()) {
-        ref = reference;
-        img= input_image;
-    }
+
+    // Read files from input directory
+    string output_dir ("XmlMap");
+    
+    map<unsigned int, string> gt_files;
+    int gt_size = -1;
+
+    // Verify input name is a video file or sequences of jpg files
+    path path_to_ground_truth (ground_truth_dir.c_str());
+
+    if (is_directory(path_to_ground_truth)) {
+
+        list_files(ground_truth_dir,gt_files);
+        gt_size = gt_files.size();
+        
+        path::iterator it(path_to_ground_truth.end());
+        it--;
+        output_dir += it->c_str();
+        
+
+    } 
     else {
-
-        string img  = "/Users/jsepulve/Downloads/BGS/Performance/config/test1.jpg";
-        string ref  = "/Users/jsepulve/Downloads/BGS/Performance/config/reference.jpg";
+        cout << "Invalid ground-truth directory ... "<< endl;
+        return 0;
     }
 
-    Mat im1 = imread(ref.c_str());
-    Mat im2 = imread(img.c_str());
+
+    // Create local directory to save xml maps.
+    path p (output_dir);
     
-    if (!im1.data || !im2.data )
-    {
-        cerr << "Could not open or find the images" << endl;
-        return -1;
+    if ( !exists(p) )
+        create_directory(p);
+
+    
+
+    map<unsigned int, string>::iterator gt_it;
+
+    Performance *measure = new Performance();
+
+    Mat Image;
+    Mat Map;
+    
+    
+    for (gt_it = gt_files.begin(); gt_it != gt_files.end(); ++gt_it) {
+        
+        Image  = Scalar::all(0);
+        Map    = Scalar::all(0);
+        
+        // open ground truth frame.
+        Image = imread(gt_it->second, CV_LOAD_IMAGE_GRAYSCALE);
+        
+        // get general Map
+        measure->computeGeneralDSCoreMap(Image, Map);
+        
+        string dirname = fileName(gt_it->second);
+        cout << dirname << endl;
+
+        
+        stringstream mapfile;
+        mapfile << output_dir << "/" << gt_it->first << ".xml";
+        FileStorage fs(mapfile.str(), FileStorage::WRITE);
+        stringstream tagname;
+        tagname << gt_it->first;
+        fs << "MAP" << Map;
+        fs.release();
+        
+        // just for testing
+        if (gt_it->first == 300) {
+            
+            Mat mask;
+            FileStorage fsread(mapfile.str(), FileStorage::READ);
+            fsread["MAP"] >> mask;
+            fsread.release();
+            
+            normalize(mask, mask, 0, 255, cv::NORM_MINMAX);
+            imwrite("300.png", mask);
+            
+        }
+        
     }
-   
-    Performance p;
-
-    //Mat map;
-    //FileStorage fs("/Users/jsepulve/Downloads/BGS/tmp_xcode/bin/Debug/test10.xml", FileStorage::READ);
-    //fs["tmp"] >> map;
-    //fs.release();
     
-    //cout << map << endl << endl;
-    
-    Mat mapref;
-    p.computeGeneralDSCoreMap(im1, mapref);
-    FileStorage fs("reference.xml", FileStorage::WRITE);
-    fs << "reference" << mapref;
-    fs.release();
-    
-    cout << mapref.size() << endl;
-    cout << mapref.type() << endl;
-    cout << mapref.depth() << endl;
-    cout << mapref.channels() << endl;
-    
-    cout << p.getDScore(im2, im1, mapref) << endl;
-    //cout << mapref << endl << endl << endl;
-
-    cout << "=============================================================================================================================" << endl;
-    Mat mapref1;
-    FileStorage fs1("reference.xml", FileStorage::READ);
-    fs1["reference"] >> mapref1;
-    fs1.release();
-    cout << mapref1.size() << endl;
-    cout << mapref1.type() << endl;
-    cout << mapref1.depth() << endl;
-    cout << mapref1.channels() << endl;
-    //cout << mapref1 << endl << endl << endl;
-   
-    cout << p.getDScore(im2, im1, mapref1) << endl;
-    
-    Mat im3;
-    double result = p.getDScore(im1,im2,im3);
-
-    cout << "Result: " << result << endl; 
-    
-    
+    delete measure;
 
     
-   
+
     return 0;
 }
 
