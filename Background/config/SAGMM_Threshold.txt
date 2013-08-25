@@ -23,3 +23,13 @@
 <Range>46</Range>
 <Range>48</Range>
 <Range>50</Range>
+<Range>55</Range>
+<Range>60</Range>
+<Range>65</Range>
+<Range>70</Range>
+<Range>75</Range>
+<Range>80</Range>
+<Range>85</Range>
+<Range>90</Range>
+<Range>95</Range>
+<Range>100</Range>
