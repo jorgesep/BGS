@@ -12,26 +12,26 @@ cmd="./bin/bgs"
 ext_args=""
 
 # Ground-truth frames 
-GT_Kick_Person1_Camera3="2370 2911"
-GT_Kick_Person1_Camera4="2370 2911"
-GT_Kick_Person4_Camera3="200 628"
-GT_Kick_Person4_Camera4="200 628"
-GT_Punch_Person1_Camera3="2140 2607"
-GT_Punch_Person1_Camera4="2140 2607"
-GT_Punch_Person4_Camera3="92 536"
-GT_Punch_Person4_Camera4="92 536"
-GT_RunStop_Person1_Camera3="980 1418"
-GT_RunStop_Person1_Camera4="980 1418"
-GT_RunStop_Person4_Camera3="293 618"
-GT_RunStop_Person4_Camera4="293 618"
-GT_ShotgunCollapse_Person1_Camera3="267 1104"
-GT_ShotgunCollapse_Person1_Camera4="267 1104"
-GT_ShotgunCollapse_Person4_Camera3="319 1208"
-GT_ShotgunCollapse_Person4_Camera4="319 1208"
-GT_WalkTurnBack_Person1_Camera3="216 682"
-GT_WalkTurnBack_Person1_Camera4="216 682"
-GT_WalkTurnBack_Person4_Camera3="207 672"
-GT_WalkTurnBack_Person4_Camera4="207 672"
+GT_Kick_Person1_Camera_3="2370 2911"
+GT_Kick_Person1_Camera_4="2370 2911"
+GT_Kick_Person4_Camera_3="200 628"
+GT_Kick_Person4_Camera_4="200 628"
+GT_Punch_Person1_Camera_3="2140 2607"
+GT_Punch_Person1_Camera_4="2140 2607"
+GT_Punch_Person4_Camera_3="92 536"
+GT_Punch_Person4_Camera_4="92 536"
+GT_RunStop_Person1_Camera_3="980 1418"
+GT_RunStop_Person1_Camera_4="980 1418"
+GT_RunStop_Person4_Camera_3="293 618"
+GT_RunStop_Person4_Camera_4="293 618"
+GT_ShotgunCollapse_Person1_Camera_3="267 1104"
+GT_ShotgunCollapse_Person1_Camera_4="267 1104"
+GT_ShotgunCollapse_Person4_Camera_3="319 1208"
+GT_ShotgunCollapse_Person4_Camera_4="319 1208"
+GT_WalkTurnBack_Person1_Camera_3="216 682"
+GT_WalkTurnBack_Person1_Camera_4="216 682"
+GT_WalkTurnBack_Person4_Camera_3="207 672"
+GT_WalkTurnBack_Person4_Camera_4="207 672"
 #
 
 
@@ -80,9 +80,10 @@ process_list() {
 
 set_ground_truth_frames() {
 
-    GT_FRAMES="GT_${name}"
-    init_gt=`echo ${GT_FRAMES} | awk '{print $1}'`
-    end_gt=`echo ${GT_FRAMES} | awk '{print $2}'`
+    eval FRAMES_VAL='$GT_'${name}
+
+    init_gt=`echo ${FRAMES_VAL} | awk '{print $1}'`
+    end_gt=`echo  ${FRAMES_VAL} | awk '{print $2}'`
 
     cat ${config} | grep -v "/${_header_tag}\|InitFGMaskFrame\|EndFGMaskFrame" > config.tmp
     echo -e  "<InitFGMaskFrame>${init_gt}</InitFGMaskFrame>"                  >> config.tmp
