@@ -152,11 +152,18 @@ int main( int argc, char** argv )
         return -1;
     }
 
+    // Load initialization parameters
     bg_model.loadInitParametersFromXMLFile();
 
     //Print out initialization parameters.
     if (verbose)
         cout << bg_model.initParametersToString() << endl;
+
+    // Read init/end ground truth values
+    FileStorage fs(config_filename, FileStorage::READ);
+    InitFGMaskFrame = (int)fs["InitFGMaskFrame"];
+    EndFGMaskFrame  = (int)fs["EndFGMaskFrame"];
+    fs.release();
 
     //Create foreground mask directory
     string foreground_path = "sagmm_mask";
