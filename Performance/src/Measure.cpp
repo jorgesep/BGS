@@ -95,7 +95,7 @@ int main( int argc, char** argv )
         ("help,h", "produce help message")
         ("verbose,v", "display messages")
         ("ground,g"            , po::value<string>(), "input ground-truth directory")
-        ("mask,m"              , po::value<string>(), "input foreground mask directory")
+        ("input,i"              , po::value<string>(), "input foreground mask directory")
         ("map,d"              , po::value<string>(), "input ground-truth map directory to compute dscore")
         ("parameter_file,p"    , po::value<string>(), "configuration parameters file. By default looks into ground-truth dir")
         ("pixel_performance,l" , po::value<bool>(&pixel_performance)->zero_tokens()->default_value(false), "pixel performance.")
@@ -154,9 +154,9 @@ int main( int argc, char** argv )
             return -1;
         }
         
-        if (vm.count("mask")) {
+        if (vm.count("input")) {
             
-            mask_dir = vm["mask"].as<string>();
+            mask_dir = vm["input"].as<string>();
             
             parameter_file = mask_dir + "/" +  parameter_file;
             if (is_regular_file(parameter_file)) {
