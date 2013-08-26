@@ -3,16 +3,3 @@
 <LearningRate>0.003</LearningRate>
 <LearningRate>0.004</LearningRate>
 <LearningRate>0.005</LearningRate>
-<LearningRate>0.006</LearningRate>
-<LearningRate>0.007</LearningRate>
-<LearningRate>0.008</LearningRate>
-<LearningRate>0.009</LearningRate>
-<LearningRate>0.01</LearningRate>
-<LearningRate>0.02</LearningRate>
-<LearningRate>0.03</LearningRate>
-<LearningRate>0.04</LearningRate>
-<LearningRate>0.05</LearningRate>
-<LearningRate>0.06</LearningRate>
-<LearningRate>0.07</LearningRate>
-<LearningRate>0.08</LearningRate>
-<LearningRate>0.09</LearningRate>
