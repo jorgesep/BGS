@@ -33,22 +33,22 @@ class plotucv(plotroc) :
         self._set_text (self.label)
 
     def plot1(self):
-        self._generic_plot(self.name_0, self.name_1, 'TPR_FPR1.png')
+        self._generic_plot(self.name_0, self.name_1, 'UCV_TPR_FPR1.png')
  
     def plot2(self):
-        self._generic_plot(self.name_1, self.name_0, 'TPR_FPR2.png')
+        self._generic_plot(self.name_1, self.name_0, 'UCV_TPR_FPR2.png')
 
     def plot3(self):
-        self._plot_range(self.name_0, self.name_1 , 'TPR_FPR3.png')
+        self._plot_range(self.name_0, self.name_1 , 'UCV_TPR_FPR3.png')
 
     def plot4(self):
-        self._plot_one_line(self.name_0, self.name_1 , 'TPR_FPR4.png', self.parameter_value)
+        self._plot_one_line(self.name_0, self.name_1 , 'UCV_TPR_FPR4.png', self.parameter_value)
 
     def plot5(self):
-        self._plot_mean_and_median('TPR_FPR5.png', self.parameter_value)
+        self._plot_mean_and_median('UCV_TPR_FPR5.png', self.parameter_value)
 
     def plot6(self):
-        self._plot_mean_and_median_same_graph('TPR_FPR6.png', self.parameter_value)
+        self._plot_mean_and_median_same_graph('UCV_TPR_FPR6.png', self.parameter_value)
 
 
 
