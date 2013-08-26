@@ -1,50 +1,75 @@
 #!/bin/bash
 
 # Path to videos
-PATH_VIDEOS="/data/MuHAVI/WalkTurnBack/Person1/Camera_3"
-FILE="WalkTurnBack-Camera_3-Person1.avi"
-DIR="ground-truth"
-VIDEO="$PATH_VIDEOS"
-TRUTH="$PATH_VIDEOS/jpeg/Person1/$DIR"
+SEQ_PATH="/media/MuHAVI_DATASET/MuHAVI"
+ACTIONS="Kick Punch RunStop ShotGunCollapse WalkTurnBack"
+ACTORS="Person1 Person4"
+CAMERAS="Camera_3 Camera_4"
 # end video definition
 
+# Binary command
+cmd="./bin/testUCV"
+ext_args="-f 2"
+
+# Ground-truth frames 
+GT_Kick_Person1_Camera_3="2370 2911"
+GT_Kick_Person1_Camera_4="2370 2911"
+GT_Kick_Person4_Camera_3="200 628"
+GT_Kick_Person4_Camera_4="200 628"
+GT_Punch_Person1_Camera_3="2140 2607"
+GT_Punch_Person1_Camera_4="2140 2607"
+GT_Punch_Person4_Camera_3="92 536"
+GT_Punch_Person4_Camera_4="92 536"
+GT_RunStop_Person1_Camera_3="980 1418"
+GT_RunStop_Person1_Camera_4="980 1418"
+GT_RunStop_Person4_Camera_3="293 618"
+GT_RunStop_Person4_Camera_4="293 618"
+GT_ShotgunCollapse_Person1_Camera_3="267 1104"
+GT_ShotgunCollapse_Person1_Camera_4="267 1104"
+GT_ShotgunCollapse_Person4_Camera_3="319 1208"
+GT_ShotgunCollapse_Person4_Camera_4="319 1208"
+GT_WalkTurnBack_Person1_Camera_3="216 682"
+GT_WalkTurnBack_Person1_Camera_4="216 682"
+GT_WalkTurnBack_Person4_Camera_3="207 672"
+GT_WalkTurnBack_Person4_Camera_4="207 672"
+#
+
+
+
 #config file
-xmlfile="ucv.xml"
+algorithm="ucv"
+mask_dir="${algorithm}_mask"
+results="/media/MuHAVI_DATASET/MuHAVI/results" 
+xmlfile="${algorithm}.xml"
 config="config/${xmlfile}"
 
 # fixed parameter
 _header_tag="opencv_storage"
-_tag_="Alpha"
-_value=`cat ${config} | grep ${_tag_} |sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\2|p'`
-OUTPUT="results/${_tag_}_${_value}"
+#_tag_="Cf"
+#_value=`cat ${config} | grep ${_tag_} |sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\2|p'`
 
-# Check video directory
-if [ -d ${VIDEO} ]; then
-    args="-i ${VIDEO}"
-else
-    echo "Invalid name of video ..."
-    exit
-fi
+# input parameters
+_name=`echo ${algorithm} | tr '[:lower:]' '[:upper:]'`
+loop1="config/${_name}_LearningRate.txt"
+loop2="config/${_name}_Threshold.txt"
 
-cmd="./bin/testUCV"
-
-loop1="config/UCV_LearningRate.txt"
-loop2="config/UCV_Threshold.txt"
-
+# name of parameters
 _tag_1=`head -1 $loop1 | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\1|p'`
 _tag_2=`head -1 $loop2 | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\1|p'`
 
+# list of values
 _list_1=`cat $loop1 | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\2|p'`
 _list_2=`cat $loop2 | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\2|p'`
 
 # one time loop 1
 #_list_1='0.001'
+#_list_2='10'
 
 # Function definition
 process_list() {
     for in2 in ${_list_2}
     do
-        echo "Processing ${_tag_}:${_value} ${_tag_1}:${in1} ${_tag_2}:${in2}"
+        echo "Processing ${name} ${_tag_1}:${in1} ${_tag_2}:${in2}"
         cat ${config} | grep -v "/${_header_tag}\|${_tag_2}"        > config.tmp
         echo -e "<${_tag_2}>${in2}</${_tag_2}>\n</${_header_tag}>" >> config.tmp
         mv config.tmp ${config}
@@ -53,14 +78,54 @@ process_list() {
 }
 #
 
+set_ground_truth_frames() {
 
-for in1 in ${_list_1}
-do
-    cat ${config} | grep -v "/${_header_tag}\|${_tag_1}"        > config.tmp
-    echo -e "<${_tag_1}>${in1}</${_tag_1}>\n</${_header_tag}>" >> config.tmp
-    mv ${config} config.bak
+    eval FRAMES_VAL='$GT_'${name}
+
+    init_gt=`echo ${FRAMES_VAL} | awk '{print $1}'`
+    end_gt=`echo  ${FRAMES_VAL} | awk '{print $2}'`
+
+    cat ${config} | grep -v "/${_header_tag}\|InitFGMaskFrame\|EndFGMaskFrame" > config.tmp
+    echo -e  "<InitFGMaskFrame>${init_gt}</InitFGMaskFrame>"                  >> config.tmp
+    echo -e  "<EndFGMaskFrame>${end_gt}</EndFGMaskFrame>\n</${_header_tag}>"  >> config.tmp
+
     mv config.tmp ${config}
-    process_list
-    #mv config.bak ${config}
-done
+}
 
+# Loop for each action
+for action in ${ACTIONS}
+do
+    for actor in ${ACTORS}
+    do
+        for cam in ${CAMERAS}
+        do
+            name="${action}_${actor}_${cam}" 
+            set_ground_truth_frames
+
+            new_dir="${results}/${name}/${mask_dir}"
+            if [ ! -d "${new_dir}" ]; then
+                mkdir -p ${new_dir}
+            else
+                if [ -L "${mask_dir}" ]; then
+                    unlink ${mask_dir}
+                fi
+            fi
+            ln -s ${new_dir} ${mask_dir}
+
+            sequence="${SEQ_PATH}/${action}/${actor}/${cam}"
+            args="-i $sequence ${ext_args}"
+
+            for in1 in ${_list_1}
+            do
+                cat ${config} | grep -v "/${_header_tag}\|${_tag_1}"        > config.tmp
+                echo -e "<${_tag_1}>${in1}</${_tag_1}>\n</${_header_tag}>" >> config.tmp
+                mv ${config} config.bak
+                mv config.tmp ${config}
+                process_list
+            done
+
+            unlink ${mask_dir}
+
+        done
+    done
+done
