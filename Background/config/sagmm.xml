@@ -4,7 +4,7 @@
 <Sigma>36.0</Sigma>
 <SigmaMax>3.0</SigmaMax>
 <SigmaMin>4.0</SigmaMin>
-<Cf>0.01</Cf>
+<Cf>0.1</Cf>
 <Range>10.0</Range>
 <Gen>9.0</Gen>
 <CT>0.05</CT>
