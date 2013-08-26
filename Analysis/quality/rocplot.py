@@ -85,7 +85,7 @@ class plotroc :
 
         self._get_range()
         print "Plot range of '%s' %s%s%s" % (self.name_0,self.str_colors['blue'], " ".join([str(i) for i in self.range_values]), self.str_colors['reset'])
-        print "Plot single line of '%s' %s%s%s" % (self.name_0, self.str_colors['red'], float(self.parameter_value), self.str_colors['reset'])
+        print "Plot value of '%s' %s%s%s" % (self.name_0, self.str_colors['red'], float(self.parameter_value), self.str_colors['reset'])
 
 
     def _set_title(self,title=None):
