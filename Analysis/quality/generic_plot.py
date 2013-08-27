@@ -12,7 +12,7 @@ import numpy as np
 from scipy.integrate import trapz
 
 from rocplot import plotroc
-
+from frameplot import frameplot
    
     
 
@@ -32,6 +32,7 @@ class plot(plotroc) :
         self._set_title(self.title)
         self._set_text (self.label)
 
+
     def plot1(self):
         self._generic_plot(self.name_0, self.name_1, 'GENERIC_TPR_FPR1.png')
  
@@ -49,6 +50,72 @@ class plot(plotroc) :
 
     def plot6(self):
         self._plot_mean_and_median_same_graph('GENERIC_TPR_FPR6.png', self.parameter_value)
+
+    def plot7(self):
+        self._plot_mean_and_median_same_graph('GENERIC_TPR_FPR6.png', self.parameter_value)
+
+
+class frame(frameplot):
+
+    def __init__(self, indexes=None, internal_range=None, one_value=None, title=None, label=None):
+        frameplot.__init__(self, indexes, internal_range, one_value)
+
+        self.title = title
+        if title == None:
+            self.title = 'Performance Curve <Algorithm Name>'
+
+        self.label = label
+        if label == None:
+            self.label = 'MuHAVI-MAS'
+        self._set_title(self.title)
+        self._set_text (self.label)
+
+
+    def plot1(self):
+        self._generic_plot(self.name_0, self.name_1, 'FRAME_TPR_FPR1.png')
+
+    def plot2(self):
+        self._plot_range('FRAME_TPR_FPR2.png')
+
+    def plot3(self):
+        self._plot_one_line('FRAME_TPR_FPR3.png')
+
+    def plot4(self):
+        self._generic_plot(self.name_0, self.name_1, 'FRAME_TPR_FPR4.png', 'MSSIM')
+
+    def plot5(self):
+        self._plot_range('FRAME_TPR_FPR5.png', None, 'MSSIM')
+
+
+    def plot6(self):
+        self._plot_one_line('FRAME_TPR_FPR6.png', None, 'MSSIM')
+
+
+    def plot7(self):
+        self._generic_plot(self.name_0, self.name_1, 'FRAME_TPR_FPR7.png', 'PSNR')
+
+    def plot8(self):
+        self._plot_range('FRAME_TPR_FPR8.png', None, 'PSNR')
+
+
+    def plot9(self):
+        self._plot_one_line('FRAME_TPR_FPR9.png', None, 'PSNR')
+
+    def plot10(self):
+        self._generic_plot(self.name_0, self.name_1, 'FRAME_TPR_FPR10.png', 'FMEASURE_MEAN')
+
+    def plot11(self):
+        self._plot_range('FRAME_TPR_FPR11.png', None, 'FMEASURE_MEAN')
+
+
+    def plot12(self):
+        self._plot_one_line('FRAME_TPR_FPR12.png', None, 'FMEASURE_MEAN')
+
+
+
+
+
+
 
 
 
@@ -163,6 +230,8 @@ if __name__ == '__main__':
         cols   = options.columns
         update_file('generic_labels.txt',3,cols)
 
+
+    print "Plot ROC parameters\n================================="
     n = plot(cols,r4nge, val, title, text)
     n.load(options.file)
     n.plot1()
@@ -171,3 +240,21 @@ if __name__ == '__main__':
     n.plot4()
     n.plot5()
     n.plot6()
+
+    print "\nPlot Performance parameters\n================================="
+    title = "Performance <Algorithm Name>"
+    m = frame(cols,r4nge, val, title, text)
+    m.load(options.file)
+    m.plot1()
+    m.plot2()
+    m.plot3()
+    m.plot4()
+    m.plot5()
+    m.plot6()
+    m.plot7()
+    m.plot8()
+    m.plot9()
+    m.plot10()
+    m.plot11()
+    m.plot12()
+
