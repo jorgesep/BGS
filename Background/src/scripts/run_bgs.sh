@@ -7,9 +7,17 @@ ACTORS="Person1 Person4"
 CAMERAS="Camera_3 Camera_4"
 # end video definition
 
-# Binary command
+# Place to save mask results 
+RESULTS="/media/MuHAVI_DATASET/MuHAVI/results" 
+
+# Algorithm name: 'sagmm' 'mog2' 'ucv'
+ALGORITHM_NAME="sagmm"
+
+# Binary command: 'bgs', 'bgs_framework', 'testUCV'
 cmd="./bin/bgs"
 ext_args=""
+
+###### From this point nothing might be changed ..
 
 # Ground-truth frames 
 GT_Kick_Person1_Camera_3="2370 2911"
@@ -37,19 +45,15 @@ GT_WalkTurnBack_Person4_Camera_4="207 672"
 
 
 #config file
-algorithm="sagmm"
-mask_dir="${algorithm}_mask"
-results="/media/MuHAVI_DATASET/MuHAVI/results" 
-xmlfile="${algorithm}.xml"
+mask_dir="${ALGORITHM_NAME}_mask"
+xmlfile="${ALGORITHM_NAME}.xml"
 config="config/${xmlfile}"
 
 # fixed parameter
 _header_tag="opencv_storage"
-#_tag_="Cf"
-#_value=`cat ${config} | grep ${_tag_} |sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\2|p'`
 
 # input parameters
-_name=`echo ${algorithm} | tr '[:lower:]' '[:upper:]'`
+_name=`echo ${ALGORITHM_NAME} | tr '[:lower:]' '[:upper:]'`
 loop1="config/${_name}_LearningRate.txt"
 loop2="config/${_name}_Threshold.txt"
 
@@ -90,6 +94,14 @@ set_ground_truth_frames() {
     echo -e  "<EndFGMaskFrame>${end_gt}</EndFGMaskFrame>\n</${_header_tag}>"  >> config.tmp
 
     mv config.tmp ${config}
+
+    framework="config/Framework.xml"
+    cat ${framework} | grep -v "/${_header_tag}\|InitFGMaskFrame\|EndFGMaskFrame" > Framework.tmp
+    echo -e  "<InitFGMaskFrame>${init_gt}</InitFGMaskFrame>"                     >> Framework.tmp
+    echo -e  "<EndFGMaskFrame>${end_gt}</EndFGMaskFrame>\n</${_header_tag}>"     >> Framework.tmp
+
+    mv Framework.tmp ${framework}
+
 }
 
 # Loop for each action
@@ -102,7 +114,7 @@ do
             name="${action}_${actor}_${cam}" 
             set_ground_truth_frames
 
-            new_dir="${results}/${name}/${mask_dir}"
+            new_dir="${RESULTS}/${name}/${mask_dir}"
             if [ ! -d "${new_dir}" ]; then
                 mkdir -p ${new_dir}
             else
