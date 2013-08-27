@@ -172,28 +172,37 @@ int main( int argc, char** argv )
 
         // Create directoty if not exists and create a numbered internal directory.
         // np_mask/0, np_mask/1, ...
-        bgs::create_foreground_directory(np_foreground_path);
-        bgs::create_foreground_directory(sagmm_foreground_path);
-        bgs::create_foreground_directory(mog2_foreground_path);
+        if (algorithmNPEnabled) 
+            bgs::create_foreground_directory(np_foreground_path);
+        if (algorithmSAGMMEnabled) 
+            bgs::create_foreground_directory(sagmm_foreground_path);
+        if (algorithmMOG2Enabled)
+            bgs::create_foreground_directory(mog2_foreground_path);
 
         ofstream outfile;
         stringstream param;
-        param << np_foreground_path << "/parameters.txt" ;
-        outfile.open(param.str().c_str());
-        outfile << np->getConfigurationParameters();
-        outfile.close();
+        if (algorithmNPEnabled) {
+            param << np_foreground_path << "/parameters.txt" ;
+            outfile.open(param.str().c_str());
+            outfile << np->getConfigurationParameters();
+            outfile.close();
+        }
         
         param.str("");
-        param << sagmm_foreground_path << "/parameters.txt" ;
-        outfile.open(param.str().c_str());
-        outfile << sagmm->getConfigurationParameters();
-        outfile.close();
+        if (algorithmSAGMMEnabled) {
+            param << sagmm_foreground_path << "/parameters.txt" ;
+            outfile.open(param.str().c_str());
+            outfile << sagmm->getConfigurationParameters();
+            outfile.close();
+        }
 
         param.str("");
-        param << mog2_foreground_path << "/parameters.txt" ;
-        outfile.open(param.str().c_str());
-        outfile << mog2->getConfigurationParameters();
-        outfile.close();
+        if (algorithmMOG2Enabled){
+            param << mog2_foreground_path << "/parameters.txt" ;
+            outfile.open(param.str().c_str());
+            outfile << mog2->getConfigurationParameters();
+            outfile.close();
+        }
 
     }
     
