@@ -165,8 +165,8 @@ int main( int argc, char** argv )
                 //cout << parameters[1].first << " " << parameters[1].second << endl;
             }
             
-            // Read files from input directory
-            list_files(mask_dir,fg_files, ".jpg");
+            // Read files (.png or .jpg) from input directory
+            find_list_any_image_file(mask_dir,fg_files);
             fg_size = fg_files.size();
             
             if (fg_size == -1 || fg_size == 0) {
@@ -228,6 +228,7 @@ int main( int argc, char** argv )
     stringstream msg,ptmsg;
     ofstream outfile, ptfile, rocfile;
 
+    int cnt_processed = 0;
     int cnt  = 0;
     int size = 0;
     Mat gtimg;
@@ -296,12 +297,35 @@ int main( int argc, char** argv )
             gtimg  = Scalar::all(0);
             fgmask = Scalar::all(0);
             
+
             // open ground truth frame.
-            gtimg = imread(gt_it->second, CV_LOAD_IMAGE_GRAYSCALE);
-            
+            try {
+                gtimg = imread(gt_it->second, CV_LOAD_IMAGE_GRAYSCALE);
+            }
+            catch(exception& e) {
+                cerr << "Exception loading ground truth mask: " << e.what() << "\n";
+                continue;
+            }
+            catch(...) {
+                cerr << "Exception of unknown type loading ground truth mask !\n";
+                continue;
+            }
+    
+             
             // open foreground mask.
-            fgmask= imread(fg_it->second, CV_LOAD_IMAGE_GRAYSCALE);
-            
+            try {
+                fgmask= imread(fg_it->second, CV_LOAD_IMAGE_GRAYSCALE);
+            }
+            catch(exception& e) {
+                cerr << "Exception loading foreground mask: " << e.what() << "\n";
+                continue;
+            }
+            catch(...) {
+                cerr << "Exception of unknown type loading foreground mask !\n";
+                continue;
+            }
+    
+ 
             if( gtimg.data && fgmask.data) {
                 
                 //compare both frames to obtain tp, tn, fn and fp values
@@ -334,6 +358,8 @@ int main( int argc, char** argv )
                 if (verbose)
                     cout    << msg.str() << endl;
 
+                cnt_processed++;
+
             }
         }
     }
@@ -343,7 +369,7 @@ int main( int argc, char** argv )
     
 
     //print out by console final result
-    cout    << measure->metricsStatisticsAsString() << endl;
+    cout    << measure->metricsStatisticsAsString() << " " << size << "/" << cnt_processed << endl;
     
     outfile << "# " << measure->getHeaderForFileWithNameOfStatisticParameters() << endl;
 
