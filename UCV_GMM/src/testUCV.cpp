@@ -252,13 +252,34 @@ int main( int argc, char** argv )
         // Save foreground mask image for posterior analysis.
         if (saveForegroundMask &&  cnt >= (unsigned int)InitFGMaskFrame &&  cnt <= (unsigned int)EndFGMaskFrame) {
             stringstream str;
-            str << foreground_path << "/" <<  cnt << ".jpg";
+            //str << foreground_path << "/" <<  cnt << ".jpg";
+            str << foreground_path << "/" <<  cnt << ".png";
+
+            //vector<int> compression_params;
+            //compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+            //compression_params.push_back(100);
+            ////imwrite(str.str(), Mask, compression_params);
+            //imwrite(str.str(), filtered_mask, compression_params);
+
 
             vector<int> compression_params;
-            compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
-            compression_params.push_back(100);
-            //imwrite(str.str(), Mask, compression_params);
-            imwrite(str.str(), filtered_mask, compression_params);
+            compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+            compression_params.push_back(9);
+
+            try {
+                imwrite(str.str(), filtered_mask, compression_params);
+            }
+            catch (runtime_error& ex) {
+                cout << "Exception converting image to PNG format: " << ex.what() << endl;
+            }
+            catch (...) {
+                cout << "Unknown Exception converting image to PNG format: " << endl;
+            }
+
+
+
+
+
         }
 
         // Display foreground mask and image
