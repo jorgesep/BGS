@@ -253,24 +253,34 @@ int main( int argc, char** argv )
         if (saveForegroundMask && cnt >= InitFGMaskFrame && cnt <= EndFGMaskFrame) {
             stringstream str;
             vector<int> compression_params;
-            compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
-            compression_params.push_back(100);
+            compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+            compression_params.push_back(9);
 
-            if (algorithmMOG2Enabled) {
-                str << mog2_foreground_path << "/" <<  cnt << ".jpg";
-                imwrite(str.str(), Foreground, compression_params);
+            try {
+                if (algorithmMOG2Enabled) {
+                    str << mog2_foreground_path << "/" <<  cnt << ".png";
+                    imwrite(str.str(), Foreground, compression_params);
+                }
+                if (algorithmNPEnabled) {
+                    str.str("");
+                    str << np_foreground_path << "/" <<  cnt << ".png";
+                    imwrite(str.str(), NPMask, compression_params);
+                    
+                }
+                if (algorithmSAGMMEnabled) {
+                    str << sagmm_foreground_path << "/" <<  cnt << ".png";
+                    imwrite(str.str(), SAMask, compression_params);
+                    
+                }
             }
-            if (algorithmNPEnabled) {
-                str.str("");
-                str << np_foreground_path << "/" <<  cnt << ".jpg";
-                imwrite(str.str(), NPMask, compression_params);
-                
+            catch (runtime_error& ex) {
+                cout << "Exception converting image to PNG format: " << ex.what() << endl;
             }
-            if (algorithmSAGMMEnabled) {
-                str << sagmm_foreground_path << "/" <<  cnt << ".jpg";
-                imwrite(str.str(), SAMask, compression_params);
-                
+            catch (...) {
+                cout << "Unknown Exception converting image to PNG format: " << endl;
             }
+
+
             
         }
         
