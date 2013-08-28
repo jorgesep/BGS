@@ -119,6 +119,9 @@ unsigned int name_to_number(string file);
 
 //Return a list of PNG files from ground-truth directory
 void list_files(string directory, map<unsigned int,string>& list, string type = ".PNG");
+
+// Look for jpg or png  file  in directory  and return  a list of them
+void find_list_any_image_file(string directory, map<unsigned int,string>& list);
 void find_dir_by_name(string , map<unsigned int,string>& );
 
 void create_foreground_directory(string& path);

@@ -100,6 +100,35 @@ void list_files(string directory, map<unsigned int,string>& list, string type)
     }
 }
 
+void find_list_any_image_file(string directory, map<unsigned int,string>& list)
+{
+    //map<unsigned int, string> files;
+    size_t size = 0;
+
+   
+    list_files(directory, list, ".png");
+    size = list.size();
+    if ( size > 0 )  
+        return;
+    
+    list.clear();
+    list_files(directory, list, ".jpg");
+    size = list.size();
+    if ( size > 0 )  
+        return;
+    
+    list.clear();
+    list_files(directory, list, ".JPG");
+    size = list.size();
+    if ( size > 0 )  
+        return;
+     
+    list.clear();
+    list_files(directory, list, ".PNG");
+      
+
+}
+
 
 void find_dir_by_name(string name, map<unsigned int,string>& list)
 {
