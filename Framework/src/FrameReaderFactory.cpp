@@ -171,12 +171,10 @@ void VideoFile::getFrame(OutputArray frame)
         video >> Image;
         Image.copyTo(frame);
 
-        
         frame_counter = video.get(CV_CAP_PROP_POS_FRAMES);
     }
     
 }
-    
     
     
 void VideoFile::getImageProperties()
@@ -196,13 +194,12 @@ void VideoFile::getImageProperties()
     nchannels = CV_MAT_CN(frameType);
 
     //reset video to initial position.
-    video.set(CV_CAP_PROP_POS_FRAMES, 0);
+    //video.set(CV_CAP_PROP_POS_FRAMES, 0);
 
     video_prop.release();
-    
-    
+
+
 }
-    
     
 FrameReader *FrameReaderFactory :: create_frame_reader(string name)
 {
