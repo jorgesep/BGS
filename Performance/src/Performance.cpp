@@ -149,10 +149,11 @@ string Performance::metricsStatisticsAsString() const
         str 
         << std::scientific << similarity_mean.PSNR      << " "
         << std::scientific << similarity_mean.MSSIM     << " "
-        << std::scientific << similarity_mean.DSCORE    << "    "
-        << std::scientific << similarity_median.PSNR    << " "
-        << std::scientific << similarity_median.MSSIM   << " "
-        << std::scientific << similarity_median.DSCORE  ;
+        << std::scientific << similarity_mean.DSCORE   ;
+        //<< "    "
+        //<< std::scientific << similarity_median.PSNR    << " "
+        //<< std::scientific << similarity_median.MSSIM   << " "
+        //<< std::scientific << similarity_median.DSCORE  ;
     }
     
     return str.str();
