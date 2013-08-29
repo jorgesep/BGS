@@ -12,6 +12,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 FILE ( GLOB CONFIG ${PROJECT_SOURCE_DIR}/../config/*.jpg ${PROJECT_SOURCE_DIR}/../config/*.PNG ${PROJECT_SOURCE_DIR}/../config/*.png )
+FILE ( GLOB SCRIPTS ${PROJECT_SOURCE_DIR}/scripts/*.py ${PROJECT_SOURCE_DIR}/scripts/*.sh )
 
 #MESSAGE("Project Source Dir set to ${PROJECT_SOURCE_DIR}")
 #MESSAGE("Project Binary Dir set to ${PROJECT_BINARY_DIR}")
@@ -61,4 +62,5 @@ target_link_libraries(Performance ${OpenCV_LIBS})
 set_property(TARGET Performance PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
 file(COPY ${CONFIG} DESTINATION ${BGS_BINARY_DIR}/config/)
+file(COPY ${SCRIPTS} DESTINATION ${BGS_BINARY_DIR}/bin/)
 
