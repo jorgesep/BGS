@@ -18,6 +18,7 @@ FILE ( GLOB BUILDER  NPBuilder.cpp *.h )
 FILE ( GLOB SCRIPTS ${PROJECT_SOURCE_DIR}/scripts/*.py ${PROJECT_SOURCE_DIR}/scripts/*.sh )
 
 INCLUDE_DIRECTORIES(${Framework_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${FrameReader_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include)
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Performance/include)
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Background/include)
@@ -47,7 +48,7 @@ set_property(TARGET NPBuilder PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR
 
 
 ADD_EXECUTABLE( npbgs ${SRCS} )
-TARGET_LINK_LIBRARIES( npbgs NonParametricModel  Utils Performance  Framework ${OpenCV_LIBS} ${Boost_LIBRARIES} )
+TARGET_LINK_LIBRARIES( npbgs NonParametricModel  Utils Performance  FrameReader ${OpenCV_LIBS} ${Boost_LIBRARIES} )
 set_property(TARGET npbgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)

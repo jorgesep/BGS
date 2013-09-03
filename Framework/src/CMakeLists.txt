@@ -12,7 +12,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
 endif()
 
-FILE ( GLOB SRCS FrameReaderFactory.cpp BGSFramework*.cpp *.h )
+#FILE ( GLOB SRCS FrameReaderFactory.cpp BGSFramework*.cpp *.h )
+FILE ( GLOB SRCS BGSFramework*.cpp *.h )
 FILE ( GLOB SCRIPTS ${PROJECT_SOURCE_DIR}/scripts/*.py ${PROJECT_SOURCE_DIR}/scripts/*.sh )
 
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/")
@@ -26,6 +27,7 @@ INCLUDE_DIRECTORIES(${SAGMM_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include) 
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/ThirdParty/bg_subt_code)
 INCLUDE_DIRECTORIES(${Background_SOURCE_DIR}/../include)
+INCLUDE_DIRECTORIES(${FrameReader_SOURCE_DIR})
 
 #delete bin files in make clean
 SET_DIRECTORY_PROPERTIES (
@@ -51,7 +53,7 @@ link_directories(${BGS_BINARY_DIR}/Utils)
 
 
 ADD_LIBRARY( Framework SHARED ${SRCS} )
-target_link_libraries( Framework ${OpenCV_LIBS} ${Boost_LIBRARIES} )
+target_link_libraries( Framework FrameReader ${OpenCV_LIBS} ${Boost_LIBRARIES} )
 set_property(TARGET Framework PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
 

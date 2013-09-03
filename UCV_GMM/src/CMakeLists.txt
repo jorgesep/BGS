@@ -25,14 +25,12 @@ INCLUDE_DIRECTORIES(${Performance_SOURCE_DIR}/../include)
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include) 
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/ThirdParty/uCV/inc ) 
 
-INCLUDE_DIRECTORIES(${Framework_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${FrameReader_SOURCE_DIR})
 
 #delete bin files in make clean
 SET_DIRECTORY_PROPERTIES (
     PROPERTIES
-        ADDITIONAL_MAKE_CLEAN_FILES "${MOG_SOURCE_DIR}/*~"
         ADDITIONAL_MAKE_CLEAN_FILES "${PROJECT_SOURCE_DIR}/../bin/*"
-        ADDITIONAL_MAKE_CLEAN_FILES "${MOG_BINARY_DIR}/*"
 )
 
 # openCV library
@@ -51,7 +49,7 @@ include_directories( ${Boost_INCLUDE_DIRS} )
 #set_property(TARGET UCVGMMBuilder PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
 ADD_EXECUTABLE( testUCV ${SRCS} )
-target_link_libraries( testUCV ${OpenCV_LIBS} ${Boost_LIBRARIES} ${ucv_gmm_methods} ${ucv_gmm} Framework Utils )
+target_link_libraries( testUCV ${OpenCV_LIBS} ${Boost_LIBRARIES} ${ucv_gmm_methods} ${ucv_gmm} FrameReader Utils )
 set_property(TARGET testUCV PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)
