@@ -302,8 +302,16 @@ int main( int argc, char** argv )
 
         }
     }
-    
-    
+    else {
+        if (processing_video) {
+            VideoCapture tmp_video(inputVideoName);
+            tmp_video >> img;
+            tmp_video.release();
+        }
+        else
+            img = imread(im_files[1]);
+    } 
+     
     
     bg_model.initializeModel(img);
     //bg_model.loadModel();
@@ -409,13 +417,16 @@ int main( int argc, char** argv )
             // counter of number of frame processed
             gt_cnt++;
         }
-        
+
+       
         // Save pixel information in a local file
         if (show_point) {
+            Mat ptimg;
+            img.convertTo(ptimg,CV_8UC3);
             ptmsg.str("");
-            ptmsg  << (int)img.at<Vec3f>(nl,nc)[0] << " " 
-                   << (int)img.at<Vec3f>(nl,nc)[1] << " " 
-                   << (int)img.at<Vec3f>(nl,nc)[2] ;
+            ptmsg  << (int)ptimg.at<Vec3b>(nl,nc)[0] << " " 
+                   << (int)ptimg.at<Vec3b>(nl,nc)[1] << " " 
+                   << (int)ptimg.at<Vec3b>(nl,nc)[2] ;
             ptfile << ptmsg.str() << endl;
         }
 
