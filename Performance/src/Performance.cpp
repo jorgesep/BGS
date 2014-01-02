@@ -908,6 +908,9 @@ double Performance::getDScore(InputArray foreground, InputArray groundtruth, Inp
     
 void Performance::computeGeneralDSCoreMap(InputArray img, OutputArray map)
 {
+    //double duration;
+    //duration = static_cast<double>(cv::getTickCount());
+
     // Check and convert foreground mask image to gray
     Mat MASK;
     if (img.channels() > 1) 
@@ -944,6 +947,10 @@ void Performance::computeGeneralDSCoreMap(InputArray img, OutputArray map)
     exp(LOG_EMAP_2, EXP_LOG_EMAP_2);
     
     EXP_LOG_EMAP_2.copyTo(map);
+
+    //duration = static_cast<double>(cv::getTickCount())-duration;
+    //duration /= cv::getTickFrequency(); //the elapsed time in ms
+    //cout << "getDScore Duration: " << duration << " " << DScore.val[0] << endl; 
 
         
         
