@@ -137,7 +137,7 @@ int main( int argc, char** argv )
         // Read files from input directory
         list_files(inputVideoName,im_files, ".jpg");
         im_size = im_files.size();
-            
+
         if (im_size == -1 || im_size == 0) {
             cout << "Not valid ground images directory ... " << endl;
             return -1;
@@ -271,10 +271,11 @@ int main( int argc, char** argv )
     if (displayImages) { 
         namedWindow("image", CV_WINDOW_NORMAL);
         namedWindow("foreground mask", CV_WINDOW_NORMAL);
-        namedWindow("foreground image", CV_WINDOW_NORMAL);
-        moveWindow("image"           ,20,20);
-        moveWindow("foreground image",20,300);
-        moveWindow("foreground mask" ,400,20);
+        //namedWindow("foreground image", CV_WINDOW_NORMAL);
+        moveWindow("image"           ,50,50);
+        moveWindow("foreground mask" ,400,50);
+        //moveWindow("foreground image",20,300);
+
     } 
     
     //spatio-temporal pre-processing filter for smoothing frames.
@@ -282,7 +283,7 @@ int main( int argc, char** argv )
         
         filter = mdgkt::Instance();
         cntTemporalWindow = filter->getTemporalWindow();
-        
+
         for (int i=0; i<cntTemporalWindow; i++) {
 
             frame = Scalar::all(0);
@@ -309,16 +310,14 @@ int main( int argc, char** argv )
             tmp_video.release();
         }
         else
-            img = imread(im_files[1]);
+            img = imread(im_files[1], CV_LOAD_IMAGE_COLOR);
     } 
-     
     
     bg_model.initializeModel(img);
     //bg_model.loadModel();
     Mat bgimg;
     bg_model.getBackground(bgimg);
 
-    
     //Shift backward or forward ground truth sequence counter.
     //for compensating pre-processed frames in the filter.
     unsigned int cnt    = 0  + shiftFrame + cntTemporalWindow; 
@@ -327,6 +326,8 @@ int main( int argc, char** argv )
     // main loop 
     for(;;)
     {
+        //cout << cnt << " " ;
+
         //clean up all Mat structures.
         //This is done because, performance was improved.
         img    = Scalar::all(0);
@@ -356,6 +357,9 @@ int main( int argc, char** argv )
                 video >> img;
             else
                 img = imread(im_files[cnt+1]);
+
+            if (img.empty()) 
+                break;
         } 
             
         if( fgimg.empty() )
@@ -363,7 +367,6 @@ int main( int argc, char** argv )
         
         //Global illumination changing factor 'g' between reference image ir and current image ic.
         double globalIlluminationFactor = icdm::Instance()->getIlluminationFactor(img,bgimg);
-
 
         //Calling background subtraction algorithm.
         bg_model(img, fgmask, update_bg_model ? -1 : 0, globalIlluminationFactor);
@@ -441,7 +444,25 @@ int main( int argc, char** argv )
             
             imshow("image", ftimg);
             imshow("foreground mask", fgmask);
-            imshow("foreground image", fgimg);
+            //imshow("foreground image", fgimg);
+
+
+            // This is just to write down two different images, showing red point on them.
+            // This line could be commented out.
+            //if ((cnt >= 605) &&  (cnt <= 611)) {
+            //if (cnt == 570) {
+            //    stringstream str;
+            //    str <<  cnt << ".jpg";
+            //    imwrite(str.str(), ftimg);
+            //    stringstream fgstr;
+            //    fgstr <<  cnt << "_fg.jpg";
+            //    imwrite(fgstr.str(), fgmask);
+
+            //    Mat small_img;
+            //    img.convertTo(small_img,CV_8UC3);
+            //    Mat imageROI = small_img(cv::Rect((pt.x-3),(pt.y-3),6,6));
+            //    cout << setprecision(0) << fixed << imageROI << endl;
+            //}
 
             char key=0;
             key = (char)waitKey(delay);
@@ -464,6 +485,7 @@ int main( int argc, char** argv )
         //    bg_model.saveModel();
         
     }
+
 
     if (!groundTruthName.empty() && compare) {
         
