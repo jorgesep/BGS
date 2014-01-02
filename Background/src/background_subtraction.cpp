@@ -318,6 +318,7 @@ public:
     Fg0 = _Fg;
 
     debugPt = _debugPt;
+    internal_frame_counter = 0;
     
     cvtfunc = src->depth() != CV_32F ? getConvertFunc(src->depth(), CV_32F) : 0;
 }
@@ -354,6 +355,8 @@ void operator()(const Range& range) const
         float* bg        = Bg0 + ncols*nchannels*y;
         float* fg        = Fg0 + ncols*y;
 
+
+
         //After each iteration per mixture:
         // increment x (note: x is a column)
         // data (buffer) incremented by number of channels.
@@ -381,9 +384,34 @@ void operator()(const Range& range) const
             //float* fg_m       = fg;
             float* bg_cnt     = cm;
 
-            //just for debugging
-            //if (y0==228 && x==670)
-            //    int temporary = y0;
+            //////
+            // This array is created just for debugging 
+            // the calculated Mahalanobis distance in each channel
+            float MD[nmixtures]; 
+            float old_sigma[nmixtures];
+            float old_weight[nmixtures];
+            float three_sigma[nmixtures];
+            float four_sigma[nmixtures];
+            int   flagged_mode[nmixtures];
+            int   NM=0;
+            float *squared_dist      = MD; 
+            float *sigma             = old_sigma;
+            float *old_w             = old_weight;
+            float *three_times_sigma = three_sigma;
+            float *four_times_sigma  = four_sigma;
+
+            for (int i=0; i<nmixtures; i++) { 
+                MD[i]                = 0;
+                old_sigma[i]         = 0;
+                old_weight[i]        = 0;
+                three_times_sigma[i] = 0;
+                four_times_sigma[i]  = 0;
+                flagged_mode[i]      = 0;
+            }
+            //just for debugging when I run with xcode IDE
+            //if (y0==1 && x==1)
+            //    internal_frame_counter+=1;
+            ////// End of debugging variables declaration
             
 
             //////
@@ -395,7 +423,8 @@ void operator()(const Range& range) const
                 // Ownership Om set zero to obtain weight if fit is not found.
                 // Eq (14) ownership in zero
                 float weight = alpha1*gmm[mode].weight + prune;//need only weight if fit is found
-                
+
+               
                 //// 
                 //fit not found yet, at init fitsPDF <-- false
                 if( !fitsPDF )
@@ -410,21 +439,6 @@ void operator()(const Range& range) const
                     // d_dirac_m = x[t] - mu_m
                     if( nchannels == 3 )
                     {
-                        //just for debugging
-                        /*
-                        float mean0 = mean_m[0];
-                        float mean1 = mean_m[1];
-                        float mean2 = mean_m[2];
-                        float data0 = data[0];
-                        float data1 = data[1];
-                        float data2 = data[2];
-                        data0 *=globalChange;
-                        data1 *=globalChange;
-                        data2 *=globalChange;
-                        dData[0] = mean0 - data0;
-                        dData[1] = mean1 - data1;
-                        dData[2] = mean2 - data2;
-                        */
                         dData[0] = mean_m[0] - data[0]*globalChange;
                         dData[1] = mean_m[1] - data[1]*globalChange;
                         dData[2] = mean_m[2] - data[2]*globalChange;
@@ -444,7 +458,8 @@ void operator()(const Range& range) const
                     // Eq (8)
                     // SUM(Weight) > (1-Cf); TB=(1-Cf)
                     //background? - Tb - usually larger than Tg
-                    if( totalWeight < TB && dist2 < Tb*var ) {
+                    //if( tempTotalWeight < TB && dist2 < Tb*var ) {
+                    if( totalWeight < TB && dist2 < Tb*var && !background) {
                         background = true;
                         
                         for( int c = 0; c < nchannels; c++ )
@@ -469,13 +484,6 @@ void operator()(const Range& range) const
                         //New Beta dynamic learning rate, se eq. 4.7
                         //Beta=alfa(h+Cm)/Cm
                         //If the background changes quickly, Cm will become smaller, new beta learning rate will increase
-                        //
-                        //just for debugging
-                        //double aT    = (double)alphaT;
-                        //double bgcnT = (double)bg_cnt[mode];
-                        //double Beta  = aT/bgcnT;
-                        //Beta += aT;
-                        
                         float Beta = alphaT/bg_cnt[mode]+alphaT;
                         //see eq. (4.8) (4.9)
                         float k = Beta/gmm[mode].weight;
@@ -518,7 +526,22 @@ void operator()(const Range& range) const
                         }
                         //belongs to the mode - bFitsPDF becomes 1
                         /////
+                    }//// End checking of:  dist2 < Tg*var
+
+
+                    // Save Mahalanobis in an array just for debugging
+                    if ( (debugPt != Point(0,0)) && (debugPt.x == x && debugPt.y == y0) )
+                    {
+                            *(squared_dist      + mode) = dist2;
+                            *(sigma             + mode) = var;
+                            *(old_w             + mode) = totalWeight;
+                            *(four_times_sigma  + mode) = Tb*var;
+                            *(three_times_sigma + mode) = Tg*var;
+                            NM                          = mode + 1;
+                            //flagged_mode[mode] = dist2<Tg*var?1:0;
+                            flagged_mode[mode] = background?1:(fitsPDF?2:0);
                     }
+
                 }//!bFitsPDF)
 
                 //check prune
@@ -530,11 +553,17 @@ void operator()(const Range& range) const
 
                 gmm[mode].weight = weight;//update weight by the calculated value
                 totalWeight += weight;
+                //tempTotalWeight = totalWeight;
+
+                //if ( (debugPt != Point(0,0)) && (debugPt.x == x && debugPt.y == y0) )
+                //    cout << "A VER CUANTO ES: " << totalWeight << " " << weight << endl;
             }
             //go through all modes
             //////
 
             //renormalize weights
+            //if (totalWeight == 0)
+            //    totalWeight = 1.f;
             totalWeight = 1.f/totalWeight;
             for( int mode = 0; mode < nmodes; mode++ )
                 gmm[mode].weight *= totalWeight;
@@ -580,6 +609,14 @@ void operator()(const Range& range) const
                     for( int c = 0; c < nchannels; c++ )
                         std::swap(mean[i*nchannels + c], mean[(i-1)*nchannels + c]);
                 }
+
+                // Just debugging new mode has been created.
+                if ( (debugPt != Point(0,0)) && (debugPt.x == x && debugPt.y == y0) )
+                {
+                        flagged_mode[mode] = 3;
+                }
+
+
             }//make new mode if needed and exit
 
             //set the number of modes
@@ -593,29 +630,50 @@ void operator()(const Range& range) const
             //just for debugging save parameters to output file
             if ( debugPt != Point(0,0) ) {
                 if (debugPt.x == x && debugPt.y == y0){
-                    //if (y0==228 && x==670) {
-                    //std::ofstream outfile;
-                    //outfile.open("bg_params_670_240.txt",ios::out | ios::app);
-                    std::cout.precision(5);
+
+                    bool COLORED = true;
+                    string RED  = "\033[0;31m" ; 
+                    string BLUE = "\033[0;34m";
+                    string GREEN= "\033[0;32m";
+                    string RESET= "\033[0m" ;
+                    string C[nmixtures];
+
+                    if (COLORED) 
+                        for (int i=0; i<nmixtures; i++) C[i] = flagged_mode[i]==1?BLUE:(flagged_mode[i]==2?RED:(flagged_mode[i]==3?GREEN:"")) ;
+                    else {
+                        RESET= "" ;
+                        for (int i=0; i<nmixtures; i++) C[i] = "" ;
+                    }
+
                     cout 
-                    //<< debugPt.x << " " << debugPt.y << " "
-                    << "mode: " << nmodes 
-                    << " data: "   << (int)data[0]           << " " << (int)data[1]              << " " << (int)data[2]
-                    << " bg_cnt: " << (int)bg_cnt[0]         << " " << (int)bg_cnt[1]            << " " << (int)bg_cnt[2]       << " " << (int)bg_cnt[3]
-                    << " mean: "   << (int)mean[0]           << " " << (int)mean[1]              << " " << (int)mean[2] 
-                    << " ; "       << (int)mean[1*nchannels] << " " << (int)mean[1*nchannels +1] << " " << (int)mean[1*nchannels +2] 
-                    << " ; "       << (int)mean[2*nchannels] << " " << (int)mean[2*nchannels +1] << " " << (int)mean[2*nchannels +2] 
-                    << " ; "       << (int)mean[3*nchannels] << " " << (int)mean[3*nchannels +1] << " " << (int)mean[3*nchannels +2] 
-                    << " var: "    << gmm[0].variance        << " " << gmm[1].variance           << " " << gmm[2].variance       << " " << gmm[3].variance
-                    << " weight: " << gmm[0].weight          << " " << gmm[1].weight              << " " << gmm[2].weight        << " " << gmm[3].weight
+                    << NM  << " " << nmodes << " " 
+                    << "(" << (int)bg_cnt[0]         << ":" << (int)bg_cnt[1]            << ":" << (int)bg_cnt[2]            << ":" << (int)bg_cnt[3] << ") "
+                    << "(" << (int)data[0]           << ":" << (int)data[1]              << ":" << (int)data[2]              << ") "
+                    << "(" << C[0] << (int)mean[0]           << ":" << (int)mean[1]              << ":" << (int)mean[2]              << RESET << " " 
+                           << C[1] << (int)mean[1*nchannels] << ":" << (int)mean[1*nchannels +1] << ":" << (int)mean[1*nchannels +2] << RESET << " " 
+                           << C[2] << (int)mean[2*nchannels] << ":" << (int)mean[2*nchannels +1] << ":" << (int)mean[2*nchannels +2] << RESET << " "
+                           << C[3] << (int)mean[3*nchannels] << ":" << (int)mean[3*nchannels +1] << ":" << (int)mean[3*nchannels +2] << RESET << ") " 
+                    << "(" << setprecision(1) << fixed 
+                           << C[0] << gmm[0].variance        << ":" << old_sigma[0]              << RESET << " " 
+                           << C[1] << gmm[1].variance        << ":" << old_sigma[1]              << RESET << " " 
+                           << C[2] << gmm[2].variance        << ":" << old_sigma[2]              << RESET << " " 
+                           << C[3] << gmm[3].variance        << ":" << old_sigma[3]              << RESET << ") " 
+                    << "(" << setprecision(3) << fixed
+                           << C[0] << gmm[0].weight          << RESET << ":" 
+                           << C[1] << gmm[1].weight          << RESET << ":" 
+                           << C[2] << gmm[2].weight          << RESET << ":" 
+                           << C[3] << gmm[3].weight          << RESET << ") "
+                    << "(" 
+                           << C[0] <<setprecision(3)<<fixed<< old_weight[0] <<setprecision(0)<<fixed<< ":"<< MD[0]<< ":" << four_sigma[0] << ":" << three_sigma[0] <<RESET<<" " 
+                           << C[1] <<setprecision(3)<<fixed<< old_weight[1] <<setprecision(0)<<fixed<< ":"<< MD[1]<< ":" << four_sigma[1] << ":" << three_sigma[1] <<RESET<<" " 
+                           << C[2] <<setprecision(3)<<fixed<< old_weight[2] <<setprecision(0)<<fixed<< ":"<< MD[2]<< ":" << four_sigma[2] << ":" << three_sigma[2] <<RESET<<" " 
+                           << C[3] <<setprecision(3)<<fixed<< old_weight[3] <<setprecision(0)<<fixed<< ":"<< MD[3]<< ":" << four_sigma[3] << ":" << three_sigma[3] <<RESET<<") "
                     << endl;
-                    //outfile.close();
+
                 }
             }
-            
-            
         }//end columns for
-    }
+    }//end run each row for
 }
 
     const Mat* src;
@@ -637,6 +695,7 @@ void operator()(const Range& range) const
     float* Fg0;
     
     Point debugPt;
+    int internal_frame_counter;
     
     BinaryFunc cvtfunc;
 };
@@ -739,7 +798,7 @@ void BackgroundSubtractorMOG3::initializeModel(InputArray _image)
     frameSize = image.size();
     frameType = image.type();
     frameDepth= image.depth();
-    
+
     nframes = 0;
     
     int nchannels = CV_MAT_CN(frameType);
@@ -751,7 +810,7 @@ void BackgroundSubtractorMOG3::initializeModel(InputArray _image)
     
     int matSize   = frameSize.height*frameSize.width;
     int columnsNo = matSize*nmixtures*(2 + nchannels);
-    
+
     //Keep a result of background and foreground every call processing
     //Background.create(1, matSize*nchannels, frameDepth);
     Background.create(1, matSize*nchannels, CV_32F);
@@ -761,8 +820,8 @@ void BackgroundSubtractorMOG3::initializeModel(InputArray _image)
     Foreground = Scalar::all(0);
     float* ptrBG  = (float *)Background.data;
     float* Bg     = ptrBG;
+   
 
-    
     // for each gaussian mixture of each pixel bg model we store ...
     // the mixture weight (w),
     // the mean (nchannels values) and
@@ -783,14 +842,13 @@ void BackgroundSubtractorMOG3::initializeModel(InputArray _image)
         nl= 1; // it is now a 1D array
     }
     
-    
     for (int j=0; j<nl; j++) {
         for (int i=0; i<nc; i++) {
             
             data = ptrGMM + i*nmixtures + j*nmixtures*nc;
             data->weight     = 1.0f;
             data->variance = fVarInit;
-            
+
             //increment pointer in a 'j' row and 'i' column
             ptrm = ptrMean + i*nmixtures + j*nmixtures*nc;
             ptrm->meanB = static_cast<float>(image.at<Vec3b>(j,i)[0]);
@@ -799,13 +857,14 @@ void BackgroundSubtractorMOG3::initializeModel(InputArray _image)
             
             //initialize background with current input image.
             Bg    = ptrBG + i*nchannels + j*nchannels*nc;
-            Bg[0] = image.at<Vec3f>(j,i)[0];
-            Bg[1] = image.at<Vec3f>(j,i)[1];
-            Bg[2] = image.at<Vec3f>(j,i)[2];
+            Bg[0] = static_cast<float>(image.at<Vec3b>(j,i)[0]);
+            Bg[1] = static_cast<float>(image.at<Vec3b>(j,i)[1]);
+            Bg[2] = static_cast<float>(image.at<Vec3b>(j,i)[2]);
             
             
         }
-    }    
+    }
+
     /*
     cout
     << "(0,0): [" << *(ptrBG + 0) << "," << *(ptrBG + 1) << "," << *(ptrBG + 2) << "] "
