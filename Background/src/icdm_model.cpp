@@ -28,6 +28,11 @@ double icdm::getIlluminationFactor(const Mat& _ref, const Mat& _cur, Method _typ
     // initialize
     _factor = 1.0;
 
+    // Verify not empty Mat.
+    if ( _ref.rows == 0 || _ref.cols == 0 ) {
+        cout << "Size of input Mat: " << _ref.size() << endl;
+        return _factor;
+    }
 
     // get Mat header for input image, O(1) operation.
     Mat ref_gray = _ref;
