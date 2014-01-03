@@ -1,4 +1,4 @@
-#!/opt/local/bin/python
+#!/usr/bin/python
 
 import sys, getopt
 import numpy as np
@@ -75,11 +75,13 @@ class PerformanceMeasureFile:
     '''Creates a final final containing all performance measures'''
 
     def __init__(self,inputpath):
-        self.path = inputpath
+        self.path     = inputpath
+        length        =  len(self.path.split('/'))
+        self.filename = self.path.split('/')[length-1] + '.txt'
     def write(self):
         files = ListFiles(self.path).getList()
         header = ParseFile(join(self.path,files[0])).getQualityMetrics()[0]
-        f = open('final_measures.txt','w')
+        f = open(self.filename ,'w')
         print >> f,header
         f.writelines( "%s\n" % ParseFile(join(self.path,item)).getQualityMetrics()[1] for item in files )
         f.close()
@@ -94,8 +96,9 @@ if __name__ == '__main__':
                         help = "Select input directory, e.g -p results")
     (options, args) = parser.parse_args ()
 
-    #if options.path == '':
-    #    exit()
+    if options.path == None:
+        parser.print_help()
+        exit()
 
     PerformanceMeasureFile(options.path).write()
 
