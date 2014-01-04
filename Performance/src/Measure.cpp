@@ -25,6 +25,7 @@
 
 #include "Performance.h"
 #include "utils.h"
+#include "BGSTimer.h"
 
 #include <iostream>
 #include <fstream>
@@ -251,9 +252,9 @@ int main( int argc, char** argv )
             out << it->first << "=" << it->second << " ";
             
             // takes first character and its value as name of the output result file.
-            stringstream name;
-            name << "_" << it->first.at(0) << "_" << it->second;
-            output_filename += name.str();
+            stringstream parameter_value_pair;
+            parameter_value_pair << "_" << it->first.at(0) << "_" << it->second;
+            output_filename += parameter_value_pair.str();
 
         }
 
@@ -289,6 +290,16 @@ int main( int argc, char** argv )
     output_filename += ".txt";
     outfile.open(output_filename.c_str());
     outfile << header << endl;
+
+    // Register time duration
+    // Create filename to register elapsed time.
+    stringstream duration_file_stream;
+    duration_file_stream << "Performance_" << 
+                            path(bgs::chomp(ground_truth_dir)).filename().string() << ".txt" ;
+    // Start timer
+    BGSTimer::Instance()->setSequenceName(duration_file_stream.str(), header) ;
+    BGSTimer::Instance()->registerStartTime();
+
 
     for ( int i= cnt; i<size + cnt; i++)
     {
@@ -363,6 +374,12 @@ int main( int argc, char** argv )
             }
         }
     }
+
+
+    // Return elapsed time and save it in a file.
+    BGSTimer::Instance()->registerStopTime();
+    cout << BGSTimer::Instance()->getSequenceElapsedTime() << endl;
+    BGSTimer::deleteInstance();
     
     // Performs calculations of mean and median of accumulated metrics
     measure->calculateFinalPerformanceOfMetrics();

@@ -251,5 +251,12 @@ void NPBuilder::loadDefaultParameters()
     ApplyMorphologicalFilter = DefaultApplyMorphologicalFilter; 
 }
 
+string NPBuilder::ElapsedTimeAsString()
+{
+    std::stringstream _elapsed ;
+    _elapsed << duration ;
+    return _elapsed.str() ;
+}
+
 
 

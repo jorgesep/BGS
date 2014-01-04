@@ -33,6 +33,7 @@
 #include "background_subtraction.h"
 #include "Performance.h"
 #include "utils.h"
+#include "BGSTimer.h"
 
 #include "icdm_model.h"
 
@@ -322,6 +323,11 @@ int main( int argc, char** argv )
     //for compensating pre-processed frames in the filter.
     unsigned int cnt    = 0  + shiftFrame + cntTemporalWindow; 
 
+    // Start timer
+    string description = "SAGMM " + bg_model.initParametersAsOneLineString();
+    BGSTimer::Instance()->setSequenceName(inputVideoName.c_str(), description) ;
+    BGSTimer::Instance()->registerStartTime();
+
 
     // main loop 
     for(;;)
@@ -449,8 +455,7 @@ int main( int argc, char** argv )
 
             // This is just to write down two different images, showing red point on them.
             // This line could be commented out.
-            //if ((cnt >= 605) &&  (cnt <= 611)) {
-            //if (cnt == 570) {
+            //if ((cnt >= 500) &&  (cnt <= 506)) {
             //    stringstream str;
             //    str <<  cnt << ".jpg";
             //    imwrite(str.str(), ftimg);
@@ -458,10 +463,10 @@ int main( int argc, char** argv )
             //    fgstr <<  cnt << "_fg.jpg";
             //    imwrite(fgstr.str(), fgmask);
 
-            //    Mat small_img;
-            //    img.convertTo(small_img,CV_8UC3);
-            //    Mat imageROI = small_img(cv::Rect((pt.x-3),(pt.y-3),6,6));
-            //    cout << setprecision(0) << fixed << imageROI << endl;
+            //    //Mat small_img;
+            //    //img.convertTo(small_img,CV_8UC3);
+            //    //Mat imageROI = small_img(cv::Rect((pt.x-3),(pt.y-3),6,6));
+            //    //cout << setprecision(0) << fixed << imageROI << endl;
             //}
 
             char key=0;
@@ -486,6 +491,10 @@ int main( int argc, char** argv )
         
     }
 
+    // Return elapsed time and sve it in file.    
+    BGSTimer::Instance()->registerStopTime();
+    cout << BGSTimer::Instance()->getSequenceElapsedTime() << endl;
+    BGSTimer::deleteInstance();
 
     if (!groundTruthName.empty() && compare) {
         

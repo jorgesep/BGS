@@ -113,6 +113,14 @@ void MOGBuilder::Update(InputArray frame, OutputArray mask)
 
 }
 
+string MOGBuilder::ElapsedTimeAsString()
+{
+    std::stringstream _elapsed;
+    _elapsed << duration;
+    return _elapsed.str();
+
+}
+
 
 
 

@@ -34,6 +34,9 @@ public:
     virtual void LoadModel()              = 0;
     virtual void SaveModel()              = 0;
     virtual string PrintParameters() = 0;
+    virtual const string Name() = 0;
+    virtual string ElapsedTimeAsString() = 0;
+    virtual double ElapsedTime() = 0;
 };
 
 

@@ -246,5 +246,12 @@ void SAGMMBuilder::Update(InputArray frame, OutputArray mask)
 }
 
 
+string SAGMMBuilder::ElapsedTimeAsString()
+{
+    std::stringstream _elapsed ;
+    _elapsed << duration ;
+    return _elapsed.str();
+
+}
 
 

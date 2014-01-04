@@ -41,7 +41,7 @@ find_package( Boost REQUIRED COMPONENTS filesystem system )
 include_directories( ${Boost_INCLUDE_DIRS} )
 
 ADD_LIBRARY( MOG2Builder SHARED ${SRCS} )
-target_link_libraries( MOG2Builder ${OpenCV_LIBS} ${Boost_LIBRARIES} )
+target_link_libraries( MOG2Builder ${OpenCV_LIBS} ${Boost_LIBRARIES} Timer )
 set_property(TARGET MOG2Builder PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
 file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)

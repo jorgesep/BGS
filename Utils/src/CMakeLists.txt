@@ -13,7 +13,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
 endif()
 
-FILE ( GLOB SRCS *.cpp *.h )
+FILE ( GLOB SRCS utils.cpp utils.h )
+FILE ( GLOB TM BGS*.cpp BGS*.h )
 
 INCLUDE_DIRECTORIES("${utils_SOURCE_DIR}/../include")
 
@@ -34,10 +35,14 @@ set(OpenCV_DIR "/usr/local/share/OpenCV"
            CACHE PATH "The path where OpenCVConfig.cmake is placed")
 FIND_PACKAGE( OpenCV REQUIRED )
 
-find_package( Boost REQUIRED COMPONENTS filesystem system regex )
+find_package( Boost REQUIRED COMPONENTS filesystem system regex date_time)
 include_directories( ${Boost_INCLUDE_DIRS} )
 
 ADD_LIBRARY(Utils SHARED ${SRCS}) 
 TARGET_LINK_LIBRARIES( Utils ${Boost_LIBRARIES} )
 set_property(TARGET Utils PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
+
+ADD_LIBRARY(Timer SHARED ${TM}) 
+TARGET_LINK_LIBRARIES( Timer ${OpenCV_LIBS} Utils )
+set_property(TARGET Timer PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 

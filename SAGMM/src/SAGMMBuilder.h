@@ -49,6 +49,9 @@ public:
     void LoadModel() {};
     void SaveModel() {};
     string PrintParameters();
+    const string Name() {return string("SAGMM"); } ;
+    string ElapsedTimeAsString();
+    double ElapsedTime(){return duration; };
 
 private:
 
@@ -65,7 +68,8 @@ private:
     unsigned int  InitFGMaskFrame;
     unsigned int  EndFGMaskFrame;
     unsigned char ApplyMorphologicalFilter;
-    
+    double duration;
+
     static const int    DefaultGaussiansNo;
     static const double DefaultSigma;
     static const double DefaultSigmaMax;

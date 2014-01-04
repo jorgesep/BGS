@@ -49,6 +49,9 @@ public:
     void LoadModel() {};
     void SaveModel() {};
     string PrintParameters();
+    const string Name() {return string("MOG"); };
+    string ElapsedTimeAsString();
+    double ElapsedTime() {return duration; } ;
 
 private:
     
@@ -57,6 +60,7 @@ private:
     double backgroundRatio;
     double noiseSigma;
     double alpha;
+    double duration;
 
     static const int DefaultHistory;
     static const int DefaultNMixtures;

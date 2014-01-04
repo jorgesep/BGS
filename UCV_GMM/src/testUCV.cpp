@@ -26,6 +26,7 @@
 //
 //#include "Performance.h"
 #include "utils.h"
+#include "BGSTimer.h"
 
 #include "ucv_types.h"
 #include "ucv_gmm_data.h"
@@ -210,7 +211,19 @@ int main( int argc, char** argv )
     // Initialize counter of number of frames read.
     unsigned int cnt = input_frame->getFrameCounter();
 
+    // Start timer
+    ofstream description;
+    string ucv_name ; 
+    if (type_function == 1)
+        ucv_name = "UCV_LINEAR";
+    else if (type_function == 2)
+        ucv_name = "UCV_STAIRCASE";
+    else
+        ucv_name = "UCV_NORMAL";
 
+    description << ucv_name << " # LearningRate=" << LearningRate << " Threshold=" << Threshold ;
+    BGSTimer::Instance()->setSequenceName(Name, description.str()) ;
+    BGSTimer::Instance()->registerStartTime();
 
     // main loop
     for(;;)
@@ -300,6 +313,12 @@ int main( int argc, char** argv )
 
 
     }
+
+
+    // Return elapsed time and sve it in file.
+    BGSTimer::Instance()->registerStopTime();
+    cout << BGSTimer::Instance()->getSequenceElapsedTime() << endl;
+    BGSTimer::deleteInstance();
 
     delete input_frame;
 

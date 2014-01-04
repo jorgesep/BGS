@@ -48,6 +48,9 @@ public:
     void LoadModel() {};
     void SaveModel() {};
     string PrintParameters();
+    const string Name() {return string("NP"); };
+    string ElapsedTimeAsString();
+    double ElapsedTime(){ return duration; };
 
 private:
     void loadDefaultParameters();
@@ -70,6 +73,7 @@ private:
     int frame_counter;
     Size frameSize;
     int  frameType;
+    double duration;
 
     unsigned char *FilterFGImage;
     unsigned char **DisplayBuffers;

@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 #include "MOG2Builder.h"
+#include "BGSTimer.h"
 
 
 const int           MOG2Builder::DefaultHistory                    = 500;
@@ -30,10 +31,16 @@ const unsigned char MOG2Builder::DefaultApplyMorphologicalFilter   = 1;
 
 MOG2Builder::~MOG2Builder()
 {
+    //Saved elapsed time in a file.
+    BGSTimer::Instance()->registerStopTime();
+    BGSTimer::Instance()->getSequenceElapsedTime();
+    BGSTimer::deleteInstance();
+
     if (model != NULL) {
         delete model;
     }
     model = 0;
+
 }
 
 MOG2Builder::MOG2Builder()
@@ -53,7 +60,10 @@ void MOG2Builder::Initialization()
 {
     model = new BackgroundSubtractorMOG2(History, VarThreshold, ShadowDetection);
 
-    
+    // Just for now, I'm going a start timer here (workaround)
+    string description = Name() + PrintParameters();
+    BGSTimer::Instance()->setSequenceName( "Framework_MOG2", description) ;
+    BGSTimer::Instance()->registerStartTime();
     
 }
 
@@ -145,6 +155,12 @@ void MOG2Builder::Update(InputArray frame, OutputArray mask)
 
 }
 
+string MOG2Builder::ElapsedTimeAsString()
+{
+    std::stringstream _elapsed ;
+    _elapsed << duration;
+    return _elapsed.str();
 
+}
 
 

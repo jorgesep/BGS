@@ -54,7 +54,7 @@ set_property(TARGET createMapDScore PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINA
 
 
 ADD_EXECUTABLE( pmbgs Measure )
-TARGET_LINK_LIBRARIES( pmbgs Performance ${Boost_PROGRAM_OPTIONS_LIBRARY} Utils )
+TARGET_LINK_LIBRARIES( pmbgs Performance ${Boost_PROGRAM_OPTIONS_LIBRARY} Utils Timer)
 set_property(TARGET pmbgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_LIBRARY(Performance SHARED Performance)

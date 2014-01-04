@@ -44,6 +44,9 @@ public:
     void LoadModel() {};
     void SaveModel() {};
     string PrintParameters();
+    const string Name() {return string("MOG2"); }; 
+    string ElapsedTimeAsString();
+    double ElapsedTime() {return duration; };
 
 private:
    
@@ -54,6 +57,7 @@ private:
     unsigned int  InitFGMaskFrame;
     unsigned int  EndFGMaskFrame;
     unsigned char ApplyMorphologicalFilter;
+    double duration;
 
     static const int DefaultHistory;
     static const float DefaultVarThreshold;
