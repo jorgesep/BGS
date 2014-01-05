@@ -58,7 +58,7 @@ TARGET_LINK_LIBRARIES( pmbgs Performance ${Boost_PROGRAM_OPTIONS_LIBRARY} Utils 
 set_property(TARGET pmbgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_LIBRARY(Performance SHARED Performance)
-target_link_libraries(Performance ${OpenCV_LIBS})
+target_link_libraries(Performance ${OpenCV_LIBS} ${Boost_LIBRARIES} )
 set_property(TARGET Performance PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
 file(COPY ${CONFIG} DESTINATION ${BGS_BINARY_DIR}/config/)

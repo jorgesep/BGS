@@ -545,7 +545,8 @@ public:
     double getMSSIM( const Mat&, const Mat&);
     double getDScore(InputArray, InputArray, InputArray);
     void computeGeneralDSCoreMap(InputArray, OutputArray);
-    //void setDScoreMapFiles(string);
+    void writeDScoreMapToFile(InputArray, string);
+    void readDScoreMapFromFile(string, Mat&);
 
 private:
     /**

@@ -96,23 +96,28 @@ int main( int argc, char** argv )
 
 
     // Read files from input directory
-    string output_dir ("XmlMap");
+    string output_dir ("dscore_map");
+    if ( !exists(path(output_dir)) )
+        create_directory(output_dir);
     
     map<unsigned int, string> gt_files;
     int gt_size = -1;
 
     // Verify input name is a video file or sequences of jpg files
-    path path_to_ground_truth (ground_truth_dir.c_str());
+    path path_to_ground_truth ( chomp(ground_truth_dir) );
+    //path path_to_ground_truth (ground_truth_dir.c_str());
 
     if (is_directory(path_to_ground_truth)) {
 
+        // fills list gt_files with  <number,file_number>
         list_files(ground_truth_dir,gt_files);
         gt_size = gt_files.size();
-        
-        path::iterator it(path_to_ground_truth.end());
-        it--;
-        output_dir += it->c_str();
-        
+
+        output_dir += "/" + path_to_ground_truth.filename().string();
+
+        // Create local directory to save xml maps.
+        if ( !exists(path(output_dir)) )
+            create_directory(output_dir);
 
     } 
     else {
@@ -120,12 +125,6 @@ int main( int argc, char** argv )
         return 0;
     }
 
-
-    // Create local directory to save xml maps.
-    path p (output_dir);
-    
-    if ( !exists(p) )
-        create_directory(p);
 
     
 
@@ -156,20 +155,27 @@ int main( int argc, char** argv )
         mapfile << output_dir << "/" << gt_it->first << ".xml";
         FileStorage fs(mapfile.str(), FileStorage::WRITE);
         stringstream tagname;
-        tagname << gt_it->first;
-        fs << "MAP" << Map;
+        tagname << "DSCORE" << gt_it->first;
+        fs << "DSCORE" << Map;
         fs.release();
         
         // just for testing
-        if (gt_it->first == 300) {
+        if (gt_it->first == (unsigned int)(gt_size/2)) {
             
             Mat mask;
+            stringstream map_name;
+            map_name << "Map_" << gt_it->first ;
+
+            cout << "Looking for: "<< map_name.str() << endl;
+
             FileStorage fsread(mapfile.str(), FileStorage::READ);
-            fsread["MAP"] >> mask;
+            fsread["DSCORE"] >> mask;
             fsread.release();
             
+            map_name.str("");
+            map_name << gt_it->first << ".png" ;
             normalize(mask, mask, 0, 255, cv::NORM_MINMAX);
-            imwrite("300.png", mask);
+            imwrite(map_name.str().c_str(), mask);
             
         }
         

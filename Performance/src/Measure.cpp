@@ -348,11 +348,10 @@ int main( int argc, char** argv )
                 if (frame_performance) {
                     
                     Mat map;
-                    //read from xml file and return mat
+                    //read from xml directory and return mat
                     if ( (map_it = map_files.find(i)) != map_files.end()) {
-                        FileStorage fs(map_it->second, FileStorage::READ);
-                        fs["MAP"] >> map;
-                        fs.release();
+
+                        measure->readDScoreMapFromFile(map_it->second, map);
                         
                         //cout << "Reading: " << i << " file: " << map_it->first << " : " << map_it->second << endl;
                     }

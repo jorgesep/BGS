@@ -146,6 +146,7 @@ int main( int argc, char** argv )
     cout << perf.refToString();
     */
 
+
     Mat im1 = imread(ref.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
     Mat im2 = imread(img2.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
     //Mat im3 = imread(img3);
@@ -167,7 +168,17 @@ int main( int argc, char** argv )
     //perf.pixelLevelCompare(im1, im3);
     //cout << perf.asString() << endl;
     
-    
+    // Save DScore map
+    perf.writeDScoreMapToFile(im1,"reference.xml");
+
+    Mat ex1;
+    double result = perf.getDScore(im2,im1,ex1);
+    cout << "Size: " << ex1.size() <<" Result: " << result << endl;
+
+    Mat ex2;
+    perf.readDScoreMapFromFile("reference.xml", ex2);
+    double result1 = perf.getDScore(im2,im1,ex2);
+    cout << "Size: " << ex2.size() << " Result: " << result1 << endl;
     return 0;
 }
 

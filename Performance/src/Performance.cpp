@@ -17,12 +17,14 @@
 
 #include "Performance.h"
 #include <math.h>
+#include <boost/filesystem.hpp>
 
 #include <iostream>     // std::cout, std::fixed
 #include <iomanip>      // std::setprecision
 
 using namespace cv;
 using namespace std;
+using namespace boost::filesystem;
 
 namespace bgs {
 
@@ -819,7 +821,6 @@ double Performance::getMSSIM( const Mat& i1, const Mat& i2)
 }
 
 
-
     
 /**
  * Foreground map is already computed
@@ -832,12 +833,9 @@ double Performance::getDScore(InputArray foreground, InputArray groundtruth, Inp
     Mat Truth;
     Mat Truth_BINARY_INV;
     Mat Truth_BINARY;
-    Mat EMAP;
-
     
     //double duration;
     //duration = static_cast<double>(cv::getTickCount());
-
     
     // Check and convert foreground mask image to gray
     if (foreground.channels() > 1) 
@@ -845,23 +843,23 @@ double Performance::getDScore(InputArray foreground, InputArray groundtruth, Inp
     else 
         Mask = foreground.getMat();
     
-    
     if (groundtruth.channels() > 1) 
         cvtColor( groundtruth.getMat(), Truth, CV_BGR2GRAY );
     else 
         Truth = groundtruth.getMat();
     
-    
-    if (map.empty())
+    Mat EMAP = map.getMat();
+    if ( EMAP.empty() ) {
         computeGeneralDSCoreMap(Truth, EMAP);
-    else {
-        EMAP = map.getMat();
+        //cout << "1111 "  << endl;
     }
-    
+    //else {
+    //    //EMAP = map.getMat();
+    //    cout << "2222 "  << endl;
+    //}
     
     Mask.convertTo(Mask, CV_32F);
     Truth.convertTo(Truth, CV_32F);
-
 
     // binary ground truth 
     cv::threshold(Truth, Truth_BINARY    , 1, 1, THRESH_BINARY);
@@ -875,35 +873,25 @@ double Performance::getDScore(InputArray foreground, InputArray groundtruth, Inp
     bitwise_and(Truth_BINARY, Mask_BINARY_INV, FOREGROUND);
     bitwise_and(Truth_BINARY_INV, Mask_BINARY, BACKGROUND);
     
-    
-    
     Mat FRAME_MAP;
     bitwise_or(FOREGROUND, BACKGROUND, FRAME_MAP);
-    
 
-    
     FRAME_MAP = FRAME_MAP.mul(EMAP);
-    
 
-    
     Scalar DScore = mean(FRAME_MAP);
-    
     
     //normalize(FRAME_MAP, FRAME_MAP, 0, 255, cv::NORM_MINMAX);
     //imwrite("frame_map.png", FRAME_MAP);
-    
     
     //duration = static_cast<double>(cv::getTickCount())-duration;
     //duration /= cv::getTickFrequency(); //the elapsed time in ms
     //cout << "getDScore Duration: " << duration << " " << DScore.val[0] << endl; 
 
-    
-    
     return DScore.val[0];
-    
+
 }    
     
-    
+   
     
     
 void Performance::computeGeneralDSCoreMap(InputArray img, OutputArray map)
@@ -957,8 +945,28 @@ void Performance::computeGeneralDSCoreMap(InputArray img, OutputArray map)
 }
     
     
- 
+void Performance::writeDScoreMapToFile(InputArray ref, string filename)
+{
+    Mat map;
+
+    // Calculate dscore index from ref.
+    computeGeneralDSCoreMap(ref, map);
+
+    FileStorage fs( filename, FileStorage::WRITE );
+    fs << "DSCORE"  << map;
+    fs.release();
+
+}
     
+void Performance::readDScoreMapFromFile(string filename, Mat& dsmap)
+{
+    if ( exists( filename ) ) {
+        FileStorage fs(filename, FileStorage::READ);
+        fs["DSCORE"] >> dsmap;
+        fs.release();
+    }
+
+}
     
     
 
