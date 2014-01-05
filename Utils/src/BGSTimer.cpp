@@ -19,6 +19,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
+#include <boost/regex.hpp>
+
 #include "BGSTimer.h"
 
 BGSTimer* BGSTimer::ptrInstance = NULL;
@@ -33,22 +35,26 @@ using namespace boost::gregorian;
 const string BGSTimer::getSequenceElapsedTime()
 {
     // construct output line
-    path seq_path( bgs::chomp(sequence_name) );
+    // The input contains either directory or video filename
     string name;
-    if (is_directory(seq_path))
+    path seq_path( bgs::chomp(sequence_name) );
+
+    if (is_directory(seq_path)) {
         // get last name of directory
-        name = seq_path.filename().string();
+        name = regex_replace( seq_path.relative_path().string(), boost::regex("/"), "_")    ;
+    }
     else
         // get filename of full path
         name = seq_path.stem().string();
 
 
+    // Build output line.
     stringstream str;
     str << duration        << " " <<
            start_date_time << " " << stop_date_time  << " " <<
            name            << " " << sequence_parameters ;
 
-    string time_path="timming";
+    string time_path="timing";
     path p (time_path);
     if ( !exists(p) )
         create_directory(p);
