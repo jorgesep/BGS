@@ -49,7 +49,7 @@ include_directories( ${Boost_INCLUDE_DIRS} )
 #set_property(TARGET UCVGMMBuilder PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
 ADD_EXECUTABLE( testUCV ${SRCS} )
-target_link_libraries( testUCV ${OpenCV_LIBS} ${Boost_LIBRARIES} ${ucv_gmm_methods} ${ucv_gmm} FrameReader Utils )
+target_link_libraries( testUCV ${OpenCV_LIBS} ${Boost_LIBRARIES} ${ucv_gmm_methods} ${ucv_gmm} FrameReader Utils Timer)
 set_property(TARGET testUCV PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)

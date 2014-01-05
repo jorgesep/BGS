@@ -212,11 +212,11 @@ int main( int argc, char** argv )
     unsigned int cnt = input_frame->getFrameCounter();
 
     // Start timer
-    ofstream description;
+    stringstream description;
     string ucv_name ; 
-    if (type_function == 1)
+    if (typeFunction == 1)
         ucv_name = "UCV_LINEAR";
-    else if (type_function == 2)
+    else if (typeFunction == 2)
         ucv_name = "UCV_STAIRCASE";
     else
         ucv_name = "UCV_NORMAL";
