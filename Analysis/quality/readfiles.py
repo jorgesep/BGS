@@ -75,7 +75,7 @@ class PerformanceMeasureFile:
     '''Creates a final final containing all performance measures'''
 
     def __init__(self,inputpath):
-        self.path     = inputpath
+        self.path     = inputpath.rstrip('/')
         length        =  len(self.path.split('/'))
         self.filename = self.path.split('/')[length-1] + '.txt'
     def write(self):
