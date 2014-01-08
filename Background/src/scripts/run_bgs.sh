@@ -1,21 +1,33 @@
 #!/bin/bash
 
+MAIN_PATH="/home/jsepulve"
+
 # Path to videos
-SEQ_PATH="/media/MuHAVI_DATASET/MuHAVI"
-ACTIONS="Kick Punch RunStop ShotGunCollapse WalkTurnBack"
-ACTORS="Person1 Person4"
-CAMERAS="Camera_3 Camera_4"
-# end video definition
+SEQ_PATH="${MAIN_PATH}/Activity-JPGfiles"
 
 # Place to save mask results 
-RESULTS="/media/MuHAVI_DATASET/MuHAVI/results" 
+MASK_PATH="${MAIN_PATH}/BGS/build/results/masks"
 
 # Algorithm name: 'sagmm' 'mog2' 'ucv'
 ALGORITHM_NAME="sagmm"
 
+# Activities
+#ACTIONS="Kick Punch RunStop ShotGunCollapse WalkTurnBack"
+ACTIONS="Kick"
+#ACTORS="Person1 Person4"
+ACTORS="Person1 Person4"
+#CAMERAS="Camera_3 Camera_4"
+CAMERAS="Camera_3 Camera_4"
+# end video definition
+
+
+
 # Binary command: 'bgs', 'bgs_framework', 'testUCV'
+#Type of method: 1:linear 2:staircase 3:gmm normal
+#cmd="./bin/testUCV"
+#ext_args="--function=2"
 cmd="./bin/bgs"
-ext_args=""
+ext_args="--show=false"
 
 ###### From this point nothing might be changed ..
 
@@ -78,6 +90,7 @@ process_list() {
         echo -e "<${_tag_2}>${in2}</${_tag_2}>\n</${_header_tag}>" >> config.tmp
         mv config.tmp ${config}
         $cmd $args
+        sleep 0.5 
     done
 }
 #
@@ -112,9 +125,13 @@ do
         for cam in ${CAMERAS}
         do
             name="${action}_${actor}_${cam}" 
+            # temporary work around
+            #if [ "$name" == "Kick_Person1_Camera_3" ]; then
+	    #    continue  ### resumes iteration of an enclosing for loop ###
+	    #fi
             set_ground_truth_frames
 
-            new_dir="${RESULTS}/${name}/${mask_dir}"
+            new_dir="${MASK_PATH}/${name}/${mask_dir}"
             if [ ! -d "${new_dir}" ]; then
                 mkdir -p ${new_dir}
             else

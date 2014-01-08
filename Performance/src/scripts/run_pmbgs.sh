@@ -1,18 +1,21 @@
 #!/bin/bash
 
+MAIN_PATH="/home/jsepulve"
+
 # Path to videos
-GT_PATH="/Volumes/MuHAVi_HD/Datasets/Ground-Truth"
-MASK_PATH="/Volumes/MuHAVi_HD/results"
-OUTPUT="/Volumes/MuHAVi_HD/results/output"
+GT_PATH="${MAIN_PATH}/Ground-Truth"
+MASK_PATH="${MAIN_PATH}/BGS/build/results/masks"
+OUTPUT="${MAIN_PATH}/BGS/build/results/measures"
 
 # Actions definition
-ACTIONS="Kick Punch RunStop ShotGunCollapse WalkTurnBack"
+#ACTIONS="Kick Punch RunStop ShotGunCollapse WalkTurnBack"
+ACTIONS="Kick"
 ACTORS="Person1 Person4"
 CAMERAS="Camera_3 Camera_4"
 # end video definition
 
 # Algorithm name: 'sagmm' 'mog2' 'ucv'
-ALGORITHM_NAME="mog2"
+ALGORITHM_NAME="sagmm"
 
 # Binary command
 cmd="./bin/pmbgs"
@@ -34,9 +37,14 @@ do
         for cam in ${CAMERAS}
         do
             name="${action}_${actor}_${cam}" 
+            # temporary work around
+            #if [ "$name" == "Kick_Person1_Camera_3" ]; then
+            #    continue  ### resumes iteration of an enclosing for loop ###
+            #fi
 
             # set ground truth directory
-            ground_truth="${GT_PATH}/${action}${actor}${cam}"
+            camera=`echo ${cam} | sed s/_//`
+            ground_truth="${GT_PATH}/${action}${actor}${camera}"
 
             # set output directory
             new_dir="${OUTPUT}/${name}/${mask_dir}"
