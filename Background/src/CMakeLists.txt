@@ -25,6 +25,7 @@ INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/include")
 INCLUDE_DIRECTORIES("/opt/local/include")
 INCLUDE_DIRECTORIES(${Performance_SOURCE_DIR}/../include)
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include) 
+INCLUDE_DIRECTORIES(${FrameReader_SOURCE_DIR})
 
 
 #delete bin files in make clean
@@ -65,6 +66,10 @@ set_property(TARGET testMdgkt PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR
 ADD_EXECUTABLE( plot_point bg_points )
 TARGET_LINK_LIBRARIES( plot_point ${OpenCV_LIBS} )
 set_property(TARGET plot_point PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
+ADD_EXECUTABLE( play_sequence play_sequence )
+TARGET_LINK_LIBRARIES( play_sequence FrameReader Utils ${OpenCV_LIBS} )
+set_property(TARGET play_sequence PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_EXECUTABLE( bgs bgs )
 TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} SAGMM Performance Utils Timer)
