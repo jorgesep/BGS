@@ -44,7 +44,7 @@ class plotroc :
         pass
 
     def _get_two_columns_to_plot_automatically(self,line):
-        words = ['RANGE','ALPHA','THRESHOLD','LEARNINGRATE']
+        words = ['ALPHA','RANGE','LEARNINGRATE','THRESHOLD']
         name = [None, None]
         cnt  = 0
 
