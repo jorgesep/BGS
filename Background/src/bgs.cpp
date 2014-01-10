@@ -274,7 +274,7 @@ int main( int argc, char** argv )
         namedWindow("foreground mask", CV_WINDOW_NORMAL);
         //namedWindow("foreground image", CV_WINDOW_NORMAL);
         moveWindow("image"           ,50,50);
-        moveWindow("foreground mask" ,400,50);
+        moveWindow("foreground mask" ,450,50);
         //moveWindow("foreground image",20,300);
 
     } 
@@ -471,8 +471,29 @@ int main( int argc, char** argv )
 
             char key=0;
             key = (char)waitKey(delay);
+            // Exit program
             if( key == 27 ) 
-                break;        
+                break;
+
+            // pause program
+            if ( key == 32) {
+                bool pause = true;
+                while (pause)
+                {
+                    key = (char)waitKey(delay);
+                    if (key == 32)
+                        pause = false;
+                    // save frame
+                    if (key == 13) {
+                        stringstream str;
+                        str << cnt << ".png" ;
+                        imwrite( str.str()  , ftimg  );
+                        str.str("") ;
+                        str << cnt << "_fg.png" ;
+                        imwrite( str.str(), fgmask );
+                    }
+                }
+            }
         
         }
 
