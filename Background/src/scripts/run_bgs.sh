@@ -12,11 +12,8 @@ MASK_PATH="${MAIN_PATH}/BGS/build/results/masks"
 ALGORITHM_NAME="sagmm"
 
 # Activities
-#ACTIONS="Kick Punch RunStop ShotGunCollapse WalkTurnBack"
-ACTIONS="Kick"
-#ACTORS="Person1 Person4"
+ACTIONS="Kick Punch RunStop ShotGunCollapse WalkTurnBack"
 ACTORS="Person1 Person4"
-#CAMERAS="Camera_3 Camera_4"
 CAMERAS="Camera_3 Camera_4"
 # end video definition
 
@@ -29,7 +26,7 @@ CAMERAS="Camera_3 Camera_4"
 cmd="./bin/bgs"
 ext_args="--show=false"
 
-###### From this point nothing might be changed ..
+###### From this point nothing should change .. 
 
 # Ground-truth frames 
 GT_Kick_Person1_Camera_3="2370 2911"
@@ -81,14 +78,37 @@ _list_2=`cat $loop2 | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\2|p'`
 #_list_1='0.001'
 #_list_2='10'
 
+# Verify of 'Gen' is less than 'Range', if algorithm is 'sagmm'.
+verify_sagmm_gen_value() {
+    if [ "$ALGORITHM_NAME" == "sagmm" ]; then
+
+        gen_tag="Gen"
+
+        if [ ${1} -lt "9" ]; then
+            gen_val=`expr $1 - 1`
+        else
+            gen_val="9"
+        fi
+
+        cat ${config} | grep -v "/${_header_tag}\|${gen_tag}"             > config.tmp
+        echo -e "<${gen_tag}>${gen_val}</${gen_tag}>\n</${_header_tag}>" >> config.tmp
+        mv config.tmp ${config}
+    fi
+}
+
 # Function definition
 process_list() {
     for in2 in ${_list_2}
     do
         echo "Processing ${name} ${_tag_1}:${in1} ${_tag_2}:${in2}"
+
+        # Verify value of 'Gen' if less than 'Range'
+        verify_sagmm_gen_value $in2
+
         cat ${config} | grep -v "/${_header_tag}\|${_tag_2}"        > config.tmp
         echo -e "<${_tag_2}>${in2}</${_tag_2}>\n</${_header_tag}>" >> config.tmp
         mv config.tmp ${config}
+
         $cmd $args
         sleep 0.5 
     done
@@ -125,10 +145,6 @@ do
         for cam in ${CAMERAS}
         do
             name="${action}_${actor}_${cam}" 
-            # temporary work around
-            #if [ "$name" == "Kick_Person1_Camera_3" ]; then
-	    #    continue  ### resumes iteration of an enclosing for loop ###
-	    #fi
             set_ground_truth_frames
 
             new_dir="${MASK_PATH}/${name}/${mask_dir}"
