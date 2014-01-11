@@ -6,4 +6,5 @@
 <ApplyMorphologicalFilter>0</ApplyMorphologicalFilter>
 <LearningRate>0.09</LearningRate>
 <Threshold>20</Threshold>
+<TypeFunction>1</TypeFunction>
 </opencv_storage>

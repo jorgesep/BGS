@@ -13,6 +13,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 FILE ( GLOB SRCS *.cpp *.h )
+FILE ( GLOB BUILDER UCVBuilder.cpp UCVBuilder.h )
 FILE ( GLOB SCRIPTS ${PROJECT_SOURCE_DIR}/scripts/*.py ${PROJECT_SOURCE_DIR}/scripts/*.sh )
 
 add_definitions(-D__EDAQ__)
@@ -26,6 +27,7 @@ INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include)
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/ThirdParty/uCV/inc ) 
 
 INCLUDE_DIRECTORIES(${FrameReader_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${Framework_SOURCE_DIR})
 
 #delete bin files in make clean
 SET_DIRECTORY_PROPERTIES (
@@ -44,9 +46,9 @@ find_library(ucv_gmm_methods uCVMethods PATHS ../../ThirdParty/uCV/lib )
 find_package( Boost REQUIRED COMPONENTS filesystem system )
 include_directories( ${Boost_INCLUDE_DIRS} )
 
-#ADD_LIBRARY( UCVGMMBuilder SHARED ${SRCS} )
-#target_link_libraries( UCVGMMBuilder ${OpenCV_LIBS} ${Boost_LIBRARIES} ${ucv_gmm} )
-#set_property(TARGET UCVGMMBuilder PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
+ADD_LIBRARY( UCVBuilder SHARED ${BUILDER} )
+target_link_libraries( UCVBuilder ${OpenCV_LIBS} ${Boost_LIBRARIES} ${ucv_gmm_methods} ${ucv_gmm} Timer )
+set_property(TARGET UCVBuilder PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
 ADD_EXECUTABLE( testUCV ${SRCS} )
 target_link_libraries( testUCV ${OpenCV_LIBS} ${Boost_LIBRARIES} ${ucv_gmm_methods} ${ucv_gmm} FrameReader Utils Timer)
