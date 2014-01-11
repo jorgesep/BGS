@@ -65,6 +65,7 @@ class plotroc :
     def load(self, name) :
         '''Load txt file to be processed.'''
         Fi = file(name,'r')
+        self.fig_name = name[0:name.rfind(".")]
 
         lines = Fi.read().split('\n')
 
@@ -883,19 +884,19 @@ class plotroc :
 
     def plot6(self):
         self._set_title('MuHAVI-MAS ROC Curve')
-        self._generic_plot(self.name_0, self.name_1, 'NP_TPR-FPR6.png')
+        self._generic_plot(self.name_0, self.name_1, self.fig_name + '_TPR-FPR6.png')
  
     def plot7(self):
         self._set_title('MuHAVI-MAS ROC Curve')
-        self._generic_plot(self.name_1, self.name_0, 'NP_TPR-FPR7.png')
+        self._generic_plot(self.name_1, self.name_0, self.fig_name + '_TPR-FPR7.png')
 
     def plot8(self):
         self._set_title('MuHAVI-MAS ROC Curve\nRange plot')
-        self._plot_range(self.name_0, self.name_1 , 'NP_TPR_FPR8.png')
+        self._plot_range(self.name_0, self.name_1 , self.fig_name + '_TPR_FPR8.png')
 
     def plot9(self):
         self._set_title('MuHAVI-MAS ROC Curve\nSingle plot')
-        self._plot_one_line(self.name_0, self.name_1 , 'NP_TPR_FPR9.png', self.parameter_value)
+        self._plot_one_line(self.name_0, self.name_1 , self.fig_name + '_TPR_FPR9.png', self.parameter_value)
 
 
 class sepu :
