@@ -3,6 +3,7 @@
 <MOG2>1</MOG2>
 <NP>0</NP>
 <SAGMM>0</SAGMM>
+<UCV>0</UCV>
 <InitFGMaskFrame>216</InitFGMaskFrame>
 <EndFGMaskFrame>682</EndFGMaskFrame>
 <ApplyMorphologicalFilter>0</ApplyMorphologicalFilter>

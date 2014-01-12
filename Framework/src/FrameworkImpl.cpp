@@ -28,6 +28,7 @@
 #include "MOG2Builder.h"
 #include "NPBuilder.h"
 #include "SAGMMBuilder.h"
+#include "UCVBuilder.h"
 #include "FrameReaderFactory.h"
 
 //#include "Performance.h"
@@ -108,6 +109,7 @@ int main( int argc, char** argv )
     bool algorithmMOG2Enabled     = (int)fs["MOG2"];
     bool algorithmNPEnabled       = (int)fs["NP"];
     bool algorithmSAGMMEnabled    = (int)fs["SAGMM"];
+    bool algorithmUCVEnabled    = (int)fs["UCV"];
     int  InitFGMaskFrame          = (int)fs["InitFGMaskFrame"];
     int  EndFGMaskFrame           = (int)fs["EndFGMaskFrame"];
     
@@ -132,6 +134,11 @@ int main( int argc, char** argv )
         if (algorithmSAGMMEnabled) {
             namedWindow("SAGMM", CV_WINDOW_NORMAL);
             moveWindow("SAGMM", 200, 200);
+        }
+
+        if (algorithmUCVEnabled) {
+            namedWindow("UCV", CV_WINDOW_NORMAL);
+            moveWindow("UCV", 200, 200);
         }
     }
     
@@ -161,12 +168,18 @@ int main( int argc, char** argv )
     sagmm->loadConfigParameters();
     sagmm->initializeAlgorithm();
     
+    Framework *ucv = new Framework();
+    ucv->setAlgorithm(new UCVBuilder(col,row,nch));
+    ucv->setName("UCV");
+    ucv->loadConfigParameters();
+    ucv->initializeAlgorithm();
     
     
     // Prapare directory masks
     string np_foreground_path    = "np_mask";
     string sagmm_foreground_path = "sagmm_mask";
     string mog2_foreground_path  = "mog2_mask";
+    string ucv_foreground_path  = "ucv_mask";
     
     if (saveForegroundMask) {
 
@@ -178,6 +191,9 @@ int main( int argc, char** argv )
             bgs::create_foreground_directory(sagmm_foreground_path);
         if (algorithmMOG2Enabled)
             bgs::create_foreground_directory(mog2_foreground_path);
+        if (algorithmUCVEnabled)
+            bgs::create_foreground_directory(ucv_foreground_path);
+
 
         ofstream outfile;
         stringstream param;
@@ -204,6 +220,13 @@ int main( int argc, char** argv )
             outfile.close();
         }
 
+        param.str("");
+        if (algorithmUCVEnabled){
+            param << ucv_foreground_path << "/parameters.txt" ;
+            outfile.open(param.str().c_str());
+            outfile << ucv->getConfigurationParameters();
+            outfile.close();
+        }
     }
     
    
@@ -213,6 +236,7 @@ int main( int argc, char** argv )
     Mat Foreground;
     Mat NPMask;
     Mat SAMask;
+    Mat UCVMask;
    
     int cnt = 0;
 
@@ -223,6 +247,7 @@ int main( int argc, char** argv )
         NPMask     = Scalar::all(0);
         Foreground = Scalar::all(0);
         SAMask     = Scalar::all(0);
+        UCVMask    = Scalar::all(0);
 
         input_frame->getFrame(Frame);
         
@@ -249,7 +274,13 @@ int main( int argc, char** argv )
                 imshow("SAGMM", SAMask);
         }
         
-        // Save foreground images
+        if (algorithmUCVEnabled) {
+            ucv->updateAlgorithm(Frame, UCVMask);
+            
+            if (displayImages)
+                imshow("UCV", UCVMask);
+        }
+         // Save foreground images
         if (saveForegroundMask && cnt >= InitFGMaskFrame && cnt <= EndFGMaskFrame) {
             stringstream str;
             vector<int> compression_params;
@@ -270,6 +301,11 @@ int main( int argc, char** argv )
                 if (algorithmSAGMMEnabled) {
                     str << sagmm_foreground_path << "/" <<  cnt << ".png";
                     imwrite(str.str(), SAMask, compression_params);
+                    
+                }
+                if (algorithmUCVEnabled) {
+                    str << ucv_foreground_path << "/" <<  cnt << ".png";
+                    imwrite(str.str(), UCVMask, compression_params);
                     
                 }
             }
@@ -303,6 +339,7 @@ int main( int argc, char** argv )
     
     
     delete mog2;
+    delete ucv;
     delete np;
     delete input_frame;
 

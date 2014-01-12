@@ -22,10 +22,10 @@
 #include <boost/filesystem.hpp>
 #include "IBGSAlgorithm.h"
 
-#include "ucv_types.h"
-#include "ucv_gmm_data.h"
-#include "ucv_gmm_d.h"
-#include "ucv_gmm.h"
+//#include "ucv_types.h"
+//#include "ucv_gmm_data.h"
+//#include "ucv_gmm_d.h"
+//#include "ucv_gmm.h"
 
 #include "gmm_line.h"
 #include "gmm_sample.h"
