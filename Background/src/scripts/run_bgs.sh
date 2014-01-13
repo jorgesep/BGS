@@ -84,10 +84,12 @@ verify_sagmm_gen_value() {
 
         gen_tag="Gen"
 
-        if [ ${1} -lt "9" ]; then
-            gen_val=`expr $1 - 1`
+        G=9.0 
+        result=`echo $1'<'$G | bc -l`
+        if [ $result > 0 ]; then
+            gen_val=${1/.*}
         else
-            gen_val="9"
+            gen_val=${G}
         fi
 
         cat ${config} | grep -v "/${_header_tag}\|${gen_tag}"             > config.tmp
