@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MAIN_PATH="/home/jsepulve"
+MAIN_PATH="/Users/jsepulve"
 
 # Path to videos
 SEQ_PATH="${MAIN_PATH}/Activity-JPGfiles"
@@ -86,7 +86,7 @@ verify_sagmm_gen_value() {
 
         G=9.0 
         result=`echo $1'<'$G | bc -l`
-        if [ $result > 0 ]; then
+        if [ $result -gt 0 ]; then
             gen_val=${1/.*}
         else
             gen_val=${G}
@@ -112,7 +112,7 @@ process_list() {
         mv config.tmp ${config}
 
         $cmd $args
-        sleep 0.5 
+        sleep 0.1
     done
 }
 #
