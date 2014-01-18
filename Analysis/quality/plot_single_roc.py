@@ -2,6 +2,7 @@
 
 from optparse import OptionParser
 import sys
+import os
 import re
 
 import pylab as pl
@@ -13,7 +14,7 @@ from scipy.integrate import trapz
 
 class plotroc :
 
-    def __init__(self, indexes=None, internal_range=None, one_value=None):
+    def __init__(self, indexes=None, internal_range=None, one_value=None, xline=None):
         self.colorList={'1':(0.98,0.01,0.74),\
                 '2' : (1.0,0.60,0.00),\
                 '3' : 'r',\
@@ -36,12 +37,31 @@ class plotroc :
         self.text = ''
         self.range_values = []
         self.range_0 = ()
+        # Define X line to calculate area under curve
+        if xline == None:
+            self.xline = 0.25
+        else:
+            self.xline = float(xline)
 
     def print_parameter_values(self):
         print self.parameters_name
 
     def area_under_curve(self,X,Y):
-        pass
+        x= [0] + X[::-1]
+        y= [0] + Y[::-1]
+
+        y.append(np.interp(self.xline,x,y))
+        x.append(self.xline)
+
+        Z=dict(zip(x, y))
+        x=[i for i in x if i <= self.xline]
+        x.sort()
+        y=[Z[i] for i in Z.keys() if i <= self.xline]
+        y.sort()
+
+        auc = fabs(np.trapz(y, x))
+        return auc
+
 
     def _get_two_columns_to_plot_automatically(self,line):
         words = ['ALPHA','RANGE','LEARNINGRATE','THRESHOLD']
@@ -65,7 +85,10 @@ class plotroc :
     def load(self, name) :
         '''Load txt file to be processed.'''
         Fi = file(name,'r')
-        self.fig_name = name[0:name.rfind(".")]
+
+        init = name.rfind("/")
+        if init == -1 : init = 0
+        self.fig_name = os.getcwd() + '/' + name[init:name.rfind(".")]
 
         lines = Fi.read().split('\n')
 
@@ -73,7 +96,7 @@ class plotroc :
         self.parameters = {lines[0].split()[i+1]:i for i in range(len(lines[0].split()[1:])) if lines[0].split()[0] == '#'}
 
         # keep all values in data array.
-        self.data  = [l0.split() for l0 in lines[1:] if len(l0.split()) > 1]
+        self.data  = [l0.split() for l0 in lines[1:] if len(l0.split()) > 1 and l0[0] != '#']
 
         # Prepare string with parameters name and value of list
         listp = [key for key in self.parameters.keys() if not key.find("MEDIAN") > 0 and not key.find("MEAN") > 0]
@@ -412,9 +435,10 @@ class plotroc :
             value = float( middle_value[int(len(middle_value)*0.5)] )
 
         # get values of parametric line.
+        # T: Threshold
+        # A: Alpha
         [X,Y,T,A] = self._get_X_Y(col_0, col_1 ,value)
         if X == []: return
-
 
         # Create plot
         pl.clf()
@@ -439,7 +463,9 @@ class plotroc :
 
         ax.plot(X,Y,color=self.colorList[str(p+1)],marker='x')
 #===============
-        Z = [ 0, int(len(T)/2), len(T)-1 ]
+        #Z = [ 0, int(len(T)/2), len(T)-1 ]
+        # Get first 12 (integers) range values.
+        Z = [i for i,x in enumerate(T) if (x%int(x))==0 and x <=12]
         for i in Z:        
             ax.text(X[i]+0.0000,Y[i]+0.002,T[i],fontsize=8,color='black', horizontalalignment='center',verticalalignment='center')
 #
@@ -453,14 +479,8 @@ class plotroc :
 #                    pl.text(X[i]+0.00025,Y[i]+0.02,T[i],fontsize=11,color='black', horizontalalignment='center',verticalalignment='center')
 #            else:
 #                pl.text(X[i]+0.00025,Y[i],T[i],fontsize=11,color='black', horizontalalignment='center',verticalalignment='center')
-#
-#
-#
-#
-#
-#
-#
 #===============
+
         ax.text(0.99, 0.02, self.text ,horizontalalignment='right', verticalalignment='center',  transform=ax.transAxes, fontsize=self.fontsizes[2] )
         ax.set_xlabel('False Positive Rate',  fontsize=self.fontsizes[2] )
         ax.set_ylabel('True Positive Rate',  fontsize=self.fontsizes[2] )
@@ -484,42 +504,7 @@ class plotroc :
         tpr    = self.tp_idx
         fpr    = self.fp_idx
 
-        # Determine range
-        #lookup_range = self.parameter_range
-        #if prange != None:
-        #    lookup_range = prange
-
-        #if lookup_range != None:    
-        #    sep = re.search('[0-9]+\.?[0-9]*(.)[0-9]+\.?[0-9]*',lookup_range).groups()[0]
-        #    
-        #    self.range_0 = ( float( lookup_range.split(sep)[0] ), float( lookup_range.split(sep)[1] ) )
-        #else : 
-        #    temp_line_range = { p0[index_0]:p0[index_0] for p0 in self.data }
-
-
-        #    temp_values     = [float(val) for val in temp_line_range.keys()]
-        #    temp_values.sort()
-        #    temp_line_range=temp_values
-        #    # 0.25 < range < 0.75
-        #    self.range_0 = (float(temp_line_range[int(len(temp_line_range)*0.3)]),float(temp_line_range[int(len(temp_line_range)*0.7)]))
-
-        ## Get range of col_0
-        #r_0 = self.range_0[0]
-        #r_1 = self.range_0[1]
-
-        ## switch over 
-        #if r_1 < r_0 :
-        #    r_3 = r_0
-        #    r_0 = r_1
-        #    r_1 = r_3
-
-
-        ## get all values for fixed parameter 
-        #lines = {p0[index_0]:p0[index_0] for p0 in self.data if float(p0[index_0])>=r_0 and float(p0[index_0]) <=r_1}
-        #values = [float(val) for val in lines.keys()]
-        #values.sort()
-        #lines=values
-
+        # Determine range of curve values (It means number of lines)
         self._get_range(prange)
         lines = self.range_values
 
@@ -540,7 +525,7 @@ class plotroc :
         # get one line per time, arranged by index1.
         for key in lines :
 
-            # get values of parametric line.
+            # get values of parametric line (key=0.001 --> X:FPR, Y:TPR).
             [X,Y,T,A] = self._get_X_Y(col_0, col_1 ,key)
 
             # Color counter
@@ -622,8 +607,8 @@ class plotroc :
             T = [float(_thre[val][index2]) for val in values]
             A = [float(_thre[val][index1]) for val in values]
 
-            auc = fabs(np.trapz(Y, X))
-         
+            #auc = fabs(np.trapz(Y, X))
+            auc = self.area_under_curve(X,Y)
             
 
             p=int(fmod(i,len(self.colorList)))
@@ -654,6 +639,7 @@ class plotroc :
             i+=1
             #return
         #
+        ax.axvline(x=self.xline,linewidth=0.5)
         ax.legend(self.legendP,self.legendT, bbox_to_anchor=(0.99,0.56), prop={'size':8},numpoints=1)
         ax.tick_params(axis='both', which='major', labelsize=8)
         ax.text(0.99, 0.05, self.text ,horizontalalignment='right', verticalalignment='center',  transform=ax.transAxes, fontsize=self.fontsizes[2] )
@@ -842,7 +828,7 @@ class plotroc :
         pl.subplot(111)
 
         mcc = self.parameters['MCC_MEAN']
-        pnsr = self.parameters['PNSR_MEAN']
+        pnsr = self.parameters['PSNR']
         threshold = self.parameters['Threshold']
         alpha     = self.parameters['Alpha']
 
@@ -1097,39 +1083,22 @@ if __name__ == '__main__':
                        type = "string",
                        default = None,
                        help = "Plot single value, e.g -r '0.03'")
+    parser.add_option ("-x", "--xline",dest = "xline",
+                       type = "string",
+                       default = None,
+                       help = "Vertical line to calculate area under curve, e.g -x '0.5'")
     (options, args) = parser.parse_args ()
 
     if options.file == None :
         parser.print_help()
         sys.exit()
  
-    ##########
-    #Variables
-    #########
-    #s=sepu()
-
-#  Alpha=1 cf=2 bgRation=3 Range=4 Ge=5n GaussiansNo=6 Sigma=7 cT=8 Tau=9 TPR=10 FPR=11 SPE MCC TPR TNR SPE MCC
-
-    #s.load('final_measures.txt')
-    #
-    #s.plot1()
-    #s.plot2()
-    #s.plot3()
-    #s.plot4()
                        
-    n = plotroc(options.colums,options.range,options.value)
-    #n.load('np_final_measures.txt')
+    n = plotroc(options.colums,options.range,options.value,options.xline)
     n.load(options.file)
-    #n.area_under_curve()
-    #n.plot1()
-    #n.plot2()
-    #n.plot3()
-    #n.plot4()
-    #n.plot5()
     #
     n.plot6()
-    n.plot7()
-    n.plot8()
+    #n.plot7()
+    #n.plot8()
     n.plot9()
-
 

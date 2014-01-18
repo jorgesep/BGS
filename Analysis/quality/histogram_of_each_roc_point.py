@@ -42,8 +42,12 @@ if __name__ == '__main__':
     files = ListFiles(path).getList()
 
     #pattern = "A_" + str(options._alpha) + ".*T_2" + "|" +  "L_" + str(options._alpha) + ".*T_?[0-9]"
-    #pattern = "A_" + str(options._alpha)  + "|" +  "L_" + str(options._alpha) 
-    pattern = "A_" + str(options._alpha)  + "|" +  "L_" + str(options._alpha) + ".*T_[1-2]?1[0-6]" 
+    pattern = "A_" + str(options._alpha)  + "|" +  "L_" + str(options._alpha) 
+
+    #pattern = "A_" + str(options._alpha)  + "|" +  "L_" + str(options._alpha) + ".*T_[1-2]?1[0-6]" 
+    #pattern = "A_" + str(options._alpha)  + "|" +  "L_" + str(options._alpha) + ".*T_[1]?[0-9]" 
+    #pattern = "A_" + str(options._alpha)  + "|" +  "L_" + str(options._alpha) + ".*T_[1-9]|1[0-6]" 
+    #pattern = "L_" + str(options._alpha) + ".*T_[1-9]|1[0-6]"
 
     alpha_list = [ i for i in files if re.search(pattern, i) ]
 

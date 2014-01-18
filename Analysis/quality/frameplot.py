@@ -55,7 +55,7 @@ class frameplot :
         self.parameters = {lines[0].split()[i+1]:i for i in range(len(lines[0].split()[1:])) if lines[0].split()[0] == '#'}
 
         # keep all values in data array.
-        self.data  = [l0.split() for l0 in lines[1:] if len(l0.split()) > 1]
+        self.data  = [l0.split() for l0 in lines[1:] if len(l0.split()) > 1 and l0[0] != '#']
 
         # Prepare string with variables of algorithm name and value of list
         listp = [key for key in self.parameters.keys() if not key.find("MEDIAN") > 0 and not key.find("MEAN") > 0]
