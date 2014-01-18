@@ -61,6 +61,66 @@ void display_usage( void )
     //exit( EXIT_FAILURE );
 }
 
+void mergeTwoImages(InputArray _im1, InputArray _im2, OutputArray img)
+{
+
+    vector<Mat> Imgs;
+    Imgs.push_back(_im1.getMat());
+    Imgs.push_back(_im2.getMat());
+    //int numberImages = 2;
+
+    if ( Imgs[0].empty() || Imgs[1].empty() ) return;
+
+
+    // w - Maximum number of images in a row 
+    // h - Maximum number of images in a column 
+    int w = 2;
+    int h = 1;
+    int size = 300;
+    
+    // Create a new 1 channel image
+    //img.create(Size(100 + size*w, 60 + size*h),CV_8U);
+    img.create(Size(60 + size*w, 5 + size*h),CV_8U);
+    Mat mask = img.getMat();
+    mask     = Scalar::all(255);
+
+    int m = 20;
+    int n = 20; 
+    for (vector<Mat>::iterator it = Imgs.begin() ; it != Imgs.end(); ++it) {
+
+
+        // Find the width and height of the image
+        int x = it->cols;
+        int y = it->rows;
+        
+        // Find whether height or width is greater in order to resize the image
+        int max = (x > y)? x: y;
+        
+        // Find the scaling factor to resize the image
+        float scale = (float) ( (float) max / size );
+        
+        // Used to Align the images
+        //if( i % w == 0 && m!= 20) {
+        //    m = 20;
+        //    n+= 20 + size;
+        //}
+
+
+        //Make a rectangle
+        Rect roi( m, n, (int)( x/scale ), (int)( y/scale ) );
+
+        // Set the image ROI to display the current image
+        //Point a cv::Mat header at it (no allocation is done)
+        Mat ImageROI = mask(roi);
+
+        // Resize the input image and copy the it to the Single Big Image
+        resize(*it, ImageROI, ImageROI.size(), 0, 0);   
+
+        m += (20 + size);
+
+    }
+}
+
 int main( int argc, char** argv )
 {
     //declaration of local variables.
@@ -75,6 +135,7 @@ int main( int argc, char** argv )
     int fg_size = -1;
     int map_size= -1;
     bool verbose = false;
+    bool show_masks = false;
     string mask_dir;
     string ground_truth_dir;
     string ground_map_dir;
@@ -95,6 +156,7 @@ int main( int argc, char** argv )
         desc.add_options()
         ("help,h", "produce help message")
         ("verbose,v", "display messages")
+        ("show,s",    "display images")
         ("ground,g"            , po::value<string>(), "input ground-truth directory")
         ("input,i"              , po::value<string>(), "input foreground mask directory")
         ("map,d"              , po::value<string>(), "input ground-truth map directory to compute dscore")
@@ -126,6 +188,8 @@ int main( int argc, char** argv )
         
         if (vm.count("verbose"))
             verbose = true;
+        if (vm.count("show"))
+            show_masks = true;
         
         if (vm.count("ground")) {
             
@@ -291,6 +355,14 @@ int main( int argc, char** argv )
     outfile.open(output_filename.c_str());
     outfile << header << endl;
 
+
+    // Prepare windows to display foreground and ground masks.
+    if (show_masks) {
+        /// Create Windows
+        namedWindow("PMBGS", CV_WINDOW_NORMAL);
+        moveWindow("PMBGS",50,50);
+    }
+
     // Register time duration
     // Create filename to register elapsed time.
     stringstream duration_file_stream;
@@ -367,6 +439,22 @@ int main( int argc, char** argv )
                 
                 if (verbose)
                     cout    << msg.str() << endl;
+
+                // Display ground-truth and foreground mask.
+                if (show_masks) {
+                    Mat img ;
+                    mergeTwoImages(gtimg, fgmask, img);
+                    if ( i == (cnt + (int)(size/2)) )
+                        imwrite("two_masks.png",img);
+
+                    imshow("PMBGS", img);
+
+                    char key  = 0;
+                    int delay = 25;
+                    key = (char)waitKey(delay);
+                    // Exit program
+                    if( key == 27 ) break;
+                }
 
                 cnt_processed++;
 
