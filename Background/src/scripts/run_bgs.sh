@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MAIN_PATH="/Users/jsepulve"
+MAIN_PATH="/home/jsepulve"
 
 # Path to videos
 SEQ_PATH="${MAIN_PATH}/Activity-JPGfiles"
@@ -24,6 +24,7 @@ CAMERAS="Camera_3 Camera_4"
 #cmd="./bin/testUCV"
 #ext_args="--function=2"
 cmd="./bin/bgs"
+#cmd="./bin/bgs_framework"
 ext_args="--show=false"
 
 ###### From this point nothing should change .. 
@@ -53,11 +54,6 @@ GT_WalkTurnBack_Person4_Camera_4="207 672"
 
 
 
-#config file
-mask_dir="${ALGORITHM_NAME}_mask"
-xmlfile="${ALGORITHM_NAME}.xml"
-config="config/${xmlfile}"
-
 # fixed parameter
 _header_tag="opencv_storage"
 
@@ -78,6 +74,24 @@ _list_2=`cat $loop2 | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\2|p'`
 #_list_1='0.001'
 #_list_2='10'
 
+# Range of parameters
+range1=\
+$(echo "L_")\
+$(head -1 ${loop1} | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\2|p')\
+$(echo "-")\
+$(tail -1 ${loop1} | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\2|p')
+range2=\
+$(echo "T_")\
+$(head -1 ${loop2} | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\2|p')\
+$(echo "-")\
+$(tail -1 ${loop2} | sed -n 's|<\([a-zA-Z]*\)>\(.*\)</[a-zA-Z]*>|\2|p')
+
+#config file
+mask_dir="${ALGORITHM_NAME}_mask"
+mask_name="${ALGORITHM_NAME}_$(hostname)_${range1}_${range2}"
+xmlfile="config/${ALGORITHM_NAME}.xml"
+#config="config/${xmlfile}"
+
 # Verify of 'Gen' is less than 'Range', if algorithm is 'sagmm'.
 verify_sagmm_gen_value() {
     if [ "$ALGORITHM_NAME" == "sagmm" ]; then
@@ -92,10 +106,38 @@ verify_sagmm_gen_value() {
             gen_val=${G}
         fi
 
-        cat ${config} | grep -v "/${_header_tag}\|${gen_tag}"             > config.tmp
+        cat ${xmlfile} | grep -v "/${_header_tag}\|${gen_tag}"             > config.tmp
         echo -e "<${gen_tag}>${gen_val}</${gen_tag}>\n</${_header_tag}>" >> config.tmp
-        mv config.tmp ${config}
+        mv config.tmp ${xmlfile}
     fi
+}
+
+# Create mask Directory
+create_mask_directory() {
+
+    name=$1
+    cur_dir="$PWD"
+    # /home/jsepulve/BGS/build/results/masks/Kick/sagmm_L_0.001-0.005_T_2-100
+    new_dir="${MASK_PATH}/${name}/${mask_name}"
+    # /home/jsepulve/BGS/build/results/masks/Kick/sagmm_mask
+    link_dir="${MASK_PATH}/${name}/${mask_dir}"
+
+    # Delete previous link
+    if [ -L "${mask_dir}" ]; then
+        unlink ${mask_dir}
+    fi
+    if [ -L "${link_dir}" ]; then
+        unlink ${link_dir}
+    fi
+
+    if [ ! -d "${new_dir}" ]; then
+        mkdir -p ${new_dir}
+    fi
+
+    ln -s ${new_dir} ${mask_dir}
+    cd ${MASK_PATH}/${name}
+    ln -s ${mask_name} ${mask_dir}
+    cd ${cur_dir}
 }
 
 # Function definition
@@ -107,9 +149,9 @@ process_list() {
         # Verify value of 'Gen' if less than 'Range'
         verify_sagmm_gen_value $in2
 
-        cat ${config} | grep -v "/${_header_tag}\|${_tag_2}"        > config.tmp
+        cat ${xmlfile} | grep -v "/${_header_tag}\|${_tag_2}"       > config.tmp
         echo -e "<${_tag_2}>${in2}</${_tag_2}>\n</${_header_tag}>" >> config.tmp
-        mv config.tmp ${config}
+        mv config.tmp ${xmlfile}
 
         $cmd $args
         sleep 0.1
@@ -124,17 +166,31 @@ set_ground_truth_frames() {
     init_gt=`echo ${FRAMES_VAL} | awk '{print $1}'`
     end_gt=`echo  ${FRAMES_VAL} | awk '{print $2}'`
 
-    cat ${config} | grep -v "/${_header_tag}\|InitFGMaskFrame\|EndFGMaskFrame" > config.tmp
-    echo -e  "<InitFGMaskFrame>${init_gt}</InitFGMaskFrame>"                  >> config.tmp
-    echo -e  "<EndFGMaskFrame>${end_gt}</EndFGMaskFrame>\n</${_header_tag}>"  >> config.tmp
+    cat ${xmlfile} | grep -v "/${_header_tag}\|InitFGMaskFrame\|EndFGMaskFrame" > config.tmp
+    echo -e  "<InitFGMaskFrame>${init_gt}</InitFGMaskFrame>"                   >> config.tmp
+    echo -e  "<EndFGMaskFrame>${end_gt}</EndFGMaskFrame>\n</${_header_tag}>"   >> config.tmp
 
-    mv config.tmp ${config}
+    mv config.tmp ${xmlfile}
 
     framework="config/Framework.xml"
+
+    LIST="mog2 np sagmm ucv"
+    for i in ${LIST}
+    do
+        NAME=`echo ${i} | tr '[:lower:]' '[:upper:]'`
+        ENABLE="0"
+        if [ "${ALGORITHM_NAME}" == "${i}" ]; then
+            ENABLE="1"
+        fi
+
+        cat ${framework} | grep -v "/${_header_tag}\|${NAME}"       > Framework.tmp
+        echo -e  "<${NAME}>${ENABLE}</${NAME}>\n</${_header_tag}>" >> Framework.tmp
+        mv Framework.tmp ${framework}
+    done
+
     cat ${framework} | grep -v "/${_header_tag}\|InitFGMaskFrame\|EndFGMaskFrame" > Framework.tmp
     echo -e  "<InitFGMaskFrame>${init_gt}</InitFGMaskFrame>"                     >> Framework.tmp
     echo -e  "<EndFGMaskFrame>${end_gt}</EndFGMaskFrame>\n</${_header_tag}>"     >> Framework.tmp
-
     mv Framework.tmp ${framework}
 
 }
@@ -149,25 +205,18 @@ do
             name="${action}_${actor}_${cam}" 
             set_ground_truth_frames
 
-            new_dir="${MASK_PATH}/${name}/${mask_dir}"
-            if [ ! -d "${new_dir}" ]; then
-                mkdir -p ${new_dir}
-            else
-                if [ -L "${mask_dir}" ]; then
-                    unlink ${mask_dir}
-                fi
-            fi
-            ln -s ${new_dir} ${mask_dir}
+            # Link directories
+            create_mask_directory $name
 
             sequence="${SEQ_PATH}/${action}/${actor}/${cam}"
             args="-i $sequence ${ext_args}"
 
             for in1 in ${_list_1}
             do
-                cat ${config} | grep -v "/${_header_tag}\|${_tag_1}"        > config.tmp
+                cat ${xmlfile} | grep -v "/${_header_tag}\|${_tag_1}"        > config.tmp
                 echo -e "<${_tag_1}>${in1}</${_tag_1}>\n</${_header_tag}>" >> config.tmp
-                mv ${config} config.bak
-                mv config.tmp ${config}
+                mv ${xmlfile} config.bak
+                mv config.tmp ${xmlfile}
                 process_list
             done
 

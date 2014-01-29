@@ -5,7 +5,7 @@ MAIN_PATH="/home/jsepulve"
 # Path to videos
 GT_PATH="${MAIN_PATH}/Ground-Truth"
 MASK_PATH="${MAIN_PATH}/BGS/build/results/masks"
-OUTPUT="${MAIN_PATH}/BGS/build/results/measures"
+MEASURES="${MAIN_PATH}/BGS/build/results/measures"
 
 # Actions definition
 ACTIONS="Kick Punch RunStop ShotGunCollapse WalkTurnBack"
@@ -28,6 +28,40 @@ mask_dir="${ALGORITHM_NAME}_mask"
 measure_dir="${ALGORITHM_NAME}_measure"
 
 
+# Create mask Directory
+create_mask_directory() {
+
+    name=$1
+    seq_mask_dir="${MASK_PATH}/${name}"
+    mask="${seq_mask_dir}/${mask_dir}"
+    current="$PWD"
+
+    # Delete previous link
+    if [ -L "${measure_dir}" ]; then
+        unlink ${measure_dir}
+    fi
+
+    if [ -L "${mask}" ]; then
+        seq_name=`ls -lah ${MASK_PATH}/${name} | grep ^l | awk '{print $11}'`
+    else
+        seq_name=`ls -lrt ${MASK_PATH}/${name} |  awk '{print $9}' | tail -1`
+
+        # Create mask_dir link to last created directory
+        cd ${seq_mask_dir}
+        ln -s ${seq_name} ${mask_dir}
+        cd ${current}
+    fi
+
+    new_dir="${MEASURES}/${name}/${seq_name}"
+    if [ ! -d "${new_dir}" ]; then
+        mkdir -p ${new_dir}
+    fi
+
+    ln -s ${new_dir} ${measure_dir}
+
+}
+
+
 
 # Loop for each action
 for action in ${ACTIONS}
@@ -47,24 +81,13 @@ do
             ground_truth="${GT_PATH}/${action}${actor}${camera}"
 
             # set output directory
-            new_dir="${OUTPUT}/${name}/${measure_dir}"
-            if [ ! -d "${new_dir}" ]; then
-                mkdir -p ${new_dir}
-            else
-                if [ -L "${measure_dir}" ]; then
-                    unlink ${measure_dir}
-                fi
-            fi
-            ln -s ${new_dir} ${measure_dir}
+            create_mask_directory $name
 
             mask="${MASK_PATH}/${name}/${mask_dir}"
             list_mask=`ls ${mask} | sort -n`
 
-            echo $name 
-            echo $ground_truth
-            echo $new_dir
             echo $mask
-
+            echo $ground_truth
 
             for i in ${list_mask}
             do
