@@ -139,6 +139,12 @@ int main( int argc, char** argv )
 
     // Create foreground mask directory
     string foreground_path = "ucv_mask";
+    if (typeFunction == 1)
+        foreground_path = "ucv_linear_mask"; 
+    else if (typeFunction == 2)
+        foreground_path = "ucv_staircase_mask"; 
+    else if (typeFunction == 3)
+        foreground_path = "ucv_gmm_mask"; 
     if (saveForegroundMask) {
 
         // Create directoty if not exists and create a numbered internal directory.
