@@ -119,8 +119,21 @@ int main( int argc, char** argv )
         return 0;
     }
 
+    stringstream name;
+    stringstream _config ;
+    stringstream _foreground;
+    if (typeFunction == 1)
+        name << "ucv_linear"; 
+    else if (typeFunction == 2)
+        name << "ucv_staircase"; 
+    else if (typeFunction == 3)
+        name << "ucv_gmm"; 
+    else
+        name << "ucv";
+
     // Load xml file with parameters of algorithm needed to initialize the program.
-    string config_filename = "config/ucv.xml";
+    _config << "config/" << name.str() << ".xml" ;
+    string config_filename = _config.str() ; 
     path config_path(config_filename);
     if (!is_regular_file(config_path)) {
         cout << "Configuration file " << config_filename << " not found! " << endl;
@@ -129,7 +142,7 @@ int main( int argc, char** argv )
 
     // Reading parameters of algorithm from xml file.
     FileStorage fs(config_filename, FileStorage::READ);
-    double LearningRate                     = (double)fs["LearningRate"];
+    double LearningRate              = (double)fs["LearningRate"];
     double Threshold                 = (double)fs["Threshold"];
     int NumberGaussians              = (int)fs["NumberGaussians"];
     int InitFGMaskFrame              = (int)fs["InitFGMaskFrame"];
@@ -138,13 +151,8 @@ int main( int argc, char** argv )
     fs.release();
 
     // Create foreground mask directory
-    string foreground_path = "ucv_mask";
-    if (typeFunction == 1)
-        foreground_path = "ucv_linear_mask"; 
-    else if (typeFunction == 2)
-        foreground_path = "ucv_staircase_mask"; 
-    else if (typeFunction == 3)
-        foreground_path = "ucv_gmm_mask"; 
+    _foreground << name.str() << "_mask" ;
+    string foreground_path = _foreground.str() ; 
     if (saveForegroundMask) {
 
         // Create directoty if not exists and create a numbered internal directory.
