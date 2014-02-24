@@ -30,6 +30,7 @@
 #include "Performance.h"
 #include "utils.h"
 #include "BGSTimer.h"
+#include "DisplayImageUtils.h"
 
 #include "icdm_model.h"
 
@@ -99,6 +100,7 @@ int main( int argc, char** argv )
     map<unsigned int, string>::iterator it;
     map<unsigned int, string>::iterator it_im;
     Mat gt_image;
+    DisplayImages display;
     stringstream msg,ptmsg;
     ofstream outfile, ptfile, rocfile;
     BackgroundSubtractorMOG3 bg_model;
@@ -160,6 +162,7 @@ int main( int argc, char** argv )
     FileStorage fs(config_filename, FileStorage::READ);
     InitFGMaskFrame = (int)fs["InitFGMaskFrame"];
     EndFGMaskFrame  = (int)fs["EndFGMaskFrame"];
+    int ApplyMorphologicalFilter = (int)fs["ApplyMorphologicalFilter"];
     fs.release();
 
     //Create foreground mask directory
@@ -268,10 +271,13 @@ int main( int argc, char** argv )
     if (displayImages) { 
         namedWindow("image", CV_WINDOW_NORMAL);
         namedWindow("foreground mask", CV_WINDOW_NORMAL);
-        //namedWindow("foreground image", CV_WINDOW_NORMAL);
+        ////namedWindow("foreground image", CV_WINDOW_NORMAL);
         moveWindow("image"           ,50,50);
         moveWindow("foreground mask" ,450,50);
-        //moveWindow("foreground image",20,300);
+        ////moveWindow("foreground image",20,300);
+
+        //namedWindow("sagmm", CV_WINDOW_NORMAL);
+        //moveWindow("sagmm" ,50,50);
 
     } 
     
@@ -364,8 +370,8 @@ int main( int argc, char** argv )
                 break;
         } 
             
-        if( fgimg.empty() )
-            fgimg.create(img.size(), img.type());
+        //if( fgimg.empty() )
+        //    fgimg.create(img.size(), img.type());
         
         //Global illumination changing factor 'g' between reference image ir and current image ic.
         double globalIlluminationFactor = icdm::Instance()->getIlluminationFactor(img,bgimg);
@@ -375,10 +381,18 @@ int main( int argc, char** argv )
         
         bg_model.getBackgroundImage(bgimg);
 
-        fgimg = Scalar::all(0);
+        //fgimg = Scalar::all(0);
         
-        img.copyTo(fgimg, fgmask);
-        
+        //img.copyTo(fgimg, fgmask);
+
+        // Applying morphological filter (Erode) in case option was enabled.
+        Mat filtered_mask; // the destination image
+        if (ApplyMorphologicalFilter) {
+            Mat Element(2,2,CV_8U,cv::Scalar(1));
+            erode(fgmask,filtered_mask,Element);
+        }
+
+
         //save mask to local directory
         if (saveMask  && cnt >= InitFGMaskFrame && cnt <= EndFGMaskFrame) {
             stringstream str;
@@ -389,7 +403,10 @@ int main( int argc, char** argv )
             compression_params.push_back(9);
 
             try {
-                imwrite(str.str(), fgmask, compression_params);
+                if (ApplyMorphologicalFilter)
+                    imwrite(str.str(), filtered_mask, compression_params);
+                else
+                    imwrite(str.str(), fgmask, compression_params);
             }
             catch (runtime_error& ex) {
                 cout << "Exception converting image to PNG format: " << ex.what() << endl;
@@ -459,7 +476,9 @@ int main( int argc, char** argv )
             imshow("foreground mask", fgmask);
             //imshow("foreground image", fgimg);
 
-
+            //Mat merge ;
+            //display.mergeImages(ftimg, fgmask, merge);
+            //imshow("sagmm", merge); 
             // This is just to write down two different images, showing red point on them.
             // This line could be commented out.
             //if ((cnt >= 500) &&  (cnt <= 506)) {
