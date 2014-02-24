@@ -14,13 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
-//#include <log4cplus/logger.h>
-//#include <log4cplus/loggingmacros.h>
-//#include <log4cplus/configurator.h>
-
+#include <boost/filesystem.hpp>
 #include <iomanip> 
 #include <iostream>
 #include <fstream>
@@ -40,7 +36,7 @@
 using namespace cv;
 using namespace std;
 using namespace bgs;
-
+using namespace boost::filesystem;
 
 const char* keys =
 {
@@ -386,12 +382,23 @@ int main( int argc, char** argv )
         //save mask to local directory
         if (saveMask  && cnt >= InitFGMaskFrame && cnt <= EndFGMaskFrame) {
             stringstream str;
-            str << foreground_path << "/" <<  cnt << ".jpg";
-            
+            str << foreground_path << "/" <<  cnt << ".png";
+
             vector<int> compression_params;
-            compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
-            compression_params.push_back(100);
-            imwrite(str.str(), fgmask, compression_params);
+            compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+            compression_params.push_back(9);
+
+            try {
+                imwrite(str.str(), fgmask, compression_params);
+            }
+            catch (runtime_error& ex) {
+                cout << "Exception converting image to PNG format: " << ex.what() << endl;
+            }
+            catch (...) {
+                cout << "Unknown Exception converting image to PNG format: " << endl;
+            }
+
+
         }
        
 
