@@ -409,8 +409,6 @@ void operator()(const Range& range) const
                 flagged_mode[i]      = 0;
             }
             //just for debugging when I run with xcode IDE
-            //if (y0==1 && x==1)
-            //    internal_frame_counter+=1;
             ////// End of debugging variables declaration
             
 
@@ -458,8 +456,8 @@ void operator()(const Range& range) const
                     // Eq (8)
                     // SUM(Weight) > (1-Cf); TB=(1-Cf)
                     //background? - Tb - usually larger than Tg
-                    //if( tempTotalWeight < TB && dist2 < Tb*var ) {
-                    if( totalWeight < TB && dist2 < Tb*var && !background) {
+                    if( totalWeight < TB && dist2 < Tb*var ) {
+                    //if( totalWeight < TB && dist2 < Tb*var && !background) {
                         background = true;
                         
                         for( int c = 0; c < nchannels; c++ )
@@ -508,7 +506,7 @@ void operator()(const Range& range) const
                         varnew = MIN(varnew, varMax);
                         gmm[mode].variance = varnew;
 
-                         
+                        
                         //sort
                         //all other weights are at the same place and
                         //only the matched (iModes) is higher -> just find the new place for it
@@ -538,7 +536,6 @@ void operator()(const Range& range) const
                             *(four_times_sigma  + mode) = Tb*var;
                             *(three_times_sigma + mode) = Tg*var;
                             NM                          = mode + 1;
-                            //flagged_mode[mode] = dist2<Tg*var?1:0;
                             flagged_mode[mode] = background?1:(fitsPDF?2:0);
                     }
 
@@ -610,10 +607,11 @@ void operator()(const Range& range) const
                         std::swap(mean[i*nchannels + c], mean[(i-1)*nchannels + c]);
                 }
 
-                // Just debugging new mode has been created.
+                // Just for debugging: new mode has been created.
                 if ( (debugPt != Point(0,0)) && (debugPt.x == x && debugPt.y == y0) )
                 {
                         flagged_mode[mode] = 3;
+                        cout << "NEW MODE: " << data[0] << ":" << data[1] << ":" << data[2] << endl;
                 }
 
 
@@ -658,16 +656,16 @@ void operator()(const Range& range) const
                            << C[1] << gmm[1].variance        << ":" << old_sigma[1]              << RESET << " " 
                            << C[2] << gmm[2].variance        << ":" << old_sigma[2]              << RESET << " " 
                            << C[3] << gmm[3].variance        << ":" << old_sigma[3]              << RESET << ") " 
-                    << "(" << setprecision(3) << fixed
+                    << "(" << setprecision(8) << fixed
                            << C[0] << gmm[0].weight          << RESET << ":" 
                            << C[1] << gmm[1].weight          << RESET << ":" 
                            << C[2] << gmm[2].weight          << RESET << ":" 
                            << C[3] << gmm[3].weight          << RESET << ") "
                     << "(" 
-                           << C[0] <<setprecision(3)<<fixed<< old_weight[0] <<setprecision(0)<<fixed<< ":"<< MD[0]<< ":" << four_sigma[0] << ":" << three_sigma[0] <<RESET<<" " 
-                           << C[1] <<setprecision(3)<<fixed<< old_weight[1] <<setprecision(0)<<fixed<< ":"<< MD[1]<< ":" << four_sigma[1] << ":" << three_sigma[1] <<RESET<<" " 
-                           << C[2] <<setprecision(3)<<fixed<< old_weight[2] <<setprecision(0)<<fixed<< ":"<< MD[2]<< ":" << four_sigma[2] << ":" << three_sigma[2] <<RESET<<" " 
-                           << C[3] <<setprecision(3)<<fixed<< old_weight[3] <<setprecision(0)<<fixed<< ":"<< MD[3]<< ":" << four_sigma[3] << ":" << three_sigma[3] <<RESET<<") "
+                           << C[0] <<setprecision(8)<<fixed<< old_weight[0] <<setprecision(0)<<fixed<< ":"<< MD[0]<< ":" << four_sigma[0] << ":" << three_sigma[0] <<RESET<<" " 
+                           << C[1] <<setprecision(8)<<fixed<< old_weight[1] <<setprecision(0)<<fixed<< ":"<< MD[1]<< ":" << four_sigma[1] << ":" << three_sigma[1] <<RESET<<" " 
+                           << C[2] <<setprecision(8)<<fixed<< old_weight[2] <<setprecision(0)<<fixed<< ":"<< MD[2]<< ":" << four_sigma[2] << ":" << three_sigma[2] <<RESET<<" " 
+                           << C[3] <<setprecision(8)<<fixed<< old_weight[3] <<setprecision(0)<<fixed<< ":"<< MD[3]<< ":" << four_sigma[3] << ":" << three_sigma[3] <<RESET<<") "
                     << endl;
 
                 }
