@@ -15,6 +15,7 @@ endif()
 
 FILE ( GLOB SRCS utils.cpp utils.h )
 FILE ( GLOB TM BGS*.cpp BGS*.h )
+FILE ( GLOB DSP DisplayImageUtils.cpp DisplayImageUtils.h )
 
 INCLUDE_DIRECTORIES("${utils_SOURCE_DIR}/../include")
 
@@ -46,3 +47,6 @@ ADD_LIBRARY(Timer SHARED ${TM})
 TARGET_LINK_LIBRARIES( Timer ${OpenCV_LIBS} Utils )
 set_property(TARGET Timer PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
+ADD_LIBRARY(ImageUtils SHARED ${DSP}) 
+TARGET_LINK_LIBRARIES( ImageUtils ${OpenCV_LIBS} Utils )
+set_property(TARGET ImageUtils PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)

@@ -75,7 +75,7 @@ TARGET_LINK_LIBRARIES( play_sequence FrameReader Utils ${OpenCV_LIBS} )
 set_property(TARGET play_sequence PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 ADD_EXECUTABLE( bgs bgs )
-TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} ${Boost_LIBRARIES} SAGMM Performance Utils Timer)
+TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} ${Boost_LIBRARIES} SAGMM Performance Utils Timer ImageUtils )
 set_property(TARGET bgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)
