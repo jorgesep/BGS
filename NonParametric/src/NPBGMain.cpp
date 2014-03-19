@@ -91,9 +91,7 @@ int main( int argc, char** argv )
 
     // local variables
     bool processing_video = false;
-//int im_size = -1;
     vector<string> im_files;
-    int shiftFrame = 0;
     
     
     // Verify input name is a video file or directory with image files.
@@ -205,7 +203,7 @@ int main( int argc, char** argv )
     
     //Shift backward or forward ground truth sequence counter.
     //for compensating pre-processed frames in the filter.
-    unsigned int cnt    = 0 ; 
+    int cnt    = 0 ; 
     
     
 
@@ -250,22 +248,29 @@ int main( int argc, char** argv )
         Mat Eroded; // the destination image
         if (ApplyMorphologicalFilter) {
             Mat Element(2,2,CV_8U,cv::Scalar(1));
-            //erode(Mask,Eroded,Mat());
             erode(Mask,Eroded,Element);
-        }
-        else {
-            Mask.copyTo(Eroded);
         }
 
         if (saveMask &&  cnt >= InitFGMaskFrame &&  cnt <= EndFGMaskFrame) {
             stringstream str;
-            str << foreground_path << "/" <<  cnt << ".jpg";
+            str << foreground_path << "/" <<  cnt << ".png";
             
             vector<int> compression_params;
-            compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
-            compression_params.push_back(100);
-            //imwrite(str.str(), Mask, compression_params);
-            imwrite(str.str(), Eroded, compression_params);
+            compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+            compression_params.push_back(9);
+
+            try {
+                if (ApplyMorphologicalFilter)
+                    imwrite(str.str(), Eroded, compression_params);
+                else
+                    imwrite(str.str(), Mask, compression_params);
+            }
+            catch (runtime_error& ex) {
+                cout << "Exception converting image to PNG format: " << ex.what() << endl;
+            }
+            catch (...) {
+                cout << "Unknown Exception converting image to PNG format: " << endl;
+            }
         }
 
         if (displayImages) {
