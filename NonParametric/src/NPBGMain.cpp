@@ -276,13 +276,38 @@ int main( int argc, char** argv )
         if (displayImages) {
             Frame.convertTo(ftimg, CV_8UC3);
             imshow("Image", ftimg);
-            //imshow("Mask", Mask);
-            imshow("Mask", Eroded);
+            if (ApplyMorphologicalFilter)
+                imshow("Mask", Eroded);
+            else
+                imshow("Mask", Mask);
 
             char key=0;
             key = (char)waitKey(delay);
             if( key == 27 ) 
                 break;
+
+            // pause program in with space key
+            if ( key == 32) {
+                bool pause = true;
+                while (pause)
+                {
+                    key = (char)waitKey(delay);
+                    if (key == 32)
+                        pause = false;
+                    // save frame with return key
+                    if (key == 13) {
+                        stringstream str;
+                        str << "np_" << cnt << ".png" ;
+                        imwrite( str.str()  , ftimg  );
+                        str.str("") ;
+                        str << "np_" << cnt << "_fg.png" ;
+                        if (ApplyMorphologicalFilter)
+                            imwrite( str.str(), Eroded );
+                        else
+                            imwrite( str.str(), Mask );
+                    }
+                }
+            }
         }
         
         if (!displayImages && cnt > EndFGMaskFrame)
