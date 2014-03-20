@@ -29,11 +29,13 @@
 #include "utils.h"
 #include "NPBGSubtractor.h"
 #include "FrameReaderFactory.h"
+#include "BGSTimer.h"
 
 using namespace cv;
 using namespace std;
 using namespace boost::filesystem;
 using namespace bgs;
+using namespace seq;
 
 
 
@@ -59,6 +61,7 @@ const char* keys =
 {
     "{ i | input   |       | Input video }"
     "{ m | mask    | true  | Save foreground masks}"
+    "{ p | point   |       | Show small red spot in frame image,  e.g -p 250,300 }"    
     "{ s | show    | false | Show images of video sequence }"
     "{ h | help    | false | Print help message }"
 };
@@ -87,23 +90,22 @@ int main( int argc, char** argv )
     const string inputVideoName  = cmd.get<string>("input");
     const bool displayImages     = cmd.get<bool>("show");
     const bool saveMask          = cmd.get<bool>("mask");
+    const string savePoint       = cmd.get<string>("point");
 
 
     // local variables
-    bool processing_video = false;
     vector<string> im_files;
     
     
     // Verify input name is a video file or directory with image files.
-    seq::FrameReader *input_frame;
+    FrameReader *input_frame;
     try {
-        input_frame = seq::FrameReaderFactory::create_frame_reader(inputVideoName);
+        input_frame = FrameReaderFactory::create_frame_reader(inputVideoName);
     } catch (...) {
         cout << "Invalid file name "<< endl;
         return 0;
     }
     
-
     int cols      = input_frame->getNumberCols(); 
     int rows      = input_frame->getNumberRows();
     int nchannels = input_frame->getNChannels();
@@ -138,23 +140,27 @@ int main( int argc, char** argv )
 
     // Create mask directory
     string foreground_path = "np_mask";
+    stringstream algorithm_params;
     if (saveMask) {
         
         // Create directoty if not exists and create a numbered internal directory.
         // np_mask/0, np_mask/1, ...
         create_foreground_directory(foreground_path);
                 
-        ofstream outfile;
         stringstream param;
         param << foreground_path << "/parameters.txt" ;
-        outfile.open(param.str().c_str());
-        outfile 
+
+        algorithm_params 
         << "#"
-        << " Alpha=" << Alpha 
-        << " Threshold=" << Threshold 
-        << " FramesToLearn=" << FramesToLearn 
+        << " Alpha="          << Alpha 
+        << " Threshold="      << Threshold 
+        << " FramesToLearn="  << FramesToLearn 
         << " SequenceLength=" << SequenceLength 
         << " TimeWindowSize=" << TimeWindowSize ; 
+
+        ofstream outfile;
+        outfile.open(param.str().c_str());
+        outfile << algorithm_params.str() ;
         outfile.close();
         
     }
@@ -167,6 +173,23 @@ int main( int argc, char** argv )
         moveWindow("Image", 20, 20);
         moveWindow("Mask" , 20, 300);
     }
+
+    //Get specific point to be displayed in the image.
+    //Check input point to display value
+    ofstream point_file;
+    int nl=0,nc=0;
+    Point pt(0,0);
+    if (!savePoint.empty()) {
+        pt = stringToPoint(savePoint);
+        nc = pt.x > cols  ? cols  : pt.x;
+        nl = pt.y > rows ? rows : pt.y;
+    
+        //define outfile to save BGR pixel values
+        stringstream name("");
+        name << "pt_" << pt.x << "_" << pt.y << ".txt";
+        point_file.open(name.str().c_str());
+    }
+
     
     NPBGSubtractor *BGModel = new NPBGSubtractor;
     BGModel->Intialize(rows, cols, nchannels, SequenceLength, TimeWindowSize, SDEstimationFlag, UseColorRatiosFlag);
@@ -193,19 +216,16 @@ int main( int argc, char** argv )
     //unsigned char *FilterFGImage = new unsigned char[cols*rows];
     //unsigned char *FGImage = new unsigned char[cols*rows];
 
-    VideoCapture video;
-    if (processing_video) {
-        video.open(inputVideoName);
-        // Check video has been opened sucessfully
-        if (!video.isOpened())
-            return 0;
-    }
-    
+   
     //Shift backward or forward ground truth sequence counter.
     //for compensating pre-processed frames in the filter.
     int cnt    = 0 ; 
-    
-    
+   
+
+    // Start timer
+    string description = "NP " + algorithm_params.str() ;
+    BGSTimer::Instance()->setSequenceName(inputVideoName.c_str(), description) ;
+    BGSTimer::Instance()->registerStartTime();
 
     // main loop 
     for(;;)
@@ -273,8 +293,29 @@ int main( int argc, char** argv )
             }
         }
 
+
+
+        // Save pixel information in a local file
+        if (!savePoint.empty()) {
+            Mat pointImg;
+            Frame.convertTo(pointImg,CV_8UC3);
+            stringstream msgPoint;
+
+            msgPoint  << (int)pointImg.at<Vec3b>(nl,nc)[0] << " "
+                      << (int)pointImg.at<Vec3b>(nl,nc)[1] << " "
+                      << (int)pointImg.at<Vec3b>(nl,nc)[2] ;
+            point_file<< msgPoint.str() << endl;
+        }
+
+
         if (displayImages) {
             Frame.convertTo(ftimg, CV_8UC3);
+
+            if (!savePoint.empty()) {
+                circle(ftimg,pt,8,Scalar(0,0,254),-1,8);
+            }
+
+
             imshow("Image", ftimg);
             if (ApplyMorphologicalFilter)
                 imshow("Mask", Eroded);
@@ -318,6 +359,11 @@ int main( int argc, char** argv )
         
     }
 
+    // Return elapsed time and sve it in file.
+    BGSTimer::Instance()->registerStopTime();
+    cout << BGSTimer::Instance()->getSequenceElapsedTime() << endl;
+    BGSTimer::deleteInstance();
+
     delete BGModel;
     //delete FilterFGImage;
     //delete FGImage;
@@ -330,6 +376,10 @@ int main( int argc, char** argv )
     delete [] DisplayBuffers;
 
     delete input_frame;
+
+    if (point_file.is_open())
+        point_file.close();
+
     return 0;
 }
 
