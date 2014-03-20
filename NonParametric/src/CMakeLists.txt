@@ -48,7 +48,7 @@ set_property(TARGET NPBuilder PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR
 
 
 ADD_EXECUTABLE( npbgs ${SRCS} )
-TARGET_LINK_LIBRARIES( npbgs NonParametricModel  Utils Performance  FrameReader ${OpenCV_LIBS} ${Boost_LIBRARIES} )
+TARGET_LINK_LIBRARIES( npbgs NonParametricModel  Utils Performance  FrameReader ${OpenCV_LIBS} ${Boost_LIBRARIES} Timer)
 set_property(TARGET npbgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)
