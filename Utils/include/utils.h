@@ -138,6 +138,10 @@ void showMultipleImages();
 bool FileExists( const char* );
 bool DirectoryExists( const char* path );
 void CreateDirectory( const char* path);
+void ListDirectories( string, vector<string> &);
+void ListImgFilesInDirectory( string, vector<string> &);
+void MapAllMasksDirectories( string, map<int,map<int,string> >&);
+void MapImgFilesInDirectory( string, map<int,string>&);
     
 NPBGConfig* loadInitParametersFromFile(string init="config/np_init.txt");
 }

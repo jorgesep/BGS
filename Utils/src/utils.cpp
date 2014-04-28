@@ -424,4 +424,93 @@ void parse_file(string filename, vector< pair<string, string> >& pair_str)
 
 
 
+
+// Look for jpg and png files in directory
+void ListDirectories (string _directory, vector<string>& dir_list )
+{
+    boost::filesystem::path _path ( _directory.c_str() );
+    if (is_directory(_path)) {
+       vector<path> v;
+       copy(directory_iterator(_path), directory_iterator(), back_inserter(v));
+
+       for (vector<path>::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it) {
+
+           //if ( (it->extension() == ".jpg") || (it->extension() == ".png") )
+           if (is_directory(*it))
+               dir_list.push_back((canonical(*it).string()));
+       }
+
+       sort(dir_list.begin(), dir_list.end());
+
+   }
+
+}
+
+void ListImgFilesInDirectory (string _directory, vector<string>& dir_list )
+{
+    boost::filesystem::path _path ( _directory.c_str() );
+    if (is_directory(_path)) {
+       vector<path> v;
+       copy(directory_iterator(_path), directory_iterator(), back_inserter(v));
+
+       for (vector<path>::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it) {
+
+           if ( (it->extension() == ".jpg") || (it->extension() == ".png") )
+               dir_list.push_back((canonical(*it).string()));
+       }
+
+       sort(dir_list.begin(), dir_list.end());
+
+   }
+
+}
+
+void MapAllMasksDirectories (string _directory, map<int, map<int,string> >& dir_list )
+{
+
+    int id;
+    boost::filesystem::path _path ( _directory.c_str() );
+    if (is_directory(_path)) {
+       vector<path> v;
+       copy(directory_iterator(_path), directory_iterator(), back_inserter(v));
+
+       for (vector<path>::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it) {
+
+           if (is_directory(*it)){
+               map<int,string> mapFile;
+               stringstream numdir(it->stem().string());
+               numdir >> id;
+               if (id >= 0) {
+                   MapImgFilesInDirectory(canonical(*it).string(),mapFile);
+                   dir_list[id] = mapFile;
+               }
+            }
+       }
+    }
+}
+
+
+
+void MapImgFilesInDirectory (string _directory, map<int,string>& dir_list )
+{
+
+    map<int,string> mapFile;
+    int id;
+    boost::filesystem::path _path ( _directory.c_str() );
+    if (is_directory(_path)) {
+       vector<path> v;
+       copy(directory_iterator(_path), directory_iterator(), back_inserter(v));
+
+       for (vector<path>::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it) {
+
+           if ( (it->extension() == ".jpg") || (it->extension() == ".png") ) {
+               stringstream numdir(it->stem().string());
+               numdir >> id;
+               if (id >= 0)
+                   dir_list.insert(std::pair<int,string>(id,(canonical(*it).string()) ));
+            }
+       }
+    }
+}
+
 }
