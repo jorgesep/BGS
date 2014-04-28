@@ -161,7 +161,16 @@ int main( int argc, char** argv )
     cout << perf.refToString() << endl;
     
     //Performance::ContingencyMatrix index[3];
+    bool _frame_level = true;
+    // Enable frame level performance
+    perf.setFramePerformanceMeasures(_frame_level);
+    Mat map;
+    perf.frameSimilarity(im2, im1, map);
+
     perf.pixelLevelCompare(im1, im2);
+
+    // TP TN - TP TN FP FN SENSITIVITY 1-SPECIFICITY FMEASURE MCC
+    cout << perf.getHeaderForFileWithNameOfStatisticParameters() << endl;
     cout << perf.asString() << endl;
    // index = perf.getContingencyMatrix();
 

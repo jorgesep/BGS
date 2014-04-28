@@ -49,10 +49,7 @@ const char* keys =
     "{ i | input   |       | Input video }"
     "{ r | read    |       | Read background model from  file }"
     "{ w | write   |       | Write background model in a file }"
-    "{ f | filter  | true  | Apply smooth preprocessing filter, Default true.}"
     "{ p | point   |       | Print out RGB values of point,  e.g -p 250,300 }"
-    "{ v | verbose | false | Print out output messages by console}"
-    "{ d | debug   | false | Debug mode, print by console internal gaussian parameters }"
     "{ s | show    | true  | Show images of video sequence }"
     "{ h | help    | false | Print help message }"
 };
@@ -87,14 +84,11 @@ int main( int argc, char** argv )
 
 
     // Read input parameters
-    const string inputName  = cmd.get<string>("input");
+    const string inputName       = cmd.get<string>("input");
     const string bgModelName     = cmd.get<string>("read");
     const string saveName        = cmd.get<string>("write");
     const string displayPoint    = cmd.get<string>("point");
     const bool displayImages     = cmd.get<bool>("show");
-    //const bool applyFilter       = cmd.get<bool>("filter");
-    //const bool debugPoint        = cmd.get<bool>("debug");
-    //bool verbose                 = cmd.get<bool>("verbose");
 
     
 
