@@ -74,6 +74,10 @@ ADD_EXECUTABLE( play_sequence play_sequence )
 TARGET_LINK_LIBRARIES( play_sequence FrameReader Utils ${OpenCV_LIBS} )
 set_property(TARGET play_sequence PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
+ADD_EXECUTABLE( play_mask play_sequence_masks )
+TARGET_LINK_LIBRARIES( play_mask Utils ${OpenCV_LIBS} )
+set_property(TARGET play_mask PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
 ADD_EXECUTABLE( bgs bgs )
 TARGET_LINK_LIBRARIES( bgs ${OpenCV_LIBS} ${Boost_LIBRARIES} SAGMM Performance Utils Timer ImageUtils )
 set_property(TARGET bgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
