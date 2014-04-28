@@ -14,7 +14,7 @@ from scipy.integrate import trapz
 
 class plotroc :
 
-    def __init__(self, indexes=None, internal_range=None, one_value=None, xline=None):
+    def __init__(self, indexes=None, internal_range=None, one_value=None, xline=None, _verbose=False):
         self.colorList={'1':(0.98,0.01,0.74),\
                 '2' : (1.0,0.60,0.00),\
                 '3' : 'r',\
@@ -37,9 +37,10 @@ class plotroc :
         self.text = ''
         self.range_values = []
         self.range_0 = ()
+        self.verbose = _verbose
         # Define X line to calculate area under curve
         if xline == None:
-            self.xline = 0.25
+            self.xline = 0.1
         else:
             self.xline = float(xline)
 
@@ -122,17 +123,17 @@ class plotroc :
         self.p1_idx  = self.parameters[self.name_1]
 
         self._get_range()
-        print "%sPlotting %s%s%s over%s %s%s" % (self.colors['blue'],\
-                self.colors['red'],\
-                self.name_1,\
-                self.colors['blue'],\
-                self.colors['red'],\
-                self.name_0,\
-                self.colors['reset'])
-        print "%s------------------------------------%s" %(self.colors['blue'], self.colors['reset'])
-        print self.parameters_name
-        print "Plot range of '%s' %s%s%s" % (self.name_0,self.colors['blue'], " ".join([str(i) for i in self.range_values]), self.colors['reset'])
-        print "Plot value of '%s' %s%s%s" % (self.name_0, self.colors['green'], float(self.parameter_value), self.colors['reset'])
+        if self.verbose :
+            print "%sPlotting %s%s%s over%s %s%s" % (self.colors['blue'],\
+                    self.colors['red'],\
+                    self.name_1,\
+                    self.colors['blue'],\
+                    self.colors['red'],\
+                    self.name_0,\
+                    self.colors['reset'])
+            print "%s------------------------------------%s" %(self.colors['blue'], self.colors['reset'])
+            print "Plot range of '%s' %s%s%s" % (self.name_0,self.colors['blue'], " ".join([str(i) for i in self.range_values]), self.colors['reset'])
+            print "Plot value of '%s' %s%s%s" % (self.name_0, self.colors['green'], float(self.parameter_value), self.colors['reset'])
 
 
     def _set_title(self,title=None):
@@ -167,7 +168,7 @@ class plotroc :
             lookup_range = self.parameter_range
             if internal_range != None:
                 lookup_range = internal_range
- 
+
             # verify if the input is a range
             if lookup_range.find('-') > 0:
                 sep = re.search('[0-9]+\.?[0-9]*(.)[0-9]+\.?[0-9]*',lookup_range).groups()[0]
@@ -250,6 +251,23 @@ class plotroc :
         return [X,Y,T,A]
          
             
+    def array_of_values(self,val=None):
+        # Assign parameters
+        col_0 = self.name_0
+        col_1 = self.name_1
+        index_0 = self.parameters[col_0]
+        index_1 = self.parameters[col_1]
+
+        # Determine line to be plot, if not value takes middle
+        value = float(self.parameter_value)
+        if value == None or val == None:
+            value = self._get_middle_value()
+        else:
+            value = float(val)
+
+        # get mean values of parametric line.
+        [X,Y,T,A]     = self._get_X_Y(col_0, col_1 ,value)
+        return [X,Y,T,A] 
 
 
     def _plot_mean_and_median(self,filename, val=None):
@@ -487,7 +505,8 @@ class plotroc :
         ax.tick_params(axis='both', which='major', labelsize=self.fontsizes[2] )
         ax.set_title(self.title, fontsize=self.fontsizes[3] )
         ax.grid()
-        ax.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56),  prop={'size':8},numpoints=1)
+        #ax.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56),  prop={'size':8},numpoints=1)
+        ax.legend(legendP,legendT, bbox_to_anchor=(1,0), loc='lower right', prop={'size':8},numpoints=1, fancybox=True, shadow=True)
         #
         pl.savefig(filename)
 
@@ -544,7 +563,8 @@ class plotroc :
             i+=1
  
         #
-        ax.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), prop={'size':8},numpoints=1)
+        #ax.legend(legendP,legendT, bbox_to_anchor=(0.99,0.56), prop={'size':8},numpoints=1)
+        ax.legend(legendP,legendT, bbox_to_anchor=(1,0), loc='lower right', prop={'size':8},numpoints=1, fancybox=True, shadow=True)
         ax.tick_params(axis='both', which='major', labelsize=8)
         ax.text(0.99, 0.05, self.text ,horizontalalignment='right', verticalalignment='center',  transform=ax.transAxes, fontsize=self.fontsizes[2] )
         ax.set_xlabel('False Positive Rate', fontsize=self.fontsizes[2] )
@@ -639,8 +659,9 @@ class plotroc :
             i+=1
             #return
         #
-        ax.axvline(x=self.xline,linewidth=0.5)
-        ax.legend(self.legendP,self.legendT, bbox_to_anchor=(0.99,0.56), prop={'size':8},numpoints=1)
+        ax.axvline(x=self.xline,ls='dashed',lw=0.1)
+        ax.legend(self.legendP,self.legendT, bbox_to_anchor=(1,0), loc='lower right', prop={'size':8},numpoints=1, fancybox=True, shadow=True)
+        #ax.legend(self.legendP,self.legendT, bbox_to_anchor=(0.99,0.56), prop={'size':8},numpoints=1)
         ax.tick_params(axis='both', which='major', labelsize=8)
         ax.text(0.99, 0.05, self.text ,horizontalalignment='right', verticalalignment='center',  transform=ax.transAxes, fontsize=self.fontsizes[2] )
         ax.set_xlabel('False Positive Rate', fontsize=self.fontsizes[2] )
@@ -1093,12 +1114,14 @@ if __name__ == '__main__':
         parser.print_help()
         sys.exit()
  
-                       
-    n = plotroc(options.colums,options.range,options.value,options.xline)
+
+    n = plotroc(options.colums,options.range,options.value,options.xline,True)
     n.load(options.file)
     #
-    n.plot6()
+    if options.range == None:
+        n.plot6()
+    else:
+        n.plot8()
     #n.plot7()
-    #n.plot8()
     n.plot9()
 

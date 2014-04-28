@@ -13,7 +13,7 @@ from scipy.integrate import trapz
 
 class frameplot :
 
-    def __init__(self, indexes=None, internal_range=None, one_value=None):
+    def __init__(self, indexes=None, internal_range=None, one_value=None, verbose=False):
         self.colorList={'1':(0.98,0.01,0.74),\
                 '2' : (1.0,0.60,0.00),\
                 '3' : 'r',\
@@ -36,6 +36,7 @@ class frameplot :
         self.text = ''
         self.range_values = []
         self.range_0 = ()
+        self.verbose = verbose
 
     def print_parameter_values(self):
         print self.parameters_name
@@ -62,7 +63,8 @@ class frameplot :
         listp.sort()
         names = [name+':'+ str(self.parameters[name])+' '  for name in listp]
         self.parameters_name = ''.join(names)
-        print self.parameters_name
+        if self.verbose :
+            print self.parameters_name
 
         
         if self.indexes == None:
@@ -85,23 +87,14 @@ class frameplot :
         self.p1_idx  = self.parameters[self.name_1]
 
         self._get_range()
-        #temp_line_p0 = { p0[self.p0_idx]:str(p0[self.p0_idx]) for p0 in self.data }
-        #temp_values  = [float(val) for val in temp_line_p0.keys()]
-        #temp_values.sort()
-        #temp_line_p0 = { p0:"%s%s%s"%(self.str_colors['blue'], p0, self.str_colors['reset']) for p0 in self.range_values }
-        #ran_str = ""
-        #for i in range(len(temp_values)):
-        #    if temp_line_p0.has_key(i):
-        #        ran_str += str(temp_line_p0[i]) + " "
-        #    else:
-        #        ran_str += str(temp_values[i]) + " "
-        # 
-        #print ran_str 
-        print "Plot range of '%s' %s%s%s" % (self.name_0,self.str_colors['blue'], " ".join([str(i) for i in self.range_values]), self.str_colors['reset'])
-        print "Plot value of '%s' %s%s%s" % (self.name_0, self.str_colors['red'], float(self.parameter_value), self.str_colors['reset'])
+        if self.verbose :
+            print "Plot range of '%s' %s%s%s" % (self.name_0,self.str_colors['blue'], " ".join([str(i) for i in self.range_values]), self.str_colors['reset'])
+            print "Plot value of '%s' %s%s%s" % (self.name_0, self.str_colors['red'], float(self.parameter_value), self.str_colors['reset'])
 
 # LearningRate cf bgRation Threshold Gen GaussiansNo Sigma cT Tau TPR_MEAN FPR_MEAN FMEASURE_MEAN MCC_MEAN TPR_MEDIAN FPR_MEDIAN FMEASURE_MEDIAN MCC_MEDIAN PSNR MSSIM DSCORE
 
+    def getIndexOf(self, parameter) :
+        return self.parameters[parameter]
 
 
     def _set_title(self,title=None):
@@ -178,6 +171,40 @@ class frameplot :
         middle_value=temp_values
         value = float( middle_value[int(len(middle_value)*0.5)] )
         return value
+
+    def getPerformanceValues(self):
+        '''
+        Return a list all performance values for a single learning rate
+        '''
+
+        # Assign parameters
+        index_0 = self.p0_idx
+        index_1 = self.p1_idx
+
+        # Fixing to Learning Rate
+        key_val = self.parameter_value
+
+        # Measure: MCC, FMEASURE, PSNR or DSCORE. By default MCC
+
+        # get Threshold
+        th  = [float(p0[index_1]) for p0 in self.data if float(p0[index_0]) == float(key_val)]
+
+        # get FMeasure
+        fm  = [float(p0[self.fm_idx]) for p0 in self.data if float(p0[index_0]) == float(key_val)]
+
+        # MCC
+        mc  = [float(p0[self.mc_idx]) for p0 in self.data if float(p0[index_0]) == float(key_val)]
+
+        # PSNR
+        ps  = [float(p0[self.ps_idx]) for p0 in self.data if float(p0[index_0]) == float(key_val)]
+
+        # MSSIM
+        ms  = [float(p0[self.ms_idx]) for p0 in self.data if float(p0[index_0]) == float(key_val)]
+
+        # DSCORE
+        ds  = [float(p0[self.ds_idx]) for p0 in self.data if float(p0[index_0]) == float(key_val)]
+
+        return th,fm,mc,ps,ms,ds
 
     def _get_X_Y(self,key_val, value=None):
         '''col_1: is name of the parametric curve
@@ -345,7 +372,8 @@ class frameplot :
            col2: is variable parameter in the curve
            filename is the name of png file
         '''
-        print "PARAM: %s %s %s %s" % (self.name_0, self.name_1, filename, param)
+        if self.verbose:
+            print "PARAM: %s %s %s %s" % (self.name_0, self.name_1, filename, param)
 
         # Assigns parameters
         index_0 = self.parameters[col0]
@@ -368,7 +396,8 @@ class frameplot :
         lines=values
 
         # print name and value of fixed parameter
-        print "%s: %s" %(str(col0), " ".join([str(i) for i in lines]))  
+        if self.verbose :
+            print "%s: %s" %(str(col0), " ".join([str(i) for i in lines]))  
 
         # Counter for line colors
         i=0
