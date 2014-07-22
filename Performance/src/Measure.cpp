@@ -134,6 +134,7 @@ int main( int argc, char** argv )
     int gt_size = -1;
     int fg_size = -1;
     int map_size= -1;
+    int offset  =  0; 
     bool verbose = false;
     bool show_masks = false;
     string mask_dir;
@@ -239,6 +240,11 @@ int main( int argc, char** argv )
                 return -1;
             }
 
+            /// Compute offset between ground-truth and fg masks
+            /// If first frame of gt greater than first fg mask, then
+            /// negative offset otherwise positive.
+            offset = fg_files.begin()->first - gt_files.begin()->first ;
+
         }
         
         if (vm.count("param")) {
@@ -298,9 +304,9 @@ int main( int argc, char** argv )
     int size = 0;
     Mat gtimg;
     Mat fgmask;
-    string header("# ");
+    string header("#");
     
-    // Prepare first line header of output file
+    /// Prepare name of output file composed by name and number algorithm parameters.
     if (parameters.size() > 0) {
         vector< pair<string, string> >::iterator       it  = parameters.begin();
         vector< pair<string, string> >::const_iterator end = parameters.end();
@@ -308,7 +314,7 @@ int main( int argc, char** argv )
         value_first_parameter = it->second + " ";
         
         stringstream out;
-        out << "# ";
+        out << "#";
 
 
         
@@ -322,7 +328,7 @@ int main( int argc, char** argv )
 
         }
 
-        //out << "# Name TP_R TN_R    TP_M TN_M FP_M FN_M    TPR FPR FMEASURE MCC    PSNR MSSIM DSCORE ";
+        //out << "#Frame TP TN    TP TN FP FN    TPR FPR FMEASURE MCC    PSNR MSSIM DSCORE";
         header = out.str();
     }
     
@@ -334,7 +340,8 @@ int main( int argc, char** argv )
     cnt = gt_files.begin()->first;
     
     
-    //Opening result file.
+    /// Opening file which contains parameters of algorithm
+    /// Appendt it to first line of output file as a header.
     ifstream infile (parameter_file.c_str());
     if (infile.is_open()) {
         stringstream lines;
@@ -354,6 +361,7 @@ int main( int argc, char** argv )
     output_filename += ".txt";
     outfile.open(output_filename.c_str());
     outfile << header << endl;
+    outfile << "#GT_Frame Frame TP TN    TP TN FP FN    TPR FPR FMEASURE MCC    PSNR MSSIM DSCORE" << endl;
 
 
     // Prepare windows to display foreground and ground masks.
@@ -375,7 +383,7 @@ int main( int argc, char** argv )
 
     for ( int i= cnt; i<size + cnt; i++)
     {
-        if ( (gt_it = gt_files.find(i)) != gt_files.end() && (fg_it = fg_files.find(i)) != fg_files.end()) {
+        if ( (gt_it = gt_files.find(i)) != gt_files.end() && (fg_it = fg_files.find(i+offset)) != fg_files.end()) {
         
             gtimg  = Scalar::all(0);
             fgmask = Scalar::all(0);
@@ -434,7 +442,7 @@ int main( int argc, char** argv )
                 
                 //Debug messages.
                 msg.str("");
-                msg     << fileName(fg_it->second) << " " << measure->asString() << " " ;
+                msg     << fileName(gt_it->second) << " "  << fileName(fg_it->second) << " " << measure->asString() << " " ;
                 outfile << msg.str() << endl;
                 
                 if (verbose)
