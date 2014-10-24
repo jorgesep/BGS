@@ -6,10 +6,10 @@
 <SigmaMin>4.0</SigmaMin>
 <Cf>0.1</Cf>
 <Range>10.0</Range>
-<Gen>9.0</Gen>
+<Gen>3.5</Gen>
 <CT>0.05</CT>
 <Tau>0.5</Tau>
-<Alpha>0.0002</Alpha>
+<Alpha>0.001</Alpha>
 <InitFGMaskFrame>216</InitFGMaskFrame>
 <EndFGMaskFrame>682</EndFGMaskFrame>
 <ApplyMorphologicalFilter>0</ApplyMorphologicalFilter>
