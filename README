@@ -1,15 +1,22 @@
-Background Subtraction modules
-==============================
+Software for evaluating BGS algorithms with MuHAVi a human action dataset
+=====================================================================
+This software was prepared for automatically generate silhouettes from MuHAVi sequences and measures segmentation quality of the generated silhouettes.
+This contains a binary program with a bunch of BGS (background subtraction algorithms) based in GMM and a performance evaluation program which includes a group of quality metrics used to evaluate segmentation. 
+MuHAVi (Multicamera Human Action Video) is dataset of common human activities, http://dipersec.king.ac.uk/MuHAVi-MAS/
+
+Installation
+------------
+
 All BGS modules can be built out of source directory with CMake tool. 
 Check that all OpenCV libraries must be installed previous to build BGS modules.
 
 Ubuntu Installation
 ------------------
 1.- Install OpenCV
-2.- Install boost packages
 
-$ sudo apt-get install libboost-program-options
-$ sudo apt-get install libboost-regexp
+2.- Install the following packages
+$ sudo apt-get update
+$ sudo apt-get install cmake git libboost-all-dev
 
 3.- Get BGS modules from github
 $ git clone https://github.com/jorgesep/BGS.git
