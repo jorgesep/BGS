@@ -6,7 +6,7 @@ SET( Performance_MINOR_VERSION 1 )
 SET( Performance_PATCH_LEVEL 0 )
 
 SET( CMAKE_C_FLAGS   "-g -Wall -O3" )
-SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
+SET( CMAKE_CXX_FLAGS "-Wall -g -O3 -Wmaybe-uninitialized" )
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
 endif()
@@ -22,7 +22,7 @@ FILE ( GLOB SCRIPTS ${PROJECT_SOURCE_DIR}/scripts/*.py ${PROJECT_SOURCE_DIR}/scr
 #MESSAGE("Performance Source Dir set to ${Performance_SOURCE_DIR}")
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/../include)
-INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/include)
+INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/FileUtils/include)
 
 # This include was added to support boost/program_options.hpp
 find_package( Boost REQUIRED COMPONENTS program_options regex filesystem system )
