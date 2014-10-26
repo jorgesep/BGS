@@ -11,7 +11,7 @@ SET( Performance_PATCH_LEVEL 0 )
 SET( CMAKE_C_FLAGS   "-g -Wall O3" )
 SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
+    set(CMAKE_CXX_FLAGS "-Wall -O3 -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable -Wno-sign-compare")        ## Optimize
 endif()
 
 FILE ( GLOB SRCS KernelTable.cpp NPBGmodel.cpp NPBGSubtractor.cpp *.h )

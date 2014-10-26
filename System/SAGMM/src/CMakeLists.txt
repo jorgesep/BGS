@@ -9,7 +9,7 @@ SET( Background_PATCH_LEVEL 0 )
 SET( CMAKE_C_FLAGS "-Wall -g -O3" )
 SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "-Wall -O3")        ## Optimize
+    set(CMAKE_CXX_FLAGS "-Wall -O3 -Wno-uninitialized")        ## Optimize
 endif()
 
 FILE ( GLOB SRCS background_subtraction.cpp  mdgkt_filter.cpp icdm_model.cpp sagmm_client.cpp *.h )
