@@ -1,13 +1,16 @@
-Software for evaluating BGS algorithms with MuHAVi a human action dataset
-=====================================================================
-This software was prepared for automatically generate silhouettes from MuHAVi sequences and measures segmentation quality of the generated silhouettes.
-This contains a binary program with a bunch of BGS (background subtraction algorithms) based in GMM and a performance evaluation program which includes a group of quality metrics used to evaluate segmentation. 
+Software for evaluating BGS algorithms.
+======================================
+
+This software provides C++ classes of some BGS (Background Subtraction) algorithms. The classes are implemented using OpenCV libraries. Additionally, a perfomance evaluation program has been included which contains quality metrics to evaluate segmentation.
+
+The code was developed to evaluate quality segmentation of the BGS algorithms incorporated in the main module after be applied over the MuHAVi (human action dataset). The algorithms generated automatically a set of silhouettes from MuHAVi sequences and later were evaluated with performance evaluation module.
+
 MuHAVi (Multicamera Human Action Video) is dataset of common human activities, http://dipersec.king.ac.uk/MuHAVi-MAS/
 
 Installation
 ------------
 
-All BGS modules can be built out of source directory with CMake tool. 
+All BGS modules can be build outside of the source directory with CMake tool. 
 Check that all OpenCV libraries must be installed previous to build BGS modules.
 
 Ubuntu Installation
