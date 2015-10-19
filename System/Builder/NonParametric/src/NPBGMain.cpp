@@ -167,11 +167,22 @@ int main( int argc, char** argv )
     
     
     // Create display windows
+
+    /// aspect ratio of pictures 5:4
+    int width  = 200;
+    int height = int(width/1.25);
+    int border = 1;
+    int sep    = 1;
+    int ncol   = 2; 
+    int nrow   = 1;
+    int wsize  = border*2 + ncol*width  + (ncol-1)*sep;
+    int hsize  = border*2 + nrow*height + (nrow-1)*sep;
+    int m = border;
+    int n = border;
+
     if (displayImages) {
-        namedWindow("Image", CV_WINDOW_NORMAL);
-        namedWindow("Mask", CV_WINDOW_NORMAL);
-        moveWindow("Image", 20, 20);
-        moveWindow("Mask" , 20, 300);
+        namedWindow("Non-Parametric", CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED);
+        moveWindow("Non-Parametric", 50, 50);
     }
 
     //Get specific point to be displayed in the image.
@@ -269,6 +280,8 @@ int main( int argc, char** argv )
         if (ApplyMorphologicalFilter) {
             Mat Element(2,2,CV_8U,cv::Scalar(1));
             erode(Mask,Eroded,Element);
+            Mask = Scalar::all(0);
+            Eroded.copyTo(Mask);
         }
 
         if (saveMask &&  cnt >= InitFGMaskFrame &&  cnt <= EndFGMaskFrame) {
@@ -280,10 +293,7 @@ int main( int argc, char** argv )
             compression_params.push_back(9);
 
             try {
-                if (ApplyMorphologicalFilter)
-                    imwrite(str.str(), Eroded, compression_params);
-                else
-                    imwrite(str.str(), Mask, compression_params);
+                imwrite(str.str(), Mask, compression_params);
             }
             catch (runtime_error& ex) {
                 cout << "Exception converting image to PNG format: " << ex.what() << endl;
@@ -309,18 +319,36 @@ int main( int argc, char** argv )
 
 
         if (displayImages) {
+
             Frame.convertTo(ftimg, CV_8UC3);
 
-            if (!savePoint.empty()) {
+            if (!savePoint.empty()){ 
                 circle(ftimg,pt,8,Scalar(0,0,254),-1,8);
+                circle(Mask,pt,8,Scalar(0,0,254),-1,8);
             }
 
+            m = border;
+            n = border;
 
-            imshow("Image", ftimg);
-            if (ApplyMorphologicalFilter)
-                imshow("Mask", Eroded);
-            else
-                imshow("Mask", Mask);
+            Mat fgimg;
+            fgimg.create(Size(wsize,hsize), CV_8UC3) ;
+            //fgimg = Scalar::all(255);
+
+            // Invert color of Mask from black to white
+            Mat InvertedMask;
+            threshold(Mask, InvertedMask, 200, 255, 1);
+
+            Mat ColorMask;
+            cvtColor(InvertedMask,ColorMask, CV_GRAY2BGR);
+
+
+            Mat ImageROI   = fgimg(Rect( m, n, width, height ));
+            resize(ftimg, ImageROI  , ImageROI.size()  , 0, 0 );
+
+            ImageROI = fgimg(Rect( m + sep + width, n, width, height ));
+            resize(ColorMask , ImageROI, ImageROI.size(), 0, 0 );
+
+            imshow("Non-Parametric", fgimg);
 
             char key=0;
             key = (char)waitKey(delay);
@@ -338,14 +366,14 @@ int main( int argc, char** argv )
                     // save frame with return key
                     if (key == 13) {
                         stringstream str;
-                        str << "np_" << cnt << ".png" ;
+                        str << "np_" << cnt << "_bg.png" ;
                         imwrite( str.str()  , ftimg  );
                         str.str("") ;
                         str << "np_" << cnt << "_fg.png" ;
-                        if (ApplyMorphologicalFilter)
-                            imwrite( str.str(), Eroded );
-                        else
-                            imwrite( str.str(), Mask );
+                        imwrite( str.str(), Mask );
+                        str.str("") ;
+                        str << "np_" << cnt << "_bg_fg.png" ;
+                        imwrite( str.str(), fgimg );
                     }
                 }
             }
