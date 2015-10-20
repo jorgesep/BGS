@@ -563,9 +563,9 @@ private:
     float specificity;
     float precision;
     float MCC;
-    float medianR[2];
-    float medianG;
-    float medianB;
+    //float medianR[2];
+    //float medianG;
+    //float medianB;
     unsigned char threshold;
     unsigned int nchannel;
 

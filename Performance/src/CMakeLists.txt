@@ -9,6 +9,9 @@ SET( CMAKE_C_FLAGS   "-g -Wall -O3" )
 SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-Wall -O3 -Wno-uninitialized")        ## Optimize
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # using regular Clang or AppleClang
+    SET( CMAKE_CXX_FLAGS "-Wall -Wno-unused-local-typedef -g -O3" )
 endif()
 
 FILE ( GLOB CONFIG ${PROJECT_SOURCE_DIR}/../config/*.jpg ${PROJECT_SOURCE_DIR}/../config/*.PNG ${PROJECT_SOURCE_DIR}/../config/*.png )
@@ -32,7 +35,7 @@ link_directories(${BGS_BINARY_DIR}/Utils)
 
 # Set DEBUG option
 OPTION(DEBUG "DEBUG option to print out more info" ON)
-set(OpenCV_DIR "/usr/local/share/OpenCV"
+set(OpenCV_DIR "/opt/local/share/OpenCV"
        CACHE PATH "The path where OpenCVConfig.cmake is placed")
 FIND_PACKAGE( OpenCV REQUIRED )
 

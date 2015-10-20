@@ -12,6 +12,9 @@ SET( CMAKE_C_FLAGS   "-g -Wall O3" )
 SET( CMAKE_CXX_FLAGS "-Wall -g -O3" )
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-Wall -O3 -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable -Wno-sign-compare")        ## Optimize
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # using regular Clang or AppleClang
+    SET( CMAKE_CXX_FLAGS "-Wall -Wno-unused-local-typedef -Wno-unused-variable -g -O3" )
 endif()
 
 FILE ( GLOB SRCS KernelTable.cpp NPBGmodel.cpp NPBGSubtractor.cpp *.h )

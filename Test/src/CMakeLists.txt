@@ -13,7 +13,7 @@ INCLUDE_DIRECTORIES(${Performance_SOURCE_DIR}/../include)
 
 # Set DEBUG option
 OPTION(DEBUG "DEBUG option to print out more info" ON)
-set(OpenCV_DIR "/usr/local/share/OpenCV"
+set(OpenCV_DIR "/opt/local/share/OpenCV"
        CACHE PATH "The path where OpenCVConfig.cmake is placed")
 FIND_PACKAGE( OpenCV REQUIRED )
 

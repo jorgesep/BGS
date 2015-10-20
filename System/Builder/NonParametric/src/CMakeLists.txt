@@ -28,7 +28,7 @@ INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/ThirdParty/bg_subt_code)
 #link_directories(${BGS_BINARY_DIR}/lib)
 
 # openCV library
-set(OpenCV_DIR "/usr/local/share/OpenCV"
+set(OpenCV_DIR "/opt/local/share/OpenCV"
                CACHE PATH "The path where OpenCVConfig.cmake is placed")
 FIND_PACKAGE( OpenCV REQUIRED )
 
