@@ -634,7 +634,8 @@ void operator()(const Range& range) const
                     string BLUE = "\033[0;34m";
                     string GREEN= "\033[0;32m";
                     string RESET= "\033[0m" ;
-                    string C[nmixtures];
+                    //string C[nmixtures];
+                    string *C = new string[nmixtures];
 
                     if (COLORED) 
                         for (int i=0; i<nmixtures; i++) C[i] = flagged_mode[i]==1?BLUE:(flagged_mode[i]==2?RED:(flagged_mode[i]==3?GREEN:"")) ;
@@ -667,6 +668,7 @@ void operator()(const Range& range) const
                            << C[2] <<setprecision(8)<<fixed<< old_weight[2] <<setprecision(0)<<fixed<< ":"<< MD[2]<< ":" << four_sigma[2] << ":" << three_sigma[2] <<RESET<<" " 
                            << C[3] <<setprecision(8)<<fixed<< old_weight[3] <<setprecision(0)<<fixed<< ":"<< MD[3]<< ":" << four_sigma[3] << ":" << three_sigma[3] <<RESET<<") "
                     << endl;
+                    delete [] C;
 
                 }
             }
