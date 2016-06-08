@@ -158,7 +158,7 @@ int main( int argc, char** argv )
         << " SequenceLength=" << SequenceLength 
         << " TimeWindowSize=" << TimeWindowSize ; 
 
-        ofstream outfile;
+        std::ofstream outfile;
         outfile.open(param.str().c_str());
         outfile << algorithm_params.str() ;
         outfile.close();
@@ -187,7 +187,7 @@ int main( int argc, char** argv )
 
     //Get specific point to be displayed in the image.
     //Check input point to display value
-    ofstream point_file;
+    std::ofstream point_file;
     int nl=0,nc=0;
     Point pt(0,0);
     if (!savePoint.empty()) {

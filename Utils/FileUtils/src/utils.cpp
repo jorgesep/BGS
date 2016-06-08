@@ -273,7 +273,7 @@ NPBGConfig* loadInitParametersFromFile(string config)
 {
     NPBGConfig * cfg = new NPBGConfig;
 
-    ifstream file(config.c_str());
+    std::ifstream file(config.c_str());
     if (!file.good()) return cfg;
 
     string line;
@@ -375,7 +375,7 @@ void parse_file(string filename, vector< pair<string, string> >& pair_str)
     
     if ( exists(filename) && is_regular_file(filename) ) {
         
-        ifstream input;
+        std::ifstream input;
         input.open(filename.c_str());
 
         for( string line; getline( input, line ); ) {

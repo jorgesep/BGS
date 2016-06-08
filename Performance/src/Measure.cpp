@@ -297,7 +297,7 @@ int main( int argc, char** argv )
     
     
     stringstream msg,ptmsg;
-    ofstream outfile, ptfile, rocfile;
+    std::ofstream outfile, rocfile;
 
     int cnt_processed = 0;
     int cnt  = 0;
@@ -342,7 +342,7 @@ int main( int argc, char** argv )
     
     /// Opening file which contains parameters of algorithm
     /// Appendt it to first line of output file as a header.
-    ifstream infile (parameter_file.c_str());
+    std::ifstream infile (parameter_file.c_str());
     if (infile.is_open()) {
         stringstream lines;
         string line;

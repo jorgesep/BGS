@@ -63,7 +63,7 @@ const string BGSTimer::getSequenceElapsedTime()
     ss << time_path << "/" << name << ".txt" ;
     string filename = ss.str();
 
-    ofstream file;
+    std::ofstream file;
     file.open (filename.c_str() , ios::out | ios::app );
     file << str.str() << endl;
     file.close();

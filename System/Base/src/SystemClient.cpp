@@ -193,7 +193,7 @@ int main( int argc, char** argv )
             bgs::create_foreground_directory(ucv_foreground_path);
 
 
-        ofstream outfile;
+        std::ofstream outfile;
         stringstream param;
         if (algorithmNPEnabled) {
             param << np_foreground_path << "/parameters.txt" ;
