@@ -15,3 +15,5 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     SET( CMAKE_CXX_FLAGS "-Wall -Wno-unused-local-typedef -g -O3" )
 endif()
 
+FILE( GLOB files *.h )
+INSTALL(FILES ${files} DESTINATION include/bgs )

@@ -23,6 +23,8 @@ FILE ( GLOB SCRIPTS ${PROJECT_SOURCE_DIR}/scripts/*.py ${PROJECT_SOURCE_DIR}/scr
 #MESSAGE("BGS Source Dir set to ${BGS_SOURCE_DIR}")
 #MESSAGE("Performance Binary Dir set to ${Performance_BINARY_DIR}")
 #MESSAGE("Performance Source Dir set to ${Performance_SOURCE_DIR}")
+#MESSAGE("CMAKE_CURRENT_SOURCE_DIR Source Dir set to ${CMAKE_CURRENT_SOURCE_DIR}")
+#MESSAGE("CMAKE_CURRENT_BINARY_DIR Source Dir set to ${CMAKE_CURRENT_BINARY_DIR}")
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/../include)
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/FileUtils/include)
@@ -67,3 +69,13 @@ set_property(TARGET Performance PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_D
 file(COPY ${CONFIG} DESTINATION ${BGS_BINARY_DIR}/config/)
 file(COPY ${SCRIPTS} DESTINATION ${BGS_BINARY_DIR}/bin/)
 
+INSTALL(DIRECTORY ../include/ DESTINATION include/bgs)
+
+INSTALL(TARGETS testMatBinary testPerformance testDScore createMapDScore pmbgs
+                Performance
+        RUNTIME DESTINATION bin COMPONENT app
+        LIBRARY DESTINATION lib COMPONENT runtime
+        ARCHIVE DESTINATION lib COMPONENT runtime
+        PUBLIC_HEADER DESTINATION include/bgs COMPONENT dev
+        FRAMEWORK DESTINATION "/Library/Frameworks"
+)

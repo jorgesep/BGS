@@ -102,7 +102,7 @@ int main( int argc, char** argv )
     Mat gt_image;
     //DisplayImages display;
     stringstream msg,ptmsg;
-    ofstream outfile, ptfile, rocfile;
+    std::ofstream outfile, ptfile, rocfile;
     BackgroundSubtractorMOG3 bg_model;
     Mat img, fgmask, fgimg, ftimg,fgimg_final;
     bool update_bg_model = true;

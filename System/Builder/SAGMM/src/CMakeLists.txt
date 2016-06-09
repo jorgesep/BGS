@@ -41,3 +41,13 @@ ADD_LIBRARY( SAGMMBuilder SHARED ${SRCS} )
 target_link_libraries( SAGMMBuilder SAGMM ${OpenCV_LIBS} ${Boost_LIBRARIES} )
 set_property(TARGET SAGMMBuilder PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
+FILE( GLOB files *.h )
+INSTALL(FILES ${files} DESTINATION include/bgs )
+
+INSTALL(TARGETS SAGMMBuilder
+        RUNTIME DESTINATION bin COMPONENT app
+        LIBRARY DESTINATION lib COMPONENT runtime
+        ARCHIVE DESTINATION lib COMPONENT runtime
+        PUBLIC_HEADER DESTINATION include/bgs COMPONENT dev
+        FRAMEWORK DESTINATION "/Library/Frameworks"
+        )

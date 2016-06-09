@@ -69,23 +69,31 @@ set_property(TARGET SAGMM PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/li
 #TARGET_LINK_LIBRARIES( testMdgkt SAGMM ${OpenCV_LIBS} )
 #set_property(TARGET testMdgkt PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 #
-#ADD_EXECUTABLE( plot_point bg_points )
-#TARGET_LINK_LIBRARIES( plot_point ${OpenCV_LIBS} )
-#set_property(TARGET plot_point PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
-#
-#ADD_EXECUTABLE( play_sequence play_sequence )
-#TARGET_LINK_LIBRARIES( play_sequence FrameReader Utils ${OpenCV_LIBS} )
-#set_property(TARGET play_sequence PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
-#
-#ADD_EXECUTABLE( play_mask play_sequence_masks )
-#TARGET_LINK_LIBRARIES( play_mask Utils ${OpenCV_LIBS} )
-#set_property(TARGET play_mask PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
-#
-#ADD_EXECUTABLE( sagmm sagmm_client )
-#TARGET_LINK_LIBRARIES( sagmm ${OpenCV_LIBS} ${Boost_LIBRARIES} SAGMM Performance Utils Timer ImageUtils )
-#set_property(TARGET sagmm PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+ADD_EXECUTABLE( plot_point bg_points )
+TARGET_LINK_LIBRARIES( plot_point ${OpenCV_LIBS} )
+set_property(TARGET plot_point PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
+ADD_EXECUTABLE( play_sequence play_sequence )
+TARGET_LINK_LIBRARIES( play_sequence FrameReader Utils ${OpenCV_LIBS} )
+set_property(TARGET play_sequence PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
+ADD_EXECUTABLE( play_mask play_sequence_masks )
+TARGET_LINK_LIBRARIES( play_mask Utils ${OpenCV_LIBS} )
+set_property(TARGET play_mask PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
+ADD_EXECUTABLE( sagmm_client sagmm_client )
+TARGET_LINK_LIBRARIES( sagmm_client ${OpenCV_LIBS} ${Boost_LIBRARIES} SAGMM Performance Utils Timer ImageUtils )
+set_property(TARGET sagmm_client PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
 file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)
 file(COPY ${SCRIPTS} DESTINATION ${BGS_BINARY_DIR}/bin/)
 
+INSTALL(DIRECTORY ../include/ DESTINATION include/bgs)
 
+INSTALL(TARGETS SAGMM sagmm_client play_mask play_sequence plot_point
+        RUNTIME DESTINATION bin COMPONENT app
+        LIBRARY DESTINATION lib COMPONENT runtime
+        ARCHIVE DESTINATION lib COMPONENT runtime
+        PUBLIC_HEADER DESTINATION include/bgs COMPONENT dev
+        FRAMEWORK DESTINATION "/Library/Frameworks"
+        )

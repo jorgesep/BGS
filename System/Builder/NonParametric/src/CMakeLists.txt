@@ -54,3 +54,14 @@ set_property(TARGET npbgs PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bi
 
 file(COPY ${PROJECT_SOURCE_DIR}/../config DESTINATION ${BGS_BINARY_DIR}/)
 file(COPY ${SCRIPTS} DESTINATION ${BGS_BINARY_DIR}/bin/)
+
+FILE( GLOB files *.h )
+INSTALL(FILES ${files} DESTINATION include/bgs )
+
+INSTALL(TARGETS npbgs testNP NPBuilder
+        RUNTIME DESTINATION bin COMPONENT app
+        LIBRARY DESTINATION lib COMPONENT runtime
+        ARCHIVE DESTINATION lib COMPONENT runtime
+        PUBLIC_HEADER DESTINATION include/bgs COMPONENT dev
+        FRAMEWORK DESTINATION "/Library/Frameworks"
+                                                   )

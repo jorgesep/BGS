@@ -39,3 +39,14 @@ include_directories( ${Boost_INCLUDE_DIRS} )
 ADD_LIBRARY( MOGBuilder SHARED ${SRCS} )
 target_link_libraries( MOGBuilder ${OpenCV_LIBS} ${Boost_LIBRARIES} Timer )
 set_property(TARGET MOGBuilder PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
+
+FILE( GLOB files *.h )
+INSTALL(FILES ${files} DESTINATION include/bgs )
+
+INSTALL(TARGETS MOGBuilder
+       RUNTIME DESTINATION bin COMPONENT app
+        LIBRARY DESTINATION lib COMPONENT runtime
+        ARCHIVE DESTINATION lib COMPONENT runtime
+        PUBLIC_HEADER DESTINATION include/bgs COMPONENT dev
+        FRAMEWORK DESTINATION "/Library/Frameworks"
+        )

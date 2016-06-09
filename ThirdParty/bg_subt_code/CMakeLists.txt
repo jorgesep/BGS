@@ -22,3 +22,14 @@ FILE ( GLOB SRCS KernelTable.cpp NPBGmodel.cpp NPBGSubtractor.cpp *.h )
 ADD_LIBRARY( NonParametricModel SHARED ${SRCS} )
 set_property(TARGET NonParametricModel PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 #set_property(TARGET NonParametricModel PROPERTY LIBRARY_OUTPUT_DIRECTORY ${NPBG_BINARY_DIR}/lib)
+
+FILE( GLOB files *.h )
+INSTALL(FILES ${files} DESTINATION include/bgs )
+
+INSTALL(TARGETS
+        RUNTIME DESTINATION bin COMPONENT app
+        LIBRARY DESTINATION lib COMPONENT runtime
+        ARCHIVE DESTINATION lib COMPONENT runtime
+        PUBLIC_HEADER DESTINATION include/bgs COMPONENT dev
+        FRAMEWORK DESTINATION "/Library/Frameworks"
+        )

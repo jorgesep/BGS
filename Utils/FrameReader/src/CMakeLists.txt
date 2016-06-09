@@ -42,6 +42,14 @@ ADD_LIBRARY( FrameReader SHARED ${SRCS} )
 target_link_libraries( FrameReader ${OpenCV_LIBS} ${Boost_LIBRARIES} )
 set_property(TARGET FrameReader PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/lib)
 
+FILE(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+INSTALL(FILES "${files}" DESTINATION include/bgs )
 
-
+INSTALL(TARGETS FrameReader
+        RUNTIME DESTINATION bin COMPONENT app
+        LIBRARY DESTINATION lib COMPONENT runtime
+        ARCHIVE DESTINATION lib COMPONENT runtime
+        PUBLIC_HEADER DESTINATION include/bgs COMPONENT dev
+        FRAMEWORK DESTINATION "/Library/Frameworks"
+)
 
