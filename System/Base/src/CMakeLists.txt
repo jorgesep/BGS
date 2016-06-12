@@ -75,7 +75,7 @@ file(COPY ${SCRIPTS} DESTINATION ${BGS_BINARY_DIR}/bin/)
 FILE( GLOB files *.h )
 INSTALL(FILES ${files} DESTINATION include/bgs )
 
-INSTALL(TARGETS bgs_system
+INSTALL(TARGETS bgs_system BaseSystem
         RUNTIME DESTINATION bin COMPONENT app
         LIBRARY DESTINATION lib COMPONENT runtime
         ARCHIVE DESTINATION lib COMPONENT runtime
