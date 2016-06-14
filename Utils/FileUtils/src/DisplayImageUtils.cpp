@@ -21,13 +21,16 @@
 
 void DisplayImages::mergeImages(InputArray _im1, InputArray _im2, OutputArray img)
 {
+    // Prepare
+    if (_im1.getMat().depth() == type)
+        cout << "";
 
-    vector<Mat> Imgs;
-    Imgs.push_back(_im1.getMat());
-    Imgs.push_back(_im2.getMat());
+    vector<Mat> Images;
+    Images.push_back(_im1.getMat());
+    Images.push_back(_im2.getMat());
     //int numberImages = 2;
     
-    if ( Imgs[0].empty() || Imgs[1].empty() ) return;
+    if ( Images[0].empty() || Images[1].empty() ) return;
 
 
     // w - Maximum number of images in a row
@@ -38,13 +41,13 @@ void DisplayImages::mergeImages(InputArray _im1, InputArray _im2, OutputArray im
 
 
     // Create a new 1 channel image
-    img.create(Size(60 + size*w, 5 + size*h),CV_8U);
+    img.create(Size(60 + size*w, 5 + size*h),CV_8UC3);
     Mat mask = img.getMat();
     mask     = Scalar::all(255);
 
     int m = 20;
     int n = 20;
-    for (vector<Mat>::iterator it = Imgs.begin() ; it != Imgs.end(); ++it) {
+    for (vector<Mat>::iterator it = Images.begin() ; it != Images.end(); ++it) {
 
 
         //Find the width and height of the image

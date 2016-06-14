@@ -41,9 +41,13 @@ class DisplayImages
 {
 
 public:
+    // Default constructor , type color images.
+    DisplayImages() : type(16){};
+    DisplayImages(int rhs) {type=rhs;};
     void mergeImages(InputArray, InputArray, OutputArray);
 
 private:
+    int type;
 };
 
 
