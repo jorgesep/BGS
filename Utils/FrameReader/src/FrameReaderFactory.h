@@ -41,6 +41,7 @@ public:
     virtual int getNChannels() = 0;
     virtual int getNumberCols() = 0;
     virtual int getNumberRows() = 0;
+    virtual int getNFrames() = 0;
     virtual int getFrameCounter () = 0;
 }; 
 
@@ -58,6 +59,7 @@ public:
     virtual int getNChannels() { return nchannels; };
     virtual int getNumberCols() { return cols; };
     virtual int getNumberRows() { return rows; };
+    virtual int getNFrames() { return length; };
     virtual int getFrameCounter() { return frame_counter; };
 private:
     void lookForImageFilesInDirectory(string);
@@ -69,6 +71,7 @@ private:
     int delay;
     int cols;
     int rows;
+    int length;
     int nchannels;
 };
 
@@ -90,6 +93,7 @@ public:
     virtual int getNChannels() { return nchannels; };
     virtual int getNumberCols() { return cols; };
     virtual int getNumberRows() { return rows; };
+    virtual int getNFrames() { return length; };
     virtual int getFrameCounter() { return frame_counter; };
 
 private:
@@ -98,6 +102,7 @@ private:
     int delay;
     int cols;
     int rows;
+    int length;
     int nchannels;
     string videoname;
     int frame_counter;

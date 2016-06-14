@@ -73,6 +73,8 @@ void ListFiles::lookForImageFilesInDirectory(string _directory)
 
         sort(im_files.begin(), im_files.end());
 
+        length = im_files.size();
+
     }
 
 }
@@ -187,9 +189,10 @@ void VideoFile::getImageProperties()
     video_prop >> Frame;
     
     double rate= video_prop.get(CV_CAP_PROP_FPS);
-    delay = 1000/rate ;
-    cols = video_prop.get(CV_CAP_PROP_FRAME_WIDTH);
-    rows = video_prop.get(CV_CAP_PROP_FRAME_HEIGHT);
+    delay  = 1000/rate ;
+    cols   = video_prop.get(CV_CAP_PROP_FRAME_WIDTH);
+    rows   = video_prop.get(CV_CAP_PROP_FRAME_HEIGHT);
+    length = video_prop.get(CV_CAP_PROP_FRAME_COUNT);
     int frameType = Frame.type();
     nchannels = CV_MAT_CN(frameType);
 
