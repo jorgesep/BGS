@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include <iostream>
+#include <math.h>
 
 #include "DisplayImageUtils.h"
 
@@ -83,4 +84,132 @@ void DisplayImages::mergeImages(InputArray _im1, InputArray _im2, OutputArray im
 
 }
 
+
+ChunkImage::ChunkImage(InputArray src, int num):sWidth(0,0,0), sHeight(0,0,0)
+{
+    Mat Image=src.getMat();
+    nrows = Image.rows;
+    ncols = Image.cols;
+
+    size = Size(ncols,nrows);
+
+    sWidth = computeSubImageSize(num, ncols);
+    sHeight = computeSubImageSize(num, nrows);
+    nrows = sHeight.len;
+    ncols = sWidth.len;
+    numSubImages = num;
+}
+
+ChunkImage::ChunkImage(int row, int col, int num):sWidth(0,0,0), sHeight(0,0,0)
+{
+    size = Size(col,row);
+
+    sWidth = computeSubImageSize(num, col);
+    sHeight = computeSubImageSize(num, row);
+    nrows = sHeight.len;
+    ncols = sWidth.len;
+    numSubImages = num;
+}
+
+void ChunkImage::mergeImages(const vector<Mat>& src, OutputArray dst)
+{
+
+    // Create a new 1 channel image
+    dst.create(size,src[0].type());
+    Mat mask = dst.getMat();
+    mask     = Scalar::all(255);
+
+    int x = 0;
+    int y = 0;
+    vector<Mat>::const_iterator it;
+    for (it = src.begin() ; it != src.end(); ++it) {
+
+
+        //Find the width and height of the image
+        int wlen = it->cols;
+        int hlen = it->rows;
+
+        // Debugging
+       
+        /*
+        std::cout << "ChunkImage::mergeImages Image[" 
+              << x << ":" << y << ":" << wlen << ":" << hlen << ":" 
+              << size.height << ":" << size.width << "]\n";
+        */
+
+        //Make a rectangle
+        Rect roi( x, y, wlen, hlen);
+        //Mat subImg (Image, Rect(x, y, wlen, hlen) ); 
+       
+        // Set the image ROI to display the current image
+        //Point a cv::Mat header at it (no allocation is done)
+        Mat ImageROI = mask(roi);
+        
+        // Resize the input image and copy the it to the Single Big Image
+        resize(*it, ImageROI, ImageROI.size(), 0, 0);
+
+        x += wlen;
+        if (x == size.width) {
+            y +=hlen;
+            x = 0;
+        }
+        
+    }
+
+
+}
+
+void ChunkImage::operator()(InputArray src, vector<Mat>& Output) 
+{
+    Mat Image=src.getMat();
+
+    /*
+    std::cout << "ChunkImage::operator Image[" 
+              << Image.type() << ":" << Image.depth() << ":" << Image.size() << "]\n";
+    std::cout << "ChunkImage::operator SubImage[" 
+              << ncols << ":" << nrows 
+              << " SubImgLen[" << sWidth.len << ":" << sWidth.rest
+              << ":" << sHeight.len <<":"<< sHeight.rest << "]\n";
+    */
+
+    int x = 0;
+    int y = 0;
+    int wlen = sWidth.len;
+    int hlen = sHeight.len;
+    for (int row=0; row<sHeight.partition; row++) {
+
+        for (int col=0; col<sWidth.partition; col++) {
+
+            /* 
+            std::cout <<  "ChunkImage::operator row:col[" 
+                      << row << ":" << col << "] y:x [" << y << ":" << x << "]\n";
+            */
+
+            if( (x+wlen) == (col*wlen) ) wlen += sWidth.rest;
+
+            Mat subImg (Image, Rect(x, y, wlen, hlen) ); 
+            Output.push_back(subImg);
+
+            x += wlen;
+            
+
+        }
+
+        y += hlen;
+        x = 0;
+        if ( y == (row*hlen) ) {
+            hlen += sHeight.rest;
+        }
+    }
+    //numSubImages = Output.size();
+};
+
+ChunkImage::block ChunkImage::computeSubImageSize(int num, int len) {
+
+    int result   = int(sqrt(float(num))) ;
+    int division = int(len / result);
+    int residual = int(len % result); 
+    return ChunkImage::block(division,residual,result);
+
+}
 

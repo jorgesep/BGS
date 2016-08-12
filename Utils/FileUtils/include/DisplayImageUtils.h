@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <time.h>
 #include "utils.h"
+#include <vector>
 
 using namespace std;
 using namespace cv;
@@ -50,5 +51,51 @@ private:
     int type;
 };
 
+class ChunkImage
+{
+    struct block {
+        block(int l, int r, int p): len(l), rest(r), partition(p) {};
+        int len;
+        int rest;
+        int partition;
+    };
+
+    public:
+        ChunkImage():sWidth(0,0,0),sHeight(0,0,0) {} ;
+        ChunkImage(InputArray, int);
+        ChunkImage(int, int, int);
+        //ChunkImage() : row(0),col(0),size(4), numSubImages(0){};
+        //ChunkImage(int subImgs) : numSubImages(subImgs) {};
+        //ChunkImage(InputArray rhs): 
+        //    row(0),
+        //    col(0),
+        //    size(4), 
+        //    numSubImages(0),
+        //    sWidth(0,0),
+        //    sHeight(0,0) { img=rhs.getMat(); };
+        //copy constructor
+        //ChunkImage(const ChunkImage & rhs) { *this = rhs; };
+        void operator()(InputArray src, vector<Mat>& dst) ;
+        //equality operator
+        //bool operator ==(const ChunkImage &rhs) const
+        //{
+        //    return ((tp==rhs.tp)&&(tn==rhs.tn)&&(fp==rhs.fp)&&(fn==rhs.fn));
+        //};
+        int getNumberSubImages(){ return numSubImages; }
+        void mergeImages(const vector<Mat>& src, OutputArray dst);
+        int getSubImgCol() {return ncols;}
+        int getSubImgRow() {return nrows;}
+
+
+    private:
+        block computeSubImageSize(int sd, int px);
+        Mat img;
+        int nrows, ncols;
+        Size size;
+        //int size;
+        int numSubImages;
+        block sWidth, sHeight;
+
+};
 
 #endif
