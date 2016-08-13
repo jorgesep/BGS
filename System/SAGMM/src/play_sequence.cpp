@@ -66,7 +66,32 @@ void display_message()
     cout << "------------------------------------------------------------" << endl <<endl;
 }
 
+int get_video_codec_type(string source)
+{
+    VideoCapture inputVideo(source);              // Open input
+    if (!inputVideo.isOpened())
+    {
+        cout  << "Could not open the input video: " << source << endl;
+        return -1;
+    }
 
+
+
+    int ex = static_cast<int>(inputVideo.get(CV_CAP_PROP_FOURCC));// Get Codec Type- Int form
+    // Transform from int to char via Bitwise operators
+    char EXT[] = {(char)(ex & 0XFF) , (char)((ex & 0XFF00) >> 8),(char)((ex & 0XFF0000) >> 16),(char)((ex & 0XFF000000) >> 24), 0};
+    
+    Size S = Size((int) inputVideo.get(CV_CAP_PROP_FRAME_WIDTH),    // Acquire input size
+                  (int) inputVideo.get(CV_CAP_PROP_FRAME_HEIGHT));
+
+    cout << "Input frame resolution: Width=" << S.width << "  Height=" << S.height
+         << " of nr#: " << inputVideo.get(CV_CAP_PROP_FRAME_COUNT) << endl;
+    cout << "Input codec type: " << EXT << endl;
+
+    inputVideo.release();
+
+    return 1;
+}
 
 
 
@@ -106,6 +131,8 @@ int main( int argc, char** argv )
         cout << "Invalid file name "<< endl;
         return 0;
     }
+
+    get_video_codec_type(inputName);
 
     // Instances of algorithms
     int col   = input_frame->getNumberCols();
@@ -153,12 +180,19 @@ int main( int argc, char** argv )
 
         // Save pixel information in a local file
         if (show_point) {
-            circle(Image,pt,8,Scalar(0,0,254),-1,8);
             ptmsg.str("");
-            ptmsg  << (int)Image.at<Vec3b>(nl,nc)[0] << " "
+            ptmsg  
+                   << (int)Image.at<Vec3b>(nl,nc)[0] << " "
                    << (int)Image.at<Vec3b>(nl,nc)[1] << " "
-                   << (int)Image.at<Vec3b>(nl,nc)[2] ;
+                   << (int)Image.at<Vec3b>(nl,nc)[2] << " "
+
+                   << (int)Frame.at<Vec3b>(nl,nc)[0] << " "
+                   << (int)Frame.at<Vec3b>(nl,nc)[1] << " "
+                   << (int)Frame.at<Vec3b>(nl,nc)[2] ;
+
             ptfile << ptmsg.str() << endl;
+
+            circle(Image,pt,8,Scalar(0,0,254),-1,8);
         }
 
         imshow("Current Frame", Image);
