@@ -93,7 +93,7 @@ int main( int argc, char** argv )
     }
     
     // Checking out config file available
-    string configfile = "config/BGSSystem.xml";
+    string configfile = "config/Framework.xml";
     
     if ( !exists(configfile) && !is_regular_file(configfile) ) {
         cout << "File " << configfile << " not found." << endl;
