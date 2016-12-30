@@ -25,12 +25,28 @@ FILE ( GLOB SCRIPTS ${PROJECT_SOURCE_DIR}/scripts/*.py ${PROJECT_SOURCE_DIR}/scr
 #MESSAGE("Performance Source Dir set to ${Performance_SOURCE_DIR}")
 #MESSAGE("CMAKE_CURRENT_SOURCE_DIR Source Dir set to ${CMAKE_CURRENT_SOURCE_DIR}")
 #MESSAGE("CMAKE_CURRENT_BINARY_DIR Source Dir set to ${CMAKE_CURRENT_BINARY_DIR}")
+# — OpenMP —
+if(NOT HAVE_TBB AND NOT HAVE_CSTRIPES)
+    include (FindOpenMP) # — since cmake version 2.6.3
+    if (OPENMP_FOUND)
+        set (HAVE_OPENMP TRUE)
+        set (CMAKE_CXX_FLAGS “${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}”)
+        set (CMAKE_C_FLAGS “${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}”)
+    else()
+        set ( HAVE_OPENMP FALSE)
+    endif()
+else()
+    set(HAVE_OPENMP 0)
+endif()
+
+
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/../include)
 INCLUDE_DIRECTORIES(${BGS_SOURCE_DIR}/Utils/FileUtils/include)
 
 # This include was added to support boost/program_options.hpp
-find_package( Boost REQUIRED COMPONENTS program_options regex filesystem system )
+SET(Boost_USE_MULTITHREAD ON)
+find_package( Boost REQUIRED COMPONENTS system program_options regex filesystem thread )
 include_directories( ${Boost_INCLUDE_DIRS} )
 
 link_directories(${BGS_BINARY_DIR}/Utils)

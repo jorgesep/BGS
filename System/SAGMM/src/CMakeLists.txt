@@ -81,6 +81,10 @@ ADD_EXECUTABLE( play_mask play_sequence_masks )
 TARGET_LINK_LIBRARIES( play_mask Utils ${OpenCV_LIBS} )
 set_property(TARGET play_mask PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
 
+ADD_EXECUTABLE( mask_comparing play_mask_comparing )
+TARGET_LINK_LIBRARIES( mask_comparing Utils ${OpenCV_LIBS} )
+set_property(TARGET mask_comparing PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)
+
 ADD_EXECUTABLE( sagmm_client sagmm_client )
 TARGET_LINK_LIBRARIES( sagmm_client ${OpenCV_LIBS} ${Boost_LIBRARIES} SAGMM Performance Utils Timer ImageUtils )
 set_property(TARGET sagmm_client PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BGS_BINARY_DIR}/bin)

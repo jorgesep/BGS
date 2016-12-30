@@ -346,7 +346,20 @@ void Performance::pixelLevelCompare(const Mat& _reference, const Mat& _image)
     //cout << "Duration pixelLevelCompare : " << duration << endl; 
 }
 
-    
+void Performance::updateInternalVectors()
+{
+    // Save each current_frame in a global vector
+    vectorMetrics.push_back(
+                            GlobalMetrics(current_frame, 
+                                          ContingencyMatrix(0,0,0,0), 
+                                          ContingencyMatrix(0,0,0,0), 
+                                          getPerformance(current_frame), 
+                                          CommonMetrics(0,0,0,0), 
+                                          CommonMetrics(0,0,0,0), 
+                                          accumulated.count));
+ 
+    vectorSimilarity.push_back(similarity_frame);
+}
 
 
 // Counts up from reference frame number of TP and TN
@@ -378,63 +391,6 @@ void Performance::countPixelsReferenceImage(const Mat& image)
 
 
 }
-
-
-    
-/*    
-// Counts up from reference frame number of TP and TN
-void Performance::countPixelsReferenceImage(const Mat& image) 
-{
- double duration;
- duration = static_cast<double>(cv::getTickCount());
-
-    
-    // get Mat header for input image. This is O(1) operation
-    Mat img = image;
-    
-    // Check and convert reference image to gray
-    if (image.channels() > 1) 
-        cvtColor( image, img, CV_BGR2GRAY );
-    
-    
-    reference = ContingencyMatrix();
-    ContingencyMatrix *r_ptr = &reference;
-    
-    int nl= img.rows; // number of lines
-    int nc= img.cols;
-    
-    if (img.isContinuous())
-    {
-        //then no padded pixels
-        nc= nc*nl;
-        nl= 1; // it is now a 1D array
-    }
-    
-    //this loop is executed only once
-    // in case of continuous images
-    for (int j=0; j<nl; j++) {
-        //get a pointer of each row
-        const uchar* data= img.ptr<uchar>(j);
-        for (int i=0; i<nc; i++) {
-            
-            //if (data[i] > threshold)
-            if (data[i] > 0)
-                r_ptr->tp++;
-            else
-                r_ptr->tn++;
-        }
-    }
-    
- 
- duration = static_cast<double>(cv::getTickCount())-duration;
- duration /= cv::getTickFrequency(); //the elapsed time in ms
- cout << "BENCHMARK DURATION : " << duration << endl;
-
-    
-    
-}
-*/
-    
 
     
 void Performance::frameSimilarity(InputArray _truth,InputArray _mask)
@@ -621,32 +577,6 @@ void Performance::medianOfMetrics()
         }
     
     }
-    /*
-    // Getting median of similarity
-    unsigned int size = (unsigned int)vectorSimilarity.size()/2; 
-    bool size_even    = vectorSimilarity.size() % 2 ? false: true;
-    
-    vector<double> _psnr;
-    vector<double> _mssim;
-    vector<double> _dscore;
-    
-    for (vector<Similarity>::iterator it = vectorSimilarity.begin(); it != vectorSimilarity.end(); ++it) {
-        _psnr.push_back(it->PSNR);
-        _mssim.push_back(it->MSSIM);
-        _dscore.push_back(it->DSCORE);
-    }
-    
-    sort(_psnr.begin()  , _psnr.end());
-    sort(_mssim.begin() , _mssim.end());
-    sort(_dscore.begin(), _dscore.end());
-    
-    if (size_even)
-        similarity_median = Similarity( (_psnr  [size] + _psnr  [size-1])/2,
-                                        (_mssim [size] + _mssim [size-1])/2,
-                                        (_dscore[size] + _dscore[size-1])/2 );
-    else
-        similarity_median = Similarity( _psnr[size], _mssim[size], _dscore[size] );
-    */                                   
 
 
 }
@@ -687,85 +617,6 @@ double Performance::getPSNR(const Mat& I1, const Mat& I2)
 }
 
 
-    
-/*
-double Performance::getPSNR(Mat& src1, Mat& src2, int bb)
-{
-    double duration;
-    duration = static_cast<double>(cv::getTickCount());
-
-    int i,j;
-    double sse,mse,psnr;
-    sse = 0.0;
-
-    Mat s1,s2;
-    cvtColor(src1,s1,CV_BGR2GRAY);
-    cvtColor(src2,s2,CV_BGR2GRAY);
-
-    int count=0;
-    for(j=bb;j<s1.rows-bb;j++)
-    {
-        uchar* d=s1.ptr(j);
-        uchar* s=s2.ptr(j);
-
-        for(i=bb;i<s1.cols-bb;i++)
-        {
-            sse += ((d[i] - s[i])*(d[i] - s[i]));
-            count++;
-        }
-    }
-
-    duration = static_cast<double>(cv::getTickCount())-duration;
-    duration /= cv::getTickFrequency(); //the elapsed time in ms
-    
-    if(sse == 0.0 || count==0)
-    {
-        return 0;
-    }
-    else
-    {
-        mse =sse /(double)(count);
-        psnr = 10.0*log10((255*255)/mse);
-        return psnr;
-    }
-}
-*/
-    
-    
-
-    
-    
-/*
-double getPSNR(const Mat& I1, const Mat& I2)
-{
-    double duration;
-    duration = static_cast<double>(cv::getTickCount());
-
-    Mat s1;
-    absdiff(I1, I2, s1);       // |I1 - I2|
-    s1.convertTo(s1, CV_32F);  // cannot make a square on 8 bits
-    s1 = s1.mul(s1);           // |I1 - I2|^2
-
-    Scalar s = sum(s1);        // sum elements per channel
-
-    double sse = s.val[0] + s.val[1] + s.val[2]; // sum channels
-
-    duration = static_cast<double>(cv::getTickCount())-duration;
-    duration /= cv::getTickFrequency(); //the elapsed time in ms
-
-    if( sse <= 1e-10) // for small values return zero
-                return 0;
-    else
-    {
-        double mse  = sse / (double)(I1.channels() * I1.total());
-        double psnr = 10.0 * log10((255 * 255) / mse);
-        return psnr;
-    }
-}
-*/
-    
-    
-    
 double Performance::getMSSIM( const Mat& i1, const Mat& i2)
 {
     const double C1 = 6.5025, C2 = 58.5225;

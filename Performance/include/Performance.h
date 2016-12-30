@@ -88,7 +88,10 @@ struct ContingencyMatrix
     // overloaded -= operator
     ContingencyMatrix& operator -=(const ContingencyMatrix &rhs) 
     {
-        tp -= rhs.tp; tn -= rhs.tn; fp -= rhs.fp; fn -= rhs.fn;
+        tp = (tp > rhs.tp ) ? (tp - rhs.tp ) : 0; 
+        tn = (tn > rhs.tn ) ? (tn - rhs.tn ) : 0; 
+        fp = (fp > rhs.fp ) ? (fp - rhs.fp ) : 0; 
+        fn = (fn > rhs.fn ) ? (fn - rhs.fn ) : 0; 
         return *this;
     };
 
@@ -152,6 +155,16 @@ struct CommonMetrics {
        return result += rhs;
     }
     
+    // overloaded -= operator
+    CommonMetrics& operator -=(const CommonMetrics &rhs)
+    {
+        sensitivity  = (sensitivity>rhs.sensitivity) ? (sensitivity-rhs.sensitivity): 0; 
+        specificity  = (specificity>rhs.specificity) ? (specificity-rhs.specificity): 0; 
+        f1score      = (f1score>rhs.f1score)         ? (f1score-rhs.f1score)        : 0; 
+        MCC          = (MCC>rhs.MCC)                 ? (MCC-rhs.MCC)                : 0; 
+        return *this;
+    };
+
     // assigment operator
     double sensitivity;
     double specificity;
@@ -238,6 +251,37 @@ struct GlobalMetrics {
         return *this;
     };
 
+    const GlobalMetrics operator+(const GlobalMetrics &rhs) const
+    {
+       GlobalMetrics result(*this);
+       return result += rhs;
+    }
+
+    GlobalMetrics& operator +=(const GlobalMetrics &rhs)
+    {
+        perfR   += rhs.perfR;
+        perfG   += rhs.perfG;
+        perfB   += rhs.perfB;
+        metricR += rhs.metricR;
+        metricG += rhs.metricG;
+        metricB += rhs.metricB;
+        count   += rhs.count;
+        return *this;
+    };
+    GlobalMetrics& operator -=(const GlobalMetrics &rhs)
+    {
+        perfR   -= rhs.perfR;
+        perfG   -= rhs.perfG;
+        perfB   -= rhs.perfB;
+        metricR -= rhs.metricR;
+        metricG -= rhs.metricG;
+        metricB -= rhs.metricB;
+        count    = (count > rhs.count) ? (count - rhs.count) : 0;
+        return *this;
+    };
+
+
+
     ContingencyMatrix perfR;
     ContingencyMatrix perfG;
     ContingencyMatrix perfB;
@@ -311,6 +355,33 @@ struct StatMetrics {
         return *this;
     };
 
+    const StatMetrics operator+(const StatMetrics &rhs) const
+    {
+       StatMetrics result(*this);
+       return result += rhs;
+    }
+
+
+    StatMetrics& operator +=(const StatMetrics &rhs)
+    {
+        MeanR   += rhs.MeanR;
+        MeanG   += rhs.MeanG;
+        MeanB   += rhs.MeanB;
+        MedianR += rhs.MedianR;
+        MedianG += rhs.MedianG;
+        MedianB += rhs.MedianB;
+        return *this;
+    };
+    StatMetrics& operator -=(const StatMetrics &rhs)
+    {
+        MeanR   -= rhs.MeanR;
+        MeanG   -= rhs.MeanG;
+        MeanB   -= rhs.MeanB;
+        MedianR -= rhs.MedianR;
+        MedianG -= rhs.MedianG;
+        MedianB -= rhs.MedianB;
+        return *this;
+    };
 
     CommonMetrics MeanR;
     CommonMetrics MeanG;
@@ -368,15 +439,19 @@ struct Similarity {
         DSCORE += rhs.DSCORE;
         return *this;
     };
-    
+    Similarity& operator -=(const Similarity &rhs)
+    {
+        PSNR   += ( PSNR   > rhs.PSNR  ) ? (PSNR   - rhs.PSNR  ): 0 ; 
+        MSSIM  += ( MSSIM  > rhs.MSSIM ) ? (MSSIM  - rhs.MSSIM ): 0 ; 
+        DSCORE += ( DSCORE > rhs.DSCORE) ? (DSCORE - rhs.DSCORE): 0 ;
+        return *this;
+    };
+     
     const Similarity operator+(const Similarity &rhs) const
     {
         Similarity result(*this);
         return result += rhs;
     }
-
-    
-    
     
     double PSNR;
     double MSSIM;
@@ -392,15 +467,14 @@ public:
     Performance () : 
         FMeasure(0),Variance(0),Mean(0),
         sensitivity(0),specificity(0),precision(0),
-        threshold(250),nchannel(1),
     pixel_performance(true),frame_performance(false)
     { };
 
     //Parametric constructor
-    Performance (float fm, float var, float mu, unsigned char thr, 
-            float sn, float sp, float pr, int nch ) :
+    Performance (float fm, float var, float mu,  
+            float sn, float sp, float pr ) :
         FMeasure(fm),Variance(var),Mean(mu),
-        sensitivity(sn),specificity(sp),precision(pr),threshold(thr),nchannel(nch),
+        sensitivity(sn),specificity(sp),precision(pr),
     pixel_performance(true), frame_performance(false)
     { };
 
@@ -412,14 +486,28 @@ public:
     {
         if (*this != rhs) 
         {
-            FMeasure      = rhs.FMeasure;
-            Variance      = rhs.Variance;
-            Mean          = rhs.Mean;
-            threshold     = rhs.threshold;
-            sensitivity   = rhs.sensitivity;
-            specificity   = rhs.specificity;
-            precision     = rhs.precision;
-            nchannel      = rhs.nchannel ;
+            FMeasure               = rhs.FMeasure               ;
+            Variance               = rhs.Variance               ;
+            Mean                   = rhs.Mean                   ;
+            sensitivity            = rhs.sensitivity            ;
+            specificity            = rhs.specificity            ;
+            precision              = rhs.precision              ;
+            MCC                    = rhs.MCC                    ;
+            
+            reference              = rhs.reference              ;
+            current_frame          = rhs.current_frame          ;
+            
+            accumulated            = rhs.accumulated            ;
+            
+            stat                   = rhs.stat                   ;
+            
+            similarity_frame       = rhs.similarity_frame       ;
+            similarity_accumulated = rhs.similarity_accumulated ;
+            similarity_mean        = rhs.similarity_mean        ;
+            similarity_median      = rhs.similarity_median      ;
+            
+            pixel_performance      = rhs.pixel_performance      ;
+            frame_performance      = rhs.frame_performance      ;
         }
         return *this;
     };
@@ -427,61 +515,120 @@ public:
     //Equality operator
     bool operator ==(const Performance &rhs) const
     {
-        return ((FMeasure      == rhs.FMeasure)      &&
-                (Variance      == rhs.Variance)      &&
-                (Mean          == rhs.Mean)          &&
-                (sensitivity   == rhs.sensitivity)   &&
-                (specificity   == rhs.specificity)   &&
-                (precision     == rhs.precision  )   &&
-                (nchannel      == rhs.nchannel   ));
+        return (
+            (FMeasure              == rhs.FMeasure               ) &&
+            (Variance              == rhs.Variance               ) &&
+            (Mean                  == rhs.Mean                   ) &&
+            (sensitivity           == rhs.sensitivity            ) &&
+            (specificity           == rhs.specificity            ) &&
+            (precision             == rhs.precision              ) &&
+            (MCC                   == rhs.MCC                    ) &&
+            
+            (reference             == rhs.reference              ) &&
+            (current_frame         == rhs.current_frame          ) &&
+            
+            (accumulated           == rhs.accumulated            ) &&
+            
+            (stat                  == rhs.stat                   ) &&
+            
+            (similarity_frame      == rhs.similarity_frame       ) &&
+            (similarity_accumulated== rhs.similarity_accumulated ) &&
+            (similarity_mean       == rhs.similarity_mean        ) &&
+            (similarity_median     == rhs.similarity_median      ) &&
+            
+            (pixel_performance     == rhs.pixel_performance      ) &&
+            (frame_performance     == rhs.frame_performance      ) 
+                );
     };
 
     //Inequality operator
     bool operator !=(const Performance &rhs) const
     {
-        return ((FMeasure      != rhs.FMeasure)      ||
-                (Variance      != rhs.Variance)      ||
-                (Mean          != rhs.Mean)          ||
-                (sensitivity   != rhs.sensitivity)   ||
-                (specificity   != rhs.specificity)   ||
-                (precision     != rhs.precision)     ||
-                (nchannel      != rhs.nchannel ));
+        return (
+            (FMeasure              != rhs.FMeasure               ) ||
+            (Variance              != rhs.Variance               ) ||
+            (Mean                  != rhs.Mean                   ) ||
+            (sensitivity           != rhs.sensitivity            ) ||
+            (specificity           != rhs.specificity            ) ||
+            (precision             != rhs.precision              ) ||
+            (MCC                   != rhs.MCC                    ) ||
+            
+            (reference             != rhs.reference              ) ||
+            (current_frame         != rhs.current_frame          ) ||
+            
+            (accumulated           != rhs.accumulated            ) ||
+            
+            (stat                  != rhs.stat                   ) ||
+            
+            (similarity_frame      != rhs.similarity_frame       ) ||
+            (similarity_accumulated!= rhs.similarity_accumulated ) ||
+            (similarity_mean       != rhs.similarity_mean        ) ||
+            (similarity_median     != rhs.similarity_median      ) ||
+            
+            (pixel_performance     != rhs.pixel_performance      ) ||
+            (frame_performance     != rhs.frame_performance      ) 
+                );
     };
 
     // overloaded += operator
     Performance& operator +=(const Performance &rhs)
     {
-        FMeasure      += rhs.FMeasure;
-        Variance      += rhs.Variance;
-        Mean          += rhs.Mean;
-        sensitivity   += rhs.sensitivity;
-        specificity   += rhs.specificity;
-        precision     += rhs.precision  ;
+        FMeasure               += rhs.FMeasure               ;
+        Variance               += rhs.Variance               ;
+        Mean                   += rhs.Mean                   ;
+        sensitivity            += rhs.sensitivity            ;
+        specificity            += rhs.specificity            ;
+        precision              += rhs.precision              ;
+        MCC                    += rhs.MCC                    ;
+        
+        reference              += rhs.reference              ;
+        current_frame          += rhs.current_frame          ;
+        
+        accumulated            += rhs.accumulated            ;
+        
+        stat                   += rhs.stat                   ;
+        
+        similarity_frame       += rhs.similarity_frame       ;
+        similarity_accumulated += rhs.similarity_accumulated ;
+        similarity_mean        += rhs.similarity_mean        ;
+        similarity_median      += rhs.similarity_median      ;
+        
+        pixel_performance       = rhs.pixel_performance      ;
+        frame_performance       = rhs.frame_performance      ;
         return *this;
     };
 
     const Performance operator+(const Performance &rhs) const
     {
-        Performance result(rhs.FMeasure,
-                rhs.Variance,
-                rhs.Mean,
-                rhs.threshold,
-                rhs.sensitivity,
-                rhs.specificity,
-                rhs.precision,
-                rhs.nchannel);
+        Performance result(*this);
         return result += rhs;
     }
 
     // overloaded -= operator
     Performance& operator -=(const Performance &rhs) 
     {
-        FMeasure      -= rhs.FMeasure;
-        Variance      -= rhs.Variance;
-        Mean          -= rhs.Mean;
-        sensitivity   -= rhs.sensitivity;
-        specificity   -= rhs.specificity;
-        precision     -= rhs.precision;
+        FMeasure                = (FMeasure    > rhs.FMeasure   ) ? ( FMeasure    - rhs.FMeasure   ) : 0 ;
+        Variance                = (Variance    > rhs.Variance   ) ? ( Variance    - rhs.Variance   ) : 0 ;
+        Mean                    = (Mean        > rhs.Mean       ) ? ( Mean        - rhs.Mean       ) : 0 ;
+        sensitivity             = (sensitivity > rhs.sensitivity) ? ( sensitivity - rhs.sensitivity) : 0 ;
+        specificity             = (specificity > rhs.specificity) ? ( specificity - rhs.specificity) : 0 ;
+        precision               = (precision   > rhs.precision  ) ? ( precision   - rhs.precision  ) : 0 ;
+        MCC                     = (MCC         > rhs.MCC        ) ? ( MCC         - rhs.MCC        ) : 0 ;
+        
+        reference              += rhs.reference              ;
+        current_frame          += rhs.current_frame          ;
+        
+        accumulated            += rhs.accumulated            ;
+        
+        stat                   += rhs.stat                   ;
+        
+        similarity_frame       += rhs.similarity_frame       ;
+        similarity_accumulated += rhs.similarity_accumulated ;
+        similarity_mean        += rhs.similarity_mean        ;
+        similarity_median      += rhs.similarity_median      ;
+        
+        pixel_performance      = !rhs.pixel_performance      ;
+        frame_performance      = !rhs.frame_performance      ;
         return *this;
     };
 
@@ -517,7 +664,7 @@ public:
      * Compute number of TP and TN.
      */
     void countPixelsReferenceImage(const Mat&);
-    void setThreshold(int th) {threshold = th;};
+    //void setThreshold(int th) {threshold = th;};
     /**
      * Compute all similarity measures fo two frames
      * PSNR, SIIM, and DScore
@@ -525,6 +672,7 @@ public:
     void frameSimilarity(InputArray, InputArray);
     void frameSimilarity(InputArray, InputArray, InputArray);
     //ContingencyMatrix getContingencyMatrix(int idx) {return measure;};
+    void updateInternalVectors();
 
     /**
      * Return performance indexes
@@ -563,27 +711,23 @@ private:
     float specificity;
     float precision;
     float MCC;
-    //float medianR[2];
-    //float medianG;
-    //float medianB;
-    unsigned char threshold;
-    unsigned int nchannel;
 
     static const int MAX_NUMBER_CHANNELS = 3;
     static const float PEAK_PARAMETER;
     
     ContingencyMatrix reference;
     ContingencyMatrix current_frame;
+    
     GlobalMetrics accumulated;
-    CommonMetrics common_metrics;
     vector<GlobalMetrics> vectorMetrics;
+
     StatMetrics stat;
     
     Similarity similarity_frame;
     Similarity similarity_accumulated;
-    vector<Similarity> vectorSimilarity;
     Similarity similarity_mean;
     Similarity similarity_median;
+    vector<Similarity> vectorSimilarity;
     
     bool pixel_performance;
     bool frame_performance;

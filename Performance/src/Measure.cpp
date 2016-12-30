@@ -462,6 +462,21 @@ int main( int argc, char** argv )
                     key = (char)waitKey(delay);
                     // Exit program
                     if( key == 27 ) break;
+
+
+                    if ( key == 32) {
+                        bool pause = true;
+                        while (pause)
+                        {
+                            key = (char)waitKey(delay);
+                            if (key == 32)
+                                pause = false;
+                            if (key == 112)
+                                cout << "Number of frame: " << i << "Files: " << fileName(gt_it->second) << " : " << fileName(fg_it->second) << endl;
+                        }
+                    }
+
+
                 }
 
                 cnt_processed++;
