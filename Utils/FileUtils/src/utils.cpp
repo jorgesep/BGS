@@ -465,6 +465,32 @@ void ListImgFilesInDirectory (string _directory, vector<string>& dir_list )
 
 }
 
+void MapSpecificActionMasksDirectories (string _location, map<int, map<int,string> >& dir_list )
+{
+
+    int id;
+    boost::filesystem::path _path ( _location.c_str() );
+    if (is_directory(_path)) {
+       vector<path> v;
+       copy(directory_iterator(_path), directory_iterator(), back_inserter(v));
+
+       for (vector<path>::const_iterator it(v.begin()), it_end(v.end()); it != it_end; ++it) {
+
+           if (is_directory(*it)){
+               map<int,string> mapFile;
+               stringstream numdir(it->stem().string());
+               numdir >> id;
+               if (id >= 0) {
+                   MapImgFilesInDirectory(canonical(*it).string(),mapFile);
+                   dir_list[id] = mapFile;
+               }
+            }
+       }
+    }
+}
+
+
+
 void MapAllMasksDirectories (string _directory, map<int, map<int,string> >& dir_list )
 {
 
